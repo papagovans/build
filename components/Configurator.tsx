@@ -224,25 +224,66 @@ function Header() {
   );
 }
 
+/**
+ * Compact, information-dense header. The Sprinter itself lives in the sticky
+ * context bar, so this space explains what the buyer is actually getting
+ * rather than repeating the photo.
+ */
+const BUILD_FACTS: { value: string; label: string; detail: string }[] = [
+  {
+    value: "Van Included",
+    label: "Mercedes-Benz Sprinter",
+    detail: "Every price covers the chassis and the full conversion",
+  },
+  {
+    value: "RVIA Certified",
+    label: "Veteran-owned",
+    detail: "Meets the standard insurers and campgrounds look for",
+  },
+  {
+    value: "Built to Order",
+    label: "Mesa, Arizona",
+    detail: "Every van built in-house, start to finish",
+  },
+  {
+    value: "Financing",
+    label: "Available",
+    detail: "Through our partner, Hearth",
+  },
+];
+
 function Hero() {
   return (
-    <section className="relative bg-navy-deep">
-      {/* TODO: swap for the stock un-converted Sprinter photo once supplied. */}
-      <div
-        className="absolute inset-0 bg-cover bg-center opacity-40"
-        style={{
-          backgroundImage:
-            "url(https://papagovans.com/wp-content/uploads/2025/07/papago_vans.webp)",
-        }}
-      />
-      <div className="relative max-w-6xl mx-auto px-4 sm:px-6 py-14 sm:py-20 text-center">
-        <h1 className="text-4xl sm:text-5xl font-extrabold uppercase tracking-tight text-white leading-none">
-          Build Your Van
-        </h1>
-        <p className="mt-4 text-lg text-white/80 max-w-2xl mx-auto">
-          Start with a floor plan, pick a package, then make it yours. Your
-          estimated total updates as you go.
-        </p>
+    <section className="bg-navy-deep">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
+        <div className="text-center max-w-2xl mx-auto">
+          <h1 className="text-3xl sm:text-4xl font-extrabold uppercase tracking-tight text-white leading-none">
+            Build Your Van
+          </h1>
+          <p className="mt-3 text-white/75">
+            Five floor plans, three build packages, then customize across nine
+            categories. Your estimated total updates as you go.
+          </p>
+        </div>
+
+        <dl className="mt-7 grid grid-cols-2 lg:grid-cols-4 gap-3">
+          {BUILD_FACTS.map((f) => (
+            <div
+              key={f.value}
+              className="rounded-lg bg-white/5 border border-white/10 p-4"
+            >
+              <dt className="text-gold font-bold uppercase tracking-wide text-sm leading-tight">
+                {f.value}
+              </dt>
+              <dd className="text-white text-sm font-semibold mt-0.5">
+                {f.label}
+              </dd>
+              <dd className="text-white/55 text-xs mt-1.5 leading-snug">
+                {f.detail}
+              </dd>
+            </div>
+          ))}
+        </dl>
       </div>
     </section>
   );
