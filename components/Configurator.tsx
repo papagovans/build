@@ -636,6 +636,98 @@ function StepGallery({
   );
 }
 
+/**
+ * One glyph per category, drawn inline so the package comparison needs no
+ * icon dependency. 24x24 stroke paths, sized by the caller.
+ */
+const CATEGORY_ICON_PATHS: Record<string, string> = {
+  electricity: "M13 2 4 14h6l-1 8 9-12h-6l1-8Z",
+  plumbing: "M12 2.7s5.5 5.6 5.5 10a5.5 5.5 0 0 1-11 0c0-4.4 5.5-10 5.5-10Z",
+  climate:
+    "M10 14.8V5a2 2 0 1 1 4 0v9.8a4 4 0 1 1-4 0Z M12 17.5v.01",
+  kitchen: "M6 2v9a2 2 0 0 0 2 2v9 M6 6h4 M10 2v9 M18 2c-1.5 2-2 4-2 6s.5 3 2 3v11",
+  aesthetic:
+    "M12 3a9 9 0 1 0 0 18c1.1 0 2-.9 2-2 0-.6-.2-1-.6-1.4-.3-.4-.5-.8-.5-1.3 0-1.1.9-2 2-2h1.6A4.5 4.5 0 0 0 21 9.8C21 6 16.9 3 12 3Z",
+  storage: "M3 7h18v13H3z M3 7l2-4h14l2 4 M9 12h6",
+  sleeping: "M3 18v-6h18v6 M3 12V7 M21 18v2 M3 18v2 M7 12V9h4v3",
+  exterior: "M2 19h20 M4 19 10 7l3.5 6.5L16 10l4 9",
+  misc: "M6 12h.01 M12 12h.01 M18 12h.01",
+};
+
+function CategoryIcon({
+  categoryId,
+  className = "",
+}: {
+  categoryId: string;
+  className?: string;
+}) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.8}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      className={className}
+    >
+      {CATEGORY_ICON_PATHS[categoryId]
+        ?.split(" M")
+        .map((seg, i) => (
+          <path key={i} d={i === 0 ? seg : `M${seg}`} />
+        ))}
+    </svg>
+  );
+}
+
+/** Which categories a package actually touches, for the at-a-glance comparison. */
+function categoriesUpgradedBy(defaults: string[]): Set<string> {
+  const ids = new Set<string>();
+  for (const optionId of defaults) {
+    const option = getOption(optionId);
+    if (option) ids.add(option.categoryId);
+  }
+  return ids;
+}
+
+function PackageIconRow({ defaults }: { defaults: string[] }) {
+  const upgraded = categoriesUpgradedBy(defaults);
+
+  return (
+    <div className="mt-4">
+      <div className="flex flex-wrap gap-1.5">
+        {CATEGORIES.map((c) => {
+          const active = upgraded.has(c.id);
+          return (
+            <span
+              key={c.id}
+              title={
+                active ? `${c.name}: upgraded` : `${c.name}: standard build`
+              }
+              className={`grid place-items-center w-8 h-8 rounded-md border transition-colors ${
+                active
+                  ? "bg-navy border-navy text-gold"
+                  : "bg-transparent border-black/10 text-black/20"
+              }`}
+            >
+              <CategoryIcon categoryId={c.id} className="w-4 h-4" />
+              <span className="sr-only">
+                {c.name}: {active ? "upgraded" : "standard"}
+              </span>
+            </span>
+          );
+        })}
+      </div>
+      <p className="mt-2 text-xs text-steel">
+        {upgraded.size === 0
+          ? "Standard build across all 9 categories"
+          : `Upgrades in ${upgraded.size} of ${CATEGORIES.length} categories`}
+      </p>
+    </div>
+  );
+}
+
 function StepPackage({
   floorPlanId,
   selectedId,
@@ -672,7 +764,10 @@ function StepPackage({
               <p className="mt-4 text-2xl font-extrabold text-navy">
                 {pkg.priceDelta === 0 ? "Included" : `+${formatPrice(pkg.priceDelta)}`}
               </p>
-              <ul className="mt-5 space-y-1.5 text-sm flex-1">
+
+              <PackageIconRow defaults={pkg.defaults} />
+
+              <ul className="mt-5 space-y-1.5 text-sm flex-1 border-t border-black/5 pt-4">
                 {pkg.defaults.length === 0 && (
                   <li className="text-steel">The core build, nothing added.</li>
                 )}
