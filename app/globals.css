@@ -1,26 +1,36 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/**
+ * Brand tokens sampled from papagovans.com's live stylesheet so the
+ * configurator reads as the same product as the main site.
+ */
+@theme {
+  --color-navy: #303c47;
+  --color-navy-deep: #253038;
+  --color-charcoal: #414042;
+  --color-steel: #53687b;
+  --color-sky: #6c93b7;
+  --color-gold: #f4d969;
+  --color-gold-deep: #efc945;
+  --color-cream: #fcfaf3;
+  --color-offwhite: #f5f5f5;
+
+  --font-sans: var(--font-prompt), ui-sans-serif, system-ui, sans-serif;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  scroll-behavior: smooth;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-offwhite);
+  color: var(--color-charcoal);
+}
+
+/* Headlines are uppercase across Papago's brand. */
+.brand-heading {
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.01em;
+  color: var(--color-navy);
 }
