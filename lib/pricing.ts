@@ -7,6 +7,12 @@ import {
   type Option,
 } from "./catalog";
 
+export interface Customer {
+  firstName: string;
+  lastName: string;
+  email: string;
+}
+
 export interface BuildState {
   floorPlanId: string | null;
   packageId: string | null;
@@ -19,6 +25,21 @@ export const EMPTY_BUILD: BuildState = {
   packageId: null,
   selected: [],
 };
+
+export const EMPTY_CUSTOMER: Customer = {
+  firstName: "",
+  lastName: "",
+  email: "",
+};
+
+/** Basic shape check only. Real validation happens server-side at submit. */
+export function isValidCustomer(c: Customer): boolean {
+  return (
+    c.firstName.trim().length > 0 &&
+    c.lastName.trim().length > 0 &&
+    /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(c.email.trim())
+  );
+}
 
 export interface PriceBreakdown {
   base: number;

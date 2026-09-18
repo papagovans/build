@@ -14,6 +14,7 @@ import {
 } from "@/lib/catalog";
 import {
   EMPTY_BUILD,
+  EMPTY_CUSTOMER,
   applyPackage,
   decodeBuild,
   encodeBuild,
@@ -21,23 +22,37 @@ import {
   isSuperseded,
   priceBuild,
   setFloorPlan,
+  isValidCustomer,
   toggleOption,
   type BuildState,
+  type Customer,
 } from "@/lib/pricing";
 
-/** 0 = floor plan, 1 = layout gallery, 2 = package, 3..11 = categories, 12 = summary. */
-const GALLERY_STEP = 1;
-const PACKAGE_STEP = 2;
-const CATEGORY_STEP_OFFSET = 3;
+/** 0 = intro, 1 = floor plan, 2 = gallery, 3 = package, 4..12 = categories, 13 = summary. */
+const INTRO_STEP = 0;
+const PLAN_STEP = 1;
+const GALLERY_STEP = 2;
+const PACKAGE_STEP = 3;
+const CATEGORY_STEP_OFFSET = 4;
 const TOTAL_STEPS = CATEGORY_STEP_OFFSET + CATEGORIES.length + 1;
 const SUMMARY_STEP = TOTAL_STEPS - 1;
 
+const CUSTOMER_KEY = "pv_customer";
+
 export default function Configurator() {
   const [build, setBuild] = useState<BuildState>(EMPTY_BUILD);
-  const [step, setStep] = useState(0);
+  const [customer, setCustomer] = useState<Customer>(EMPTY_CUSTOMER);
+  const [step, setStep] = useState(INTRO_STEP);
 
-  // Restore a shared build from the URL on first paint.
+  // Restore a shared build from the URL, and the customer from this session.
+  // Customer details deliberately stay out of the URL so shared links carry no PII.
   useEffect(() => {
+    try {
+      const saved = sessionStorage.getItem(CUSTOMER_KEY);
+      if (saved) setCustomer(JSON.parse(saved));
+    } catch {
+      // Private mode or blocked storage. Non-fatal.
+    }
     const restored = decodeBuild(
       new URLSearchParams(window.location.search).get("b"),
     );
@@ -46,6 +61,16 @@ export default function Configurator() {
       setStep(restored.packageId ? CATEGORY_STEP_OFFSET : GALLERY_STEP);
     }
   }, []);
+
+  useEffect(() => {
+    try {
+      if (customer.firstName || customer.email) {
+        sessionStorage.setItem(CUSTOMER_KEY, JSON.stringify(customer));
+      }
+    } catch {
+      // Non-fatal.
+    }
+  }, [customer]);
 
   // Keep the URL in sync so any build is shareable and resumable. No database.
   useEffect(() => {
@@ -62,6 +87,10 @@ export default function Configurator() {
   const canAdvance =
     step <= GALLERY_STEP ? Boolean(build.floorPlanId) : Boolean(build.packageId);
 
+  /** Last name drives the personalized headlines, with a neutral fallback. */
+  const surname = customer.lastName.trim();
+  const possessive = surname ? `The ${surname} Build` : "Your Build";
+
   const goTo = useCallback((next: number) => {
     setStep(Math.max(0, Math.min(SUMMARY_STEP, next)));
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -72,19 +101,34 @@ export default function Configurator() {
       <Header />
       <Hero />
 
-      {build.floorPlanId && (
-        <Stepper
-          step={step}
-          onJump={goTo}
-          hasPlan={Boolean(build.floorPlanId)}
-          hasPackage={Boolean(build.packageId)}
-        />
+      {/* Van context and step nav travel together so neither scrolls away. */}
+      {step > INTRO_STEP && (
+        <div className="sticky top-0 z-30 shadow-sm">
+          <VanContextBar planName={plan?.name} surname={surname} />
+          {build.floorPlanId && (
+            <Stepper
+              step={step}
+              onJump={goTo}
+              hasPlan={Boolean(build.floorPlanId)}
+              hasPackage={Boolean(build.packageId)}
+            />
+          )}
+        </div>
       )}
 
       <main className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 py-10">
-        {step === 0 && (
+        {step === INTRO_STEP && (
+          <StepIntro
+            customer={customer}
+            onChange={setCustomer}
+            onContinue={() => goTo(PLAN_STEP)}
+          />
+        )}
+
+        {step === PLAN_STEP && (
           <StepFloorPlan
             selectedId={build.floorPlanId}
+            possessive={possessive}
             onSelect={(id) => {
               setBuild((b) => setFloorPlan(b, id));
               goTo(GALLERY_STEP);
@@ -117,10 +161,15 @@ export default function Configurator() {
         )}
 
         {step === SUMMARY_STEP && plan && (
-          <StepSummary build={build} breakdown={breakdown} />
+          <StepSummary
+            build={build}
+            breakdown={breakdown}
+            possessive={possessive}
+            firstName={customer.firstName.trim()}
+          />
         )}
 
-        {step > 0 && (
+        {step > PLAN_STEP && (
           <div className="flex items-center justify-between mt-12">
             <button
               onClick={() => goTo(step - 1)}
@@ -199,6 +248,140 @@ function Hero() {
   );
 }
 
+/**
+ * Persistent context strip. Keeps two facts on screen at all times: this is a
+ * Mercedes Sprinter, and this is the layout you picked.
+ */
+function VanContextBar({
+  planName,
+  surname,
+}: {
+  planName?: string;
+  surname: string;
+}) {
+  return (
+    <div className="bg-cream border-b border-black/10">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-2.5 flex items-center justify-between gap-4">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="relative w-20 sm:w-28 h-11 sm:h-14 shrink-0">
+            <Image
+              src="/sprinter.webp"
+              alt="Mercedes-Benz Sprinter"
+              fill
+              sizes="112px"
+              className="object-contain"
+              priority
+            />
+          </div>
+          <div className="min-w-0">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-steel">
+              Building on
+            </p>
+            <p className="text-sm sm:text-base font-bold text-navy leading-tight truncate">
+              Mercedes-Benz Sprinter
+            </p>
+          </div>
+        </div>
+
+        {planName && (
+          <div className="text-right min-w-0">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-steel">
+              {surname ? `${surname} Build` : "Floor Plan"}
+            </p>
+            <p className="brand-heading text-base sm:text-xl leading-tight truncate">
+              {planName}
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function StepIntro({
+  customer,
+  onChange,
+  onContinue,
+}: {
+  customer: Customer;
+  onChange: (c: Customer) => void;
+  onContinue: () => void;
+}) {
+  const ready = isValidCustomer(customer);
+
+  const field = (
+    key: keyof Customer,
+    label: string,
+    type = "text",
+    placeholder = "",
+  ) => (
+    <div>
+      <label
+        htmlFor={key}
+        className="block text-xs font-bold uppercase tracking-widest text-steel mb-1"
+      >
+        {label}
+      </label>
+      <input
+        id={key}
+        type={type}
+        value={customer[key]}
+        placeholder={placeholder}
+        autoComplete={
+          key === "firstName" ? "given-name" : key === "lastName" ? "family-name" : "email"
+        }
+        onChange={(e) => onChange({ ...customer, [key]: e.target.value })}
+        className="w-full rounded-md border border-black/15 bg-white px-4 py-3 text-charcoal outline-none focus:border-sky focus:ring-2 focus:ring-sky/30"
+      />
+    </div>
+  );
+
+  return (
+    <section className="max-w-xl mx-auto">
+      <div className="text-center mb-8">
+        <p className="text-xs font-bold uppercase tracking-widest text-sky">
+          Let&apos;s get started
+        </p>
+        <h2 className="brand-heading text-3xl mt-1">Build Your Sprinter</h2>
+        <p className="mt-2 text-steel">
+          Tell us who we&apos;re building for. We&apos;ll personalize your build
+          and save your Build Sheet.
+        </p>
+      </div>
+
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (ready) onContinue();
+        }}
+        className="bg-white rounded-lg p-6 sm:p-8 space-y-5"
+      >
+        <div className="grid sm:grid-cols-2 gap-5">
+          {field("firstName", "First Name")}
+          {field("lastName", "Last Name")}
+        </div>
+        {field("email", "Email", "email", "where should we send your build sheet?")}
+
+        <button
+          type="submit"
+          disabled={!ready}
+          className="w-full px-8 py-4 rounded bg-gold text-navy text-sm font-bold uppercase tracking-wide hover:bg-gold-deep transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          Start My Build →
+        </button>
+
+        <button
+          type="button"
+          onClick={onContinue}
+          className="w-full text-xs uppercase tracking-widest text-steel hover:text-navy transition-colors"
+        >
+          Skip for now
+        </button>
+      </form>
+    </section>
+  );
+}
+
 function Stepper({
   step,
   onJump,
@@ -211,6 +394,7 @@ function Stepper({
   hasPackage: boolean;
 }) {
   const labels = [
+    "Your Info",
     "Floor Plan",
     "Layout",
     "Package",
@@ -221,13 +405,13 @@ function Stepper({
   return (
     <nav
       aria-label="Build steps"
-      className="bg-white border-b border-black/10 sticky top-0 z-20"
+      className="bg-white border-b border-black/10"
     >
       <div className="max-w-6xl mx-auto px-4 sm:px-6">
         <ol className="flex gap-1 overflow-x-auto py-3 text-xs">
           {labels.map((label, i) => {
             const isCurrent = i === step;
-            const reachable = i === 0 || (i <= PACKAGE_STEP ? hasPlan : hasPackage);
+            const reachable = i <= PLAN_STEP || (i <= PACKAGE_STEP ? hasPlan : hasPackage);
             return (
               <li key={label} className="shrink-0">
                 <button
@@ -255,15 +439,17 @@ function Stepper({
 
 function StepFloorPlan({
   selectedId,
+  possessive,
   onSelect,
 }: {
   selectedId: string | null;
+  possessive: string;
   onSelect: (id: string) => void;
 }) {
   return (
     <section>
       <StepHeading
-        eyebrow="Step 1"
+        eyebrow={possessive}
         title="Choose Your Floor Plan"
         blurb="Every plan is built to order on a Mercedes Sprinter, and every price includes the van. Pick the layout that fits how you travel."
       />
@@ -332,7 +518,7 @@ function StepGallery({
   return (
     <section>
       <StepHeading
-        eyebrow="Step 2"
+        eyebrow="Step 3"
         title={`Explore the ${plan.name}`}
         blurb="Take a closer look at the layout from every angle before you choose a package."
       />
@@ -424,7 +610,7 @@ function StepPackage({
   return (
     <section>
       <StepHeading
-        eyebrow="Step 3"
+        eyebrow="Step 4"
         title="Choose Your Package"
         blurb={`Every package below is pre-configured to fit the ${plan?.name}. You can change any individual option afterward.`}
       />
@@ -542,9 +728,13 @@ function StepCategory({
 function StepSummary({
   build,
   breakdown,
+  possessive,
+  firstName,
 }: {
   build: BuildState;
   breakdown: ReturnType<typeof priceBuild>;
+  possessive: string;
+  firstName: string;
 }) {
   const plan = getFloorPlan(build.floorPlanId!);
   const pkg = getPackages(build.floorPlanId!).find((p) => p.id === build.packageId);
@@ -552,8 +742,8 @@ function StepSummary({
   return (
     <section>
       <StepHeading
-        eyebrow="Almost done"
-        title="Your Build Sheet"
+        eyebrow={firstName ? `Almost done, ${firstName}` : "Almost done"}
+        title={`${possessive} Sheet`}
         blurb="Review your configuration below. Every price includes the Mercedes Sprinter van itself."
       />
 
