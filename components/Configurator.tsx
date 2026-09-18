@@ -480,6 +480,8 @@ function StepCategory({
   selected: string[];
   onToggle: (id: string) => void;
 }) {
+  const [expanded, setExpanded] = useState<Option | null>(null);
+
   const options = optionsFor(category.id, floorPlanId);
   const included = options.filter((o) => o.type === "included");
   const upgrades = options.filter((o) => o.type === "upgrade");
@@ -496,6 +498,7 @@ function StepCategory({
               key={o.id}
               option={o}
               superseded={isSuperseded(o.id, selected)}
+              onExpand={setExpanded}
             />
           ))}
         </OptionGroup>
@@ -510,6 +513,7 @@ function StepCategory({
               checked={selected.includes(o.id)}
               selected={selected}
               onToggle={onToggle}
+              onExpand={setExpanded}
             />
           ))}
         </OptionGroup>
@@ -524,10 +528,13 @@ function StepCategory({
               checked={selected.includes(o.id)}
               selected={selected}
               onToggle={onToggle}
+              onExpand={setExpanded}
             />
           ))}
         </OptionGroup>
       )}
+
+      <Lightbox option={expanded} onClose={() => setExpanded(null)} />
     </section>
   );
 }
@@ -650,20 +657,136 @@ function OptionGroup({
   );
 }
 
+/**
+ * Square 1:1 slot so rows stay aligned whether or not an image exists yet.
+ * Clicking expands into the lightbox. Because these sit inside the option's
+ * <label>, the click must be stopped from toggling the checkbox.
+ */
+function OptionThumb({
+  option,
+  onExpand,
+}: {
+  option: Option;
+  onExpand?: (option: Option) => void;
+}) {
+  const base =
+    "shrink-0 w-20 h-20 rounded-md overflow-hidden bg-white border border-black/10 relative";
+
+  if (!option.thumb) {
+    return (
+      <div className={`${base} grid place-items-center`}>
+        <span className="text-steel/40 text-2xl font-bold">
+          {option.name.charAt(0)}
+        </span>
+      </div>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        onExpand?.(option);
+      }}
+      aria-label={`Expand photo of ${option.name}`}
+      className={`${base} group cursor-zoom-in hover:border-sky transition-colors`}
+    >
+      <Image src={option.thumb} alt="" fill sizes="80px" className="object-contain p-1" />
+      <span className="absolute inset-0 bg-navy/0 group-hover:bg-navy/10 transition-colors" />
+      <span className="absolute bottom-1 right-1 w-5 h-5 rounded bg-navy/75 text-white text-[11px] leading-5 text-center opacity-0 group-hover:opacity-100 transition-opacity">
+        ⤢
+      </span>
+    </button>
+  );
+}
+
+function Lightbox({
+  option,
+  onClose,
+}: {
+  option: Option | null;
+  onClose: () => void;
+}) {
+  useEffect(() => {
+    if (!option) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = "";
+    };
+  }, [option, onClose]);
+
+  if (!option?.thumb) return null;
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={option.name}
+      onClick={onClose}
+      className="fixed inset-0 z-50 bg-navy/80 backdrop-blur-sm grid place-items-center p-4 animate-[fadeIn_150ms_ease-out]"
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="bg-white rounded-lg max-w-2xl w-full overflow-hidden"
+      >
+        <div className="relative aspect-square max-h-[60vh] bg-white">
+          <Image
+            src={option.thumb}
+            alt={option.name}
+            fill
+            sizes="(max-width: 768px) 100vw, 672px"
+            className="object-contain p-6"
+          />
+        </div>
+        <div className="flex items-start gap-4 p-5 border-t border-black/10">
+          <div className="flex-1">
+            <p className="brand-heading text-lg">{option.name}</p>
+            {option.description && (
+              <p className="text-sm text-steel mt-1">{option.description}</p>
+            )}
+            <p className="text-xs text-steel/70 mt-2">
+              Representative product photo. Final components confirmed at build
+              consultation.
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            autoFocus
+            aria-label="Close"
+            className="shrink-0 px-4 py-2 rounded bg-navy text-white text-xs font-bold uppercase tracking-wide hover:bg-navy-deep transition-colors"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function IncludedRow({
   option,
   superseded,
+  onExpand,
 }: {
   option: Option;
   superseded: boolean;
+  onExpand: (option: Option) => void;
 }) {
   return (
     <div
-      className={`flex items-start gap-3 bg-white rounded-lg p-4 ${
+      className={`flex items-center gap-3 bg-white rounded-lg p-4 ${
         superseded ? "opacity-45" : ""
       }`}
     >
-      <span className="text-gold font-bold mt-0.5">✓</span>
+      <span className="text-gold font-bold">✓</span>
+      <OptionThumb option={option} onExpand={onExpand} />
       <div className="flex-1">
         <p
           className={`font-semibold text-charcoal ${superseded ? "line-through" : ""}`}
@@ -687,11 +810,13 @@ function OptionRow({
   checked,
   selected,
   onToggle,
+  onExpand,
 }: {
   option: Option;
   checked: boolean;
   selected: string[];
   onToggle: (id: string) => void;
+  onExpand: (option: Option) => void;
 }) {
   const requirement = option.requires?.[0];
   const requirementName = requirement ? getOption(requirement)?.name : undefined;
@@ -699,7 +824,7 @@ function OptionRow({
 
   return (
     <label
-      className={`flex items-start gap-3 bg-white rounded-lg p-4 cursor-pointer border-2 transition-colors ${
+      className={`flex items-center gap-3 bg-white rounded-lg p-4 cursor-pointer border-2 transition-colors ${
         checked ? "border-gold" : "border-transparent hover:border-sky/40"
       }`}
     >
@@ -707,8 +832,9 @@ function OptionRow({
         type="checkbox"
         checked={checked}
         onChange={() => onToggle(option.id)}
-        className="mt-1 h-4 w-4 accent-[#303c47]"
+        className="h-4 w-4 accent-[#303c47]"
       />
+      <OptionThumb option={option} onExpand={onExpand} />
       <div className="flex-1">
         <p className="font-semibold text-charcoal">{option.name}</p>
         {option.description && (

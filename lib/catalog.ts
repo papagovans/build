@@ -27,6 +27,8 @@ export interface Option {
   conflictsWith?: string[];
   /** Floor plans this fits. Undefined = fits all. */
   availableFor?: string[];
+  /** Product thumbnail under /public/products. Placeholder imagery for mockup only. */
+  thumb?: string;
 }
 
 export interface Category {
@@ -170,6 +172,7 @@ export const OPTIONS: Option[] = [
   {
     id: "elec-solar-400",
     categoryId: "electricity",
+    thumb: "/products/elec-solar-400.webp",
     name: "400W Solar System",
     description: "30A Victron MPPT Smart Solar Charger with Bluetooth",
     type: "included",
@@ -178,6 +181,7 @@ export const OPTIONS: Option[] = [
   {
     id: "elec-dcdc-50",
     categoryId: "electricity",
+    thumb: "/products/elec-dcdc-50.webp",
     name: "50A Victron Orion XS DC-DC Charger",
     description: "Smart battery charger with Bluetooth",
     type: "included",
@@ -186,6 +190,7 @@ export const OPTIONS: Option[] = [
   {
     id: "elec-battery-920",
     categoryId: "electricity",
+    thumb: "/products/elec-battery-920.webp",
     name: "920Ah Epoch V2-T Elite Lithium System",
     description: "Heated LiFePO4 with Bluetooth monitoring",
     type: "included",
@@ -194,6 +199,7 @@ export const OPTIONS: Option[] = [
   {
     id: "elec-inverter",
     categoryId: "electricity",
+    thumb: "/products/elec-inverter.webp",
     name: "Victron MultiPlus-II 3000W Inverter Charger",
     description: "Pure sine wave, with GX Touch 70 flush monitor",
     type: "included",
@@ -202,6 +208,7 @@ export const OPTIONS: Option[] = [
   {
     id: "elec-shore",
     categoryId: "electricity",
+    thumb: "/products/elec-shore.webp",
     name: "30A Shore Power Smart Hookup",
     description: "110v outlets with USB A and C throughout",
     type: "included",
@@ -210,6 +217,7 @@ export const OPTIONS: Option[] = [
   {
     id: "elec-solar-600",
     categoryId: "electricity",
+    thumb: "/products/elec-solar-600.webp",
     name: "Upgrade to 600W Solar",
     description: "With 50A MPPT Smart Solar Charger",
     type: "upgrade",
@@ -219,6 +227,7 @@ export const OPTIONS: Option[] = [
   {
     id: "elec-dcdc-100",
     categoryId: "electricity",
+    thumb: "/products/elec-dcdc-100.webp",
     name: "Upgrade to 100A DC-DC Charging",
     description: "Recharge twice as fast while driving",
     type: "upgrade",
@@ -228,6 +237,7 @@ export const OPTIONS: Option[] = [
   {
     id: "elec-battery-1380",
     categoryId: "electricity",
+    thumb: "/products/elec-battery-1380.webp",
     name: "Upgrade to 1,380Ah Battery Capacity",
     description: "Half again the capacity for extended off-grid stays",
     type: "upgrade",
@@ -240,6 +250,7 @@ export const OPTIONS: Option[] = [
   {
     id: "plumb-fresh-20",
     categoryId: "plumbing",
+    thumb: "/products/plumb-fresh-20.webp",
     name: "20 Gallon Fresh Water System",
     description: "Insulated tank with electric pump",
     type: "included",
@@ -248,6 +259,7 @@ export const OPTIONS: Option[] = [
   {
     id: "plumb-sink",
     categoryId: "plumbing",
+    thumb: "/products/plumb-sink.webp",
     name: "Undermount Stainless Sink",
     description: "Hot and cold water faucet",
     type: "included",
@@ -256,6 +268,7 @@ export const OPTIONS: Option[] = [
   {
     id: "plumb-fresh-33",
     categoryId: "plumbing",
+    thumb: "/products/plumb-fresh-33.webp",
     name: "Upgrade to 33 Gallon Fresh Water",
     description: "Stay out longer between fills",
     type: "upgrade",
@@ -265,6 +278,7 @@ export const OPTIONS: Option[] = [
   {
     id: "plumb-shower-indoor",
     categoryId: "plumbing",
+    thumb: "/products/plumb-shower-indoor.webp",
     name: "Indoor Shower",
     description: "Tiled wet bath with teak floor insert",
     type: "addon",
@@ -275,6 +289,7 @@ export const OPTIONS: Option[] = [
   {
     id: "plumb-shower-outdoor",
     categoryId: "plumbing",
+    thumb: "/products/plumb-shower-outdoor.webp",
     name: "Exterior Shower",
     description: "Rear-mounted hot and cold rinse station",
     type: "addon",
@@ -284,6 +299,7 @@ export const OPTIONS: Option[] = [
   {
     id: "plumb-water-heater",
     categoryId: "plumbing",
+    thumb: "/products/plumb-water-heater.webp",
     name: "On-Demand Water Heater",
     description: "Endless hot water, propane-free",
     type: "addon",
@@ -294,6 +310,7 @@ export const OPTIONS: Option[] = [
   {
     id: "climate-heater",
     categoryId: "climate",
+    thumb: "/products/climate-heater.webp",
     name: "Diesel Air Heater",
     description: "Thermostat-controlled cabin heat",
     type: "included",
@@ -302,6 +319,7 @@ export const OPTIONS: Option[] = [
   {
     id: "climate-fan",
     categoryId: "climate",
+    thumb: "/products/climate-fan.webp",
     name: "MaxxAir Roof Fan",
     description: "Reversible with rain cover",
     type: "included",
@@ -310,6 +328,7 @@ export const OPTIONS: Option[] = [
   {
     id: "climate-ac",
     categoryId: "climate",
+    thumb: "/products/climate-ac.webp",
     name: "12V Air Conditioning",
     description: "Runs off the battery bank, no generator",
     type: "addon",
@@ -318,6 +337,7 @@ export const OPTIONS: Option[] = [
   {
     id: "climate-insulation",
     categoryId: "climate",
+    thumb: "/products/climate-insulation.webp",
     name: "Premium Insulation Package",
     description: "Thinsulate and closed-cell throughout",
     type: "addon",
@@ -326,6 +346,7 @@ export const OPTIONS: Option[] = [
   {
     id: "climate-second-fan",
     categoryId: "climate",
+    thumb: "/products/climate-second-fan.webp",
     name: "Second Roof Fan",
     description: "Cross-ventilation for hot climates",
     type: "addon",
@@ -337,6 +358,7 @@ export const OPTIONS: Option[] = [
   {
     id: "kitchen-counter",
     categoryId: "kitchen",
+    thumb: "/products/kitchen-counter.webp",
     name: "Acacia Butcher Block Counter",
     description: "Sealed hardwood work surface",
     type: "included",
@@ -345,6 +367,7 @@ export const OPTIONS: Option[] = [
   {
     id: "kitchen-fridge-small",
     categoryId: "kitchen",
+    thumb: "/products/kitchen-fridge-small.webp",
     name: "Under-Counter Refrigerator",
     description: "3.2 cu ft compressor fridge",
     type: "included",
@@ -353,6 +376,7 @@ export const OPTIONS: Option[] = [
   {
     id: "kitchen-cooktop-single",
     categoryId: "kitchen",
+    thumb: "/products/kitchen-cooktop-single.webp",
     name: "Portable Single Induction Burner",
     description: "Stows away when not in use",
     type: "included",
@@ -361,6 +385,7 @@ export const OPTIONS: Option[] = [
   {
     id: "kitchen-fridge-tall",
     categoryId: "kitchen",
+    thumb: "/products/kitchen-fridge-tall.webp",
     name: "Upgrade to Full-Height Refrigerator",
     description: "5.7 cu ft with separate freezer",
     type: "upgrade",
@@ -371,6 +396,7 @@ export const OPTIONS: Option[] = [
   {
     id: "kitchen-cooktop-double",
     categoryId: "kitchen",
+    thumb: "/products/kitchen-cooktop-double.webp",
     name: "Upgrade to Built-In Double Induction",
     description: "Flush-mounted two-burner cooktop",
     type: "upgrade",
@@ -380,6 +406,7 @@ export const OPTIONS: Option[] = [
   {
     id: "kitchen-microwave",
     categoryId: "kitchen",
+    thumb: "/products/kitchen-microwave.webp",
     name: "Convection Microwave",
     description: "Recessed into the upper cabinetry",
     type: "addon",
@@ -390,6 +417,7 @@ export const OPTIONS: Option[] = [
   {
     id: "aes-vinyl",
     categoryId: "aesthetic",
+    thumb: "/products/aes-vinyl.webp",
     name: "Luxury Vinyl Plank Flooring",
     description: "Waterproof, matched to cabinetry",
     type: "included",
@@ -398,6 +426,7 @@ export const OPTIONS: Option[] = [
   {
     id: "aes-cabinetry-standard",
     categoryId: "aesthetic",
+    thumb: "/products/aes-cabinetry-standard.webp",
     name: "Standard Cabinetry Finish",
     description: "Powder-coated aluminum frames",
     type: "included",
@@ -406,6 +435,7 @@ export const OPTIONS: Option[] = [
   {
     id: "aes-cabinetry-premium",
     categoryId: "aesthetic",
+    thumb: "/products/aes-cabinetry-premium.webp",
     name: "Upgrade to Premium Hardwood Cabinetry",
     description: "Solid face frames with soft-close everything",
     type: "upgrade",
@@ -415,6 +445,7 @@ export const OPTIONS: Option[] = [
   {
     id: "aes-backsplash",
     categoryId: "aesthetic",
+    thumb: "/products/aes-backsplash.webp",
     name: "Tiled Backsplash",
     description: "Hand-set tile behind the galley",
     type: "addon",
@@ -423,6 +454,7 @@ export const OPTIONS: Option[] = [
   {
     id: "aes-ceiling",
     categoryId: "aesthetic",
+    thumb: "/products/aes-ceiling.webp",
     name: "Slatted Wood Ceiling",
     description: "Warm cedar slat detail with integrated lighting",
     type: "addon",
@@ -433,6 +465,7 @@ export const OPTIONS: Option[] = [
   {
     id: "storage-garage",
     categoryId: "storage",
+    thumb: "/products/storage-garage.webp",
     name: "Rear Garage Storage",
     description: "Gear bay under the bed platform",
     type: "included",
@@ -441,6 +474,7 @@ export const OPTIONS: Option[] = [
   {
     id: "storage-overhead",
     categoryId: "storage",
+    thumb: "/products/storage-overhead.webp",
     name: "Overhead Cabinets",
     description: "Latching doors rated for washboard roads",
     type: "included",
@@ -449,6 +483,7 @@ export const OPTIONS: Option[] = [
   {
     id: "storage-drawers",
     categoryId: "storage",
+    thumb: "/products/storage-drawers.webp",
     name: "Heavy-Duty Slide-Out Drawers",
     description: "Full-extension, 500lb rated",
     type: "addon",
@@ -457,6 +492,7 @@ export const OPTIONS: Option[] = [
   {
     id: "storage-gear-wall",
     categoryId: "storage",
+    thumb: "/products/storage-gear-wall.webp",
     name: "Modular Gear Wall",
     description: "Track system for bikes, skis, and boards",
     type: "addon",
@@ -467,6 +503,7 @@ export const OPTIONS: Option[] = [
   {
     id: "sleep-fixed-bed",
     categoryId: "sleeping",
+    thumb: "/products/sleep-fixed-bed.webp",
     name: "Fixed Rear Bed",
     description: "Permanent platform with memory foam mattress",
     type: "included",
@@ -475,6 +512,7 @@ export const OPTIONS: Option[] = [
   {
     id: "sleep-swivel",
     categoryId: "sleeping",
+    thumb: "/products/sleep-swivel.webp",
     name: "Swivel Cab Seats",
     description: "Both front seats rotate into the living space",
     type: "included",
@@ -483,6 +521,7 @@ export const OPTIONS: Option[] = [
   {
     id: "sleep-bench",
     categoryId: "sleeping",
+    thumb: "/products/sleep-bench.webp",
     name: "Convertible Dinette Bench",
     description: "Seats four, converts to a second bed",
     type: "addon",
@@ -492,6 +531,7 @@ export const OPTIONS: Option[] = [
   {
     id: "sleep-pop-top",
     categoryId: "sleeping",
+    thumb: "/products/sleep-pop-top.webp",
     name: "Pop-Top Sleeping Loft",
     description: "Adds two berths and standing headroom",
     type: "addon",
@@ -503,6 +543,7 @@ export const OPTIONS: Option[] = [
   {
     id: "ext-awning",
     categoryId: "exterior",
+    thumb: "/products/ext-awning.webp",
     name: "Nomadic A2 Electric Awning",
     description: "With integrated LED lighting",
     type: "addon",
@@ -511,6 +552,7 @@ export const OPTIONS: Option[] = [
   {
     id: "ext-bumper",
     categoryId: "exterior",
+    thumb: "/products/ext-bumper.webp",
     name: "FVCO Front Bumper with Bull Bar",
     description: "Recovery D-rings included",
     type: "addon",
@@ -519,6 +561,7 @@ export const OPTIONS: Option[] = [
   {
     id: "ext-winch",
     categoryId: "exterior",
+    thumb: "/products/ext-winch.webp",
     name: "Warn 12s Winch with Wireless Remote",
     description: "Requires the FVCO front bumper",
     type: "addon",
@@ -528,6 +571,7 @@ export const OPTIONS: Option[] = [
   {
     id: "ext-platform",
     categoryId: "exterior",
+    thumb: "/products/ext-platform.webp",
     name: "FVCO Rear Door Platform",
     description: "Mounting base for tire carrier and storage",
     type: "addon",
@@ -536,6 +580,7 @@ export const OPTIONS: Option[] = [
   {
     id: "ext-storage-box",
     categoryId: "exterior",
+    thumb: "/products/ext-storage-box.webp",
     name: "FVCO Rear Storage Box",
     description: "Requires the rear door platform",
     type: "addon",
@@ -545,6 +590,7 @@ export const OPTIONS: Option[] = [
   {
     id: "ext-wheels",
     categoryId: "exterior",
+    thumb: "/products/ext-wheels.webp",
     name: "All-Terrain Wheels and Tires Package",
     description: "Load-rated for a fully built van",
     type: "addon",
@@ -553,6 +599,7 @@ export const OPTIONS: Option[] = [
   {
     id: "ext-lights",
     categoryId: "exterior",
+    thumb: "/products/ext-lights.webp",
     name: "Morimoto BigBanger 7 Pod Light Bar",
     description: "Front-mounted auxiliary lighting",
     type: "addon",
@@ -563,6 +610,7 @@ export const OPTIONS: Option[] = [
   {
     id: "misc-windows",
     categoryId: "misc",
+    thumb: "/products/misc-windows.webp",
     name: "Solid Glass Rear Cargo Door Windows",
     description: "Factory-look glass in the rear doors",
     type: "addon",
@@ -571,6 +619,7 @@ export const OPTIONS: Option[] = [
   {
     id: "misc-blackout",
     categoryId: "misc",
+    thumb: "/products/misc-blackout.webp",
     name: "Magnetic Blackout Window Covers",
     description: "Van Essential insulated package",
     type: "addon",
@@ -579,6 +628,7 @@ export const OPTIONS: Option[] = [
   {
     id: "misc-screen",
     categoryId: "misc",
+    thumb: "/products/misc-screen.webp",
     name: "Slider Door Bug Screen",
     description: "Magnetic closure, full height",
     type: "addon",
@@ -587,6 +637,7 @@ export const OPTIONS: Option[] = [
   {
     id: "misc-starlink",
     categoryId: "misc",
+    thumb: "/products/misc-starlink.webp",
     name: "Starlink Roof Mount and Wiring",
     description: "Dish not included",
     type: "addon",
