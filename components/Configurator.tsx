@@ -9,6 +9,7 @@ import {
   getOption,
   getPackages,
   optionsFor,
+  type FloorPlan,
   type Option,
 } from "@/lib/catalog";
 import {
@@ -24,8 +25,10 @@ import {
   type BuildState,
 } from "@/lib/pricing";
 
-/** Step 0 = floor plan, 1 = package, 2..10 = categories, 11 = summary. */
-const CATEGORY_STEP_OFFSET = 2;
+/** 0 = floor plan, 1 = layout gallery, 2 = package, 3..11 = categories, 12 = summary. */
+const GALLERY_STEP = 1;
+const PACKAGE_STEP = 2;
+const CATEGORY_STEP_OFFSET = 3;
 const TOTAL_STEPS = CATEGORY_STEP_OFFSET + CATEGORIES.length + 1;
 const SUMMARY_STEP = TOTAL_STEPS - 1;
 
@@ -40,7 +43,7 @@ export default function Configurator() {
     );
     if (restored.floorPlanId) {
       setBuild(restored);
-      setStep(restored.packageId ? CATEGORY_STEP_OFFSET : 1);
+      setStep(restored.packageId ? CATEGORY_STEP_OFFSET : GALLERY_STEP);
     }
   }, []);
 
@@ -56,7 +59,8 @@ export default function Configurator() {
   const plan = build.floorPlanId ? getFloorPlan(build.floorPlanId) : undefined;
   const breakdown = useMemo(() => priceBuild(build), [build]);
 
-  const canAdvance = step === 0 ? Boolean(build.floorPlanId) : Boolean(build.packageId);
+  const canAdvance =
+    step <= GALLERY_STEP ? Boolean(build.floorPlanId) : Boolean(build.packageId);
 
   const goTo = useCallback((next: number) => {
     setStep(Math.max(0, Math.min(SUMMARY_STEP, next)));
@@ -69,7 +73,12 @@ export default function Configurator() {
       <Hero />
 
       {build.floorPlanId && (
-        <Stepper step={step} onJump={goTo} hasPackage={Boolean(build.packageId)} />
+        <Stepper
+          step={step}
+          onJump={goTo}
+          hasPlan={Boolean(build.floorPlanId)}
+          hasPackage={Boolean(build.packageId)}
+        />
       )}
 
       <main className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 py-10">
@@ -78,12 +87,16 @@ export default function Configurator() {
             selectedId={build.floorPlanId}
             onSelect={(id) => {
               setBuild((b) => setFloorPlan(b, id));
-              goTo(1);
+              goTo(GALLERY_STEP);
             }}
           />
         )}
 
-        {step === 1 && build.floorPlanId && (
+        {step === GALLERY_STEP && plan && (
+          <StepGallery plan={plan} onContinue={() => goTo(PACKAGE_STEP)} />
+        )}
+
+        {step === PACKAGE_STEP && build.floorPlanId && (
           <StepPackage
             floorPlanId={build.floorPlanId}
             selectedId={build.packageId}
@@ -121,7 +134,7 @@ export default function Configurator() {
                 disabled={!canAdvance}
                 className="px-8 py-3 rounded bg-navy text-white text-sm font-bold uppercase tracking-wide hover:bg-navy-deep transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
               >
-                {step === 1 ? "Customize Your Build" : "Next"} →
+                {step === PACKAGE_STEP ? "Customize Your Build" : "Next"} →
               </button>
             )}
           </div>
@@ -189,14 +202,17 @@ function Hero() {
 function Stepper({
   step,
   onJump,
+  hasPlan,
   hasPackage,
 }: {
   step: number;
   onJump: (n: number) => void;
+  hasPlan: boolean;
   hasPackage: boolean;
 }) {
   const labels = [
     "Floor Plan",
+    "Layout",
     "Package",
     ...CATEGORIES.map((c) => c.name),
     "Build Sheet",
@@ -211,7 +227,7 @@ function Stepper({
         <ol className="flex gap-1 overflow-x-auto py-3 text-xs">
           {labels.map((label, i) => {
             const isCurrent = i === step;
-            const reachable = i <= 1 || hasPackage;
+            const reachable = i === 0 || (i <= PACKAGE_STEP ? hasPlan : hasPackage);
             return (
               <li key={label} className="shrink-0">
                 <button
@@ -297,6 +313,102 @@ function StepFloorPlan({
   );
 }
 
+function StepGallery({
+  plan,
+  onContinue,
+}: {
+  plan: FloorPlan;
+  onContinue: () => void;
+}) {
+  const [activeId, setActiveId] = useState(plan.gallery[0]?.id);
+
+  // Reset to the first view whenever the selected plan changes.
+  useEffect(() => {
+    setActiveId(plan.gallery[0]?.id);
+  }, [plan.id, plan.gallery]);
+
+  const active = plan.gallery.find((g) => g.id === activeId) ?? plan.gallery[0];
+
+  return (
+    <section>
+      <StepHeading
+        eyebrow="Step 2"
+        title={`Explore the ${plan.name}`}
+        blurb="Take a closer look at the layout from every angle before you choose a package."
+      />
+
+      <div className="bg-white rounded-lg overflow-hidden">
+        <div className="relative aspect-[2/1] bg-offwhite">
+          <Image
+            key={active.id}
+            src={active.src}
+            alt={`${plan.name} ${active.label}`}
+            fill
+            priority
+            sizes="(max-width: 1024px) 100vw, 1024px"
+            className="object-contain animate-[fadeIn_200ms_ease-out]"
+          />
+          <span className="absolute left-4 bottom-4 px-3 py-1 rounded-full bg-navy/85 text-white text-xs font-bold uppercase tracking-widest">
+            {active.label}
+          </span>
+        </div>
+
+        <div
+          role="tablist"
+          aria-label={`${plan.name} views`}
+          className="flex gap-2 overflow-x-auto p-3 border-t border-black/10"
+        >
+          {plan.gallery.map((img) => {
+            const isActive = img.id === active.id;
+            return (
+              <button
+                key={img.id}
+                role="tab"
+                aria-selected={isActive}
+                onClick={() => setActiveId(img.id)}
+                title={img.label}
+                className={`relative shrink-0 w-28 aspect-[2/1] rounded overflow-hidden border-2 transition-all ${
+                  isActive
+                    ? "border-gold ring-2 ring-gold/30"
+                    : "border-transparent opacity-60 hover:opacity-100"
+                }`}
+              >
+                <Image
+                  src={img.src}
+                  alt={img.label}
+                  fill
+                  sizes="112px"
+                  className="object-cover"
+                />
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="mt-6 grid gap-4 sm:grid-cols-3">
+        {plan.specs.map((s) => (
+          <div key={s.label} className="bg-white rounded-lg p-5 text-center">
+            <p className="text-2xl font-extrabold text-navy">{s.value}</p>
+            <p className="text-xs uppercase tracking-widest text-steel mt-1">
+              {s.label}
+            </p>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-8 flex justify-center">
+        <button
+          onClick={onContinue}
+          className="px-10 py-4 rounded bg-gold text-navy text-sm font-bold uppercase tracking-wide hover:bg-gold-deep transition-colors"
+        >
+          Choose Your Package →
+        </button>
+      </div>
+    </section>
+  );
+}
+
 function StepPackage({
   floorPlanId,
   selectedId,
@@ -312,7 +424,7 @@ function StepPackage({
   return (
     <section>
       <StepHeading
-        eyebrow="Step 2"
+        eyebrow="Step 3"
         title="Choose Your Package"
         blurb={`Every package below is pre-configured to fit the ${plan?.name}. You can change any individual option afterward.`}
       />

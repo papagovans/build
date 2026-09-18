@@ -35,14 +35,38 @@ export interface Category {
   blurb: string;
 }
 
+export interface GalleryImage {
+  id: string;
+  label: string;
+  src: string;
+}
+
 export interface FloorPlan {
   id: string;
   name: string;
   tagline: string;
   basePrice: number;
+  /** Card thumbnail. The 3D cutaway reads better at small sizes than the top-down. */
   image: string;
+  gallery: GalleryImage[];
   specs: { label: string; value: string }[];
 }
+
+/**
+ * Placeholder render set, shared by all five plans until per-plan renders exist.
+ * Cutaway leads because it communicates the layout most vividly; the true
+ * top-down plan view sits immediately beside it.
+ */
+const PLACEHOLDER_GALLERY: GalleryImage[] = [
+  { id: "cutaway", label: "Cutaway", src: "/floorplans/cutaway.webp" },
+  { id: "floorplan", label: "Floor Plan", src: "/floorplans/floorplan.webp" },
+  { id: "front", label: "Front", src: "/floorplans/front.webp" },
+  { id: "left", label: "Left Side", src: "/floorplans/left.webp" },
+  { id: "left-angle", label: "Left Angle", src: "/floorplans/left-angle.webp" },
+  { id: "right", label: "Right Side", src: "/floorplans/right.webp" },
+  { id: "right-angle", label: "Right Angle", src: "/floorplans/right-angle.webp" },
+  { id: "rear-garage", label: "Rear Garage", src: "/floorplans/rear-garage.webp" },
+];
 
 export interface BuildPackage {
   id: string;
@@ -62,7 +86,8 @@ export const FLOOR_PLANS: FloorPlan[] = [
     name: "El Capitan",
     tagline: "Top-tier luxury. Premium finishes, no limits.",
     basePrice: BASE_PRICE,
-    image: "/floorplans/placeholder-floorplan.webp",
+    image: "/floorplans/cutaway.webp",
+    gallery: PLACEHOLDER_GALLERY,
     specs: [
       { label: "Sleeps", value: "2-6" },
       { label: "Battery", value: "920Ah" },
@@ -74,7 +99,8 @@ export const FLOOR_PLANS: FloorPlan[] = [
     name: "Zion",
     tagline: "Adventure seeker. Built to get off the pavement.",
     basePrice: BASE_PRICE,
-    image: "/floorplans/placeholder-floorplan.webp",
+    image: "/floorplans/cutaway.webp",
+    gallery: PLACEHOLDER_GALLERY,
     specs: [
       { label: "Sleeps", value: "2-4" },
       { label: "Battery", value: "620Ah" },
@@ -86,7 +112,8 @@ export const FLOOR_PLANS: FloorPlan[] = [
     name: "Olympus",
     tagline: "The traveling nomad. Stay out longer, live comfortably.",
     basePrice: BASE_PRICE,
-    image: "/floorplans/placeholder-floorplan.webp",
+    image: "/floorplans/cutaway.webp",
+    gallery: PLACEHOLDER_GALLERY,
     specs: [
       { label: "Sleeps", value: "2-6" },
       { label: "Battery", value: "920Ah" },
@@ -98,7 +125,8 @@ export const FLOOR_PLANS: FloorPlan[] = [
     name: "Mammoth",
     tagline: "The happy camper. Room for the whole crew.",
     basePrice: BASE_PRICE,
-    image: "/floorplans/placeholder-floorplan.webp",
+    image: "/floorplans/cutaway.webp",
+    gallery: PLACEHOLDER_GALLERY,
     specs: [
       { label: "Sleeps", value: "2-6" },
       { label: "Battery", value: "460Ah" },
@@ -110,7 +138,8 @@ export const FLOOR_PLANS: FloorPlan[] = [
     name: "Rainier",
     tagline: "The weekend warrior. Everything you need, nothing you don't.",
     basePrice: BASE_PRICE,
-    image: "/floorplans/placeholder-floorplan.webp",
+    image: "/floorplans/cutaway.webp",
+    gallery: PLACEHOLDER_GALLERY,
     specs: [
       { label: "Sleeps", value: "2" },
       { label: "Battery", value: "460Ah" },
