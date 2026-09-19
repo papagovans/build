@@ -52,6 +52,14 @@ const Users: CollectionConfig = {
 const Media: CollectionConfig = {
   slug: "media",
   admin: { group: "Admin" },
+  /**
+   * The only collection a browser reads directly. Payload defaults every
+   * collection to authenticated-only, which 403s these files for anonymous
+   * visitors and leaves the storefront with no product photos. Writes still
+   * require a login; the rest of the catalog is only ever reached through the
+   * Local API in lib/cms.ts, so it stays closed.
+   */
+  access: { read: () => true },
   upload: {
     // Product shots render at ~400px and the lightbox at ~800px. Anything the
     // shop uploads straight off a phone gets cut down on the way in.
