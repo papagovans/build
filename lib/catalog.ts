@@ -1,8 +1,13 @@
 /**
- * PHASE 1 PLACEHOLDER CATALOG
+ * CATALOG TYPES, HELPERS, AND THE SEED'S SOURCE DATA.
  *
- * This data moves to Sanity once the flow is approved. Shape here mirrors the
- * intended CMS schema exactly so the port is mechanical.
+ * The live catalog comes out of Payload now; see `lib/cms.ts`. The arrays
+ * below are exported as HARDCODED_CATALOG and are read by one thing only,
+ * `scripts/seed.ts`. Editing them changes nothing the app renders until you
+ * reseed.
+ *
+ * Everything here keys on slugs, which are the same ids Payload stores, so a
+ * `?b=` link resolves against either catalog.
  *
  * Real data confirmed from papagovansdev: the Electricity category options are
  * verbatim from the Build Layout 2 page. Other categories are representative

@@ -18,16 +18,27 @@ conversion, see a running price, and request a Build Sheet.
 git clone https://github.com/papagovans/build.git
 cd build
 npm install
-npm run dev          # http://localhost:3000
+vercel env pull .env.local --environment=preview --scope papago
+npm run dev          # storefront localhost:3000, admin localhost:3000/admin
 ```
 
 ```bash
 npm run build        # production build + typecheck
 npm run lint
+npx tsx scripts/seed.ts      # load the catalog into an empty database
 ```
 
-No environment variables and no database are required to run this. Everything
-needed is in the repo.
+**This needs a database now.** The catalog lives in Payload on Neon Postgres,
+so `.env.local` must carry a connection string plus `PAYLOAD_SECRET` and
+`BLOB_READ_WRITE_TOKEN`.
+
+The Neon variables are **Secret type in Vercel and will not come down over the
+CLI**. `vercel env pull` writes `[SENSITIVE]` placeholders for them. Copy the
+real block once from Vercel → Storage → `papago-build` → the `.env.local`
+snippet. `PAYLOAD_SECRET` and `BLOB_READ_WRITE_TOKEN` do pull normally.
+
+The project is **ESM** (`"type": "module"`). Payload's config uses
+`import.meta.url`, and its CLI cannot load the config under CommonJS.
 
 ---
 
@@ -38,17 +49,21 @@ Not customer-facing yet.
 
 | Working | Not built yet |
 |---|---|
-| 14-step wizard | Build Sheet PDF generation |
-| Pricing engine | HubSpot lead submission |
-| Compatibility rules engine | Sanity CMS (catalog is hardcoded) |
-| 49 product thumbnails + lightbox | Per-floor-plan renders |
-| Layout gallery, 8 views | Real catalog data and pricing |
+| 14-step wizard | HubSpot lead submission |
+| Pricing engine | Per-floor-plan renders |
+| Compatibility rules engine | Real catalog data and pricing |
+| 49 product thumbnails + lightbox | Generated DB migrations (dev uses push) |
+| Layout gallery, 8 views | Email adapter (writes to console today) |
 | Name/email capture + personalization | |
+| **Build Sheet PDF** | |
+| **Payload admin at `/admin`, catalog in Postgres** | |
 
 ### Known placeholders
 
-- **Catalog data** is representative, not real. Only the Electricity options are
-  verbatim from Papago's dev site. Everything else needs real spec sheets.
+- **Catalog data** is representative, not real. It lives in Postgres now, but
+  it got there from `scripts/seed.ts`, so it is the same placeholder content.
+  Only the Electricity options are verbatim from Papago's dev site. Everything
+  else needs real spec sheets, entered through `/admin`.
 - **All 5 floor plans share one render set.** Fine for testing the flow, will
   confuse a real buyer comparing El Capitan against Rainier.
 - **Product photos are retailer/manufacturer images used as mockup placeholders.
@@ -99,7 +114,7 @@ total = floorPlan.basePrice
 ```
 
 A fourth thing, **colour choices**, lives alongside the options. The Finishes
-step carries four `COLOR_GROUPS` (flooring, walls, cabinets, countertop), each
+step carries four colour groups (flooring, walls, cabinets, countertop), each
 a required pick-exactly-one swatch set. **All 16 choices are $0 today**, but
 every choice keeps a `price` field that already flows through `priceBuild()`,
 the Build Sheet, and the `?b=` URL, so a premium finish can carry an upcharge
@@ -129,41 +144,110 @@ without preserving these will produce invalid, unbuildable configurations:
 
 ```
 app/
-  layout.tsx           fonts (Prompt), metadata
-  page.tsx             renders <Configurator />
   globals.css          brand tokens (Tailwind v4 @theme)
+  (frontend)/          the storefront
+    layout.tsx         fonts (Prompt), metadata
+    page.tsx           loads the catalog, renders <Configurator />
+    api/build-sheet/   POST -> the Build Sheet PDF
+  (payload)/           the admin, its own root layout
+    admin/             Payload UI at /admin
+    api/               Payload REST + GraphQL
 components/
   Configurator.tsx     the whole wizard: steps, state, lightbox
 lib/
-  catalog.ts           floor plans, trim packages, categories, 49 options,
-                       4 colour groups
+  catalog.ts           types, catalog helpers, HARDCODED_CATALOG (seed only)
+  cms.ts               loads the live catalog out of Payload
   pricing.ts           pricing + rules engine + URL state + customer type
-public/
-  floorplans/          8 renders (cutaway, top-down floorplan, 6 angles)
-  products/            49 option thumbnails, one per option id, .webp
-  sprinter.webp        Mercedes press cutout with alpha, sticky bar
+  build-sheet.tsx      the PDF document
+payload.config.ts      7 collections, fit-rule guards, storage adapter
+scripts/seed.ts        loads HARDCODED_CATALOG into an empty database
+public/                original art, now also the seed's image source
 ```
 
+**There is deliberately no `app/layout.tsx`.** Route groups cannot escape a
+root layout, so the admin can only own its own `<html>` if none exists above
+it. Both groups carry their own root layout. Do not add one.
+
 **Stack:** Next.js 16 (App Router) · React 19 · TypeScript · Tailwind v4 ·
-deployed on Vercel.
+Payload 3 · Neon Postgres · Vercel Blob · deployed on Vercel.
 
 ### Decisions worth not re-litigating
 
-**No database.** Build state encodes into the `?b=` URL parameter, so builds are
-shareable and resumable with zero persistence layer. A fully loaded 16-option
-build is ~318 characters. Add a database only when abandoned-build analytics are
-actually needed.
+**No database for build state.** A buyer's configuration encodes into the `?b=`
+URL parameter, so builds stay shareable and resumable with no persistence. A
+fully loaded 16-option build is ~318 characters. The catalog moving to Postgres
+did not change this and must not. Add a table for build state only when
+abandoned-build analytics are actually needed.
 
 **Customer PII stays out of the URL.** Name and email live in `sessionStorage`
 only. The `?b=` param is designed to be shared, so PII must never ride along.
 
-**The catalog is hardcoded and deliberately mirrors the intended CMS schema**,
-so porting to Sanity is mechanical. Do not model CMS content until the flow is
-approved — changing a TypeScript file is free, changing a CMS schema after
-content entry is not.
+**Slugs are the ids, everywhere.** Every catalog row carries a `slug` holding
+the id the hardcoded catalog used (`elec-solar-600`, `el-capitan`). Payload's
+numeric primary keys never leave `lib/cms.ts`. Two reasons: `?b=` links encode
+those ids and would all break, and the seed matches on slug, which is what
+makes it re-runnable instead of duplicating the catalog.
+
+**Products are one shared library.** Trim packages point at products; they do
+not own them. The same inverter appears in several packages across five plans
+as a single row, so a price change lands everywhere at once. Never let the
+admin create a product *inside* a package: that is how fifteen copies of one
+inverter end up with four different prices.
+
+**The catalog is read through Payload's Local API, not REST.** `lib/cms.ts`
+runs in-process, so there is no HTTP hop and the catalog collections stay
+closed to anonymous reads. `media` is the single exception, because a browser
+fetches those files directly.
+
+**Payload chosen over Sanity.** The catalog is relational: products reference
+other products through `requires`, `conflictsWith` and `replaces`. Payload
+gives real foreign keys and an admin generated from the schema, and it runs
+inside this same Next app, so a schema change and an app change ship in one
+commit. The tradeoff accepted was adding a database.
 
 **Nine categories, not eight.** Papago's live site files winches, bumpers, and
 light bars under *Electricity*. Exterior / Off-Road was split out to fix that.
+
+---
+
+## Administering the catalog
+
+Staff sign in at **`/admin`** and work down one level at a time. Nothing here
+needs code.
+
+```
+Floor Plans      name, tagline, base price, gallery views, spec table
+  └ Trim Packages    price delta, and which products it pre-selects
+Products         the shared library: title, description, photo, price,
+                 category, and the fit rules
+Colour Groups    swatch sets, each choice a name, hex and price
+Categories       the nine wizard steps and their order
+Media            every uploaded image
+```
+
+**Fit rules** are plain-English pickers on a product: requires these first,
+cannot be combined with, replaces this included item, only fits these floor
+plans. Payload refuses to save a contradiction: nothing may require, conflict
+with or replace itself, only an upgrade may replace, and an included item must
+be priced at 0.
+
+**Images** are resized on upload to a 400px thumbnail and an 800px lightbox
+copy, so a phone photo straight from the shop is fine.
+
+Edits appear on the storefront immediately. The page renders per request
+(`export const dynamic = "force-dynamic"`), which is a handful of small
+queries against Neon in the same region. If that ever costs anything, cache it
+under a tag and revalidate from a Payload `afterChange` hook rather than going
+back to build-time data.
+
+### Reseeding
+
+`npx tsx scripts/seed.ts` is safe to re-run: it matches on slug, so it updates
+in place and re-uploads nothing. Run it after editing `HARDCODED_CATALOG` in
+`lib/catalog.ts`, or to fill a fresh database.
+
+It runs under `tsx` rather than `payload run`, because that runner exits
+without awaiting the script and the seed silently does nothing.
 
 ---
 
@@ -181,9 +265,12 @@ stylesheet so this reads as the same product:
 
 Font is **Prompt**. Headlines are uppercase via `.brand-heading`.
 
-**Wizard steps** are index constants at the top of `components/Configurator.tsx`.
-Inserting a step means updating those constants and the `labels` array — never
-scatter magic numbers.
+**Wizard steps.** The first five indices are constants at the top of
+`components/Configurator.tsx`. Everything from `CATEGORY_STEP_OFFSET` on
+depends on how many categories the shop has published, so `summaryStep` is
+computed per catalog rather than hardcoded. Inserting a fixed step means
+updating the constants and the `labels` array together — never scatter magic
+numbers.
 
 **Images:** optimize anything new to max 800px, webp. The full set of 49 product
 images is under 1 MB. Always *look at* a sourced image before committing it —
@@ -219,6 +306,9 @@ Everything an operator needs access to:
 |---|---|
 | **GitHub** | `github.com/papagovans/build` (repo is currently public) |
 | **Vercel** | project `build`, personal scope `papago` |
+| **Database** | Neon Postgres via the Vercel integration, store `papago-build`, region `us-east-1` to match the project's `iad1` |
+| **Media** | Vercel Blob store `papago-build-media`, public access |
+| **Admin** | Payload at `/admin`. Accounts are created in the app; the first-user screen is open until one exists, so never deploy an empty database |
 | **DNS** | Cloudflare, zone `papagovans.com`, `build` CNAME → `cname.vercel-dns.com`, **DNS only / gray cloud** (proxy on breaks SSL) |
 | **CRM** | HubSpot portal `43782575` (not yet wired to this app) |
 | **Source art** | Original van renders in Dropbox: `SumoLab/Clients/Papago Vans/app build/` |
@@ -230,8 +320,9 @@ Astro landing page with Google Ads and Meta conversion tracking.
 
 ## Roadmap
 
-**Phase 2** — Build Sheet PDF (`@react-pdf/renderer` in a route handler),
-HubSpot lead submission, Sanity CMS so the catalog is self-serve editable.
+**Phase 2, mostly done** — Build Sheet PDF and the Payload admin both ship.
+Remaining: HubSpot lead submission, an email adapter, generated migrations to
+replace Drizzle push, and admin polish (drag-to-reorder, a preview link).
 
 **Phase 3** — Additional chassis (Transit, Promaster), Hearth financing
 calculator, book-a-call handoff, sales-rep view of submitted builds.

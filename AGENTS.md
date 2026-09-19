@@ -33,6 +33,11 @@ Optimize for "can they visualize it," not for production hardening.
 **Pricing includes the van** ($180,000 base, all five plans). The public
 marketing site says the opposite. Trust this repo.
 
+**The catalog lives in Postgres now**, edited through the Payload admin at
+`/admin`. `lib/catalog.ts` still holds the same data as `HARDCODED_CATALOG`,
+but only `scripts/seed.ts` reads it. Changing that file changes nothing the
+app renders until you reseed.
+
 ## Rules for changing things
 
 1. **Do not flatten the three option types.** `included` / `upgrade` (delta) /
@@ -43,11 +48,27 @@ marketing site says the opposite. Trust this repo.
 3. **Never put customer PII in the `?b=` URL param.** It is built to be shared.
    Name and email belong in `sessionStorage`.
 4. **Do not add a database** to solve something the URL state already solves.
-5. **Wizard step indices are constants** at the top of `Configurator.tsx`.
+5. **Wizard step indices are only partly constant.** The first five are, at
+   the top of `Configurator.tsx`. Everything after `CATEGORY_STEP_OFFSET`
+   depends on the published category count, so `summaryStep` is computed.
    Update the constants and the `labels` array together.
 6. **Look at any image you source** before committing it. Two were rejected
    during the initial pass: one carried a competitor's logo, one was a
    mid-construction DIY shot. Optimize to max 800px webp.
+7. **Slugs are the ids.** Payload's numeric keys must never leave
+   `lib/cms.ts`. `?b=` links encode slugs, and the seed matches on them.
+8. **Do not expose the catalog over REST.** The storefront reads it through
+   the Local API in `lib/cms.ts`. Payload defaults collections to
+   authenticated-only, and that is intentional. `media` is the one exception,
+   because browsers fetch those files directly.
+9. **Do not let the admin create products inside a trim package.** Products
+   are one shared library that packages point at. The alternative is the same
+   inverter typed in fifteen times, drifting apart on price.
+10. **`push` is dev only.** Drizzle syncs the schema straight to Neon, which
+    keeps schema changes free while the shape is moving. Generate migrations
+    before the shop enters content worth keeping.
+11. **Never deploy against an empty database.** Payload's create-first-user
+    screen is open to whoever reaches it first until one account exists.
 
 ## Verifying your work
 
@@ -58,15 +79,45 @@ npm run build                  # typecheck + build must pass
 npm run dev                    # then click the real flow
 ```
 
-Worth exercising after any change to pricing or rules:
+Worth exercising after any change to pricing or rules. All four were last
+confirmed against the database, not the hardcoded file:
 
 - pick El Capitan + Summit → total should be **$260,770**
 - Exterior → check the winch → bumper auto-adds, total jumps the full $5,350
 - uncheck the bumper → the winch drops too
 - a shared `?b=` URL reloads into the same build
 
+After any change to the CMS wiring, also check:
+
+- an edit made in `/admin` shows on the storefront without a rebuild
+- a product image loads anonymously: `curl -I /api/media/file/<file>` is 200,
+  not 403. This broke once in production and local HTML checks did not catch
+  it, because the page renders fine with dead images.
+
+Do not pipe `npm run build` into `tail` or `head` and read `$?`: the shell
+reports the pager's status and a failing typecheck slides straight past. One
+red build was committed that way. Redirect to a file and check the exit code.
+
 ## Deploying
 
 `vercel --prod --scope papago`. The Vercel MCP tools are scoped to a different
 team and will 403. GitHub auto-deploy has silently missed a push before, so
 confirm with `vercel ls --scope papago` after pushing.
+
+When waiting on a deployment, match the deployment id rather than a line
+number: `vercel ls` output has a header row, and a hardcoded `sed -n '6p'`
+watches the column titles forever.
+
+## Environment
+
+The project is ESM (`"type": "module"`), because Payload's config uses
+`import.meta.url` and its CLI cannot load the config under CommonJS.
+
+Neon's variables are Secret type in Vercel and never come down over the CLI;
+`vercel env pull` writes `[SENSITIVE]` placeholders for them. The real values
+are copied once from Vercel → Storage → `papago-build`. Do not "fix" that file
+with a script that filters lines: one did, dropped the continuation lines of a
+multi-line value, and silently broke every variable after it.
+
+`@next/env` is CommonJS with no named ESM export, so reach it through
+`createRequire` in any script that needs it.
