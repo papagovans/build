@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Prompt } from "next/font/google";
-import "./globals.css";
+import "../globals.css";
 
 const prompt = Prompt({
   variable: "--font-prompt",
