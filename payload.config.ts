@@ -375,9 +375,11 @@ export default buildConfig({
   // package also carries a top-level await that breaks the CLI's CJS loader.
   db: postgresAdapter({
     pool: { connectionString },
-    // Mockup phase: let Drizzle sync the schema straight to Neon. Switch to
-    // generated migrations before the shop enters content worth keeping.
-    push: true,
+    // Dev only. Drizzle syncs the schema straight to Neon, which is what makes
+    // schema changes free during the mockup phase. It must never run from a
+    // production function: generate migrations before the shop enters content
+    // worth keeping.
+    push: process.env.NODE_ENV !== "production",
   }),
   plugins: [
     // Vercel's filesystem is read-only, so uploads cannot live on disk.
