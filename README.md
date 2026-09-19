@@ -65,7 +65,7 @@ Intro (name/email)
   → Layout            gallery, 8 views of the chosen plan
   → Package           3 tiers, each pre-fills every category
   → 9 Categories      Electricity, Plumbing, Heating/Cooling, Kitchen,
-                      Aesthetic, Storage, Seating/Sleeping,
+                      Finishes, Storage, Seating/Sleeping,
                       Exterior/Off-Road, Miscellaneous
   → Build Sheet       itemized total
 ```
@@ -91,6 +91,13 @@ total = floorPlan.basePrice
       + Σ(selected upgrade deltas)
       + Σ(selected addon prices)
 ```
+
+A fourth thing, **colour choices**, lives alongside the options. The Finishes
+step carries four `COLOR_GROUPS` (flooring, walls, cabinets, countertop), each
+a required pick-exactly-one swatch set. **All 16 choices are $0 today**, but
+every choice keeps a `price` field that already flows through `priceBuild()`,
+the Build Sheet, and the `?b=` URL, so a premium finish can carry an upcharge
+later with no schema change.
 
 **Base price is $180,000 for all five plans and includes the van.** This
 differs from the public marketing site, which quotes $53k–$127k *excluding*
@@ -122,7 +129,8 @@ app/
 components/
   Configurator.tsx     the whole wizard: steps, state, lightbox
 lib/
-  catalog.ts           floor plans, packages, categories, 49 options
+  catalog.ts           floor plans, packages, categories, 49 options,
+                       4 colour groups
   pricing.ts           pricing + rules engine + URL state + customer type
 public/
   floorplans/          8 renders (cutaway, top-down floorplan, 6 angles)
