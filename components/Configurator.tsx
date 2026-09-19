@@ -299,9 +299,8 @@ function Hero() {
 }
 
 /**
- * Persistent context strip. Keeps two facts on screen at all times: whose
- * build this is, and which layout it is on. The chassis is carried by the
- * image rather than by a caption, now that the van is large enough to read.
+ * Persistent context strip. Keeps three facts on screen at all times: whose
+ * build this is, that it is a Mercedes Sprinter, and which layout it is on.
  */
 function VanContextBar({
   planName,
@@ -336,9 +335,17 @@ function VanContextBar({
               priority
             />
           </div>
-          <p className="brand-heading text-lg sm:text-2xl leading-tight truncate">
-            {surname ? `${surname} Build` : "Your Build"}
-          </p>
+          <div className="min-w-0">
+            <p className="brand-heading text-lg sm:text-2xl leading-tight truncate">
+              {surname ? `${surname} Build` : "Your Build"}
+            </p>
+            <p className="mt-1 text-[10px] font-bold uppercase tracking-widest text-steel">
+              Building on
+            </p>
+            <p className="text-sm sm:text-base font-bold text-navy leading-tight truncate">
+              Mercedes-Benz Sprinter
+            </p>
+          </div>
         </div>
 
         {planName && (
