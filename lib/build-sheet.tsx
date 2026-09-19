@@ -227,7 +227,7 @@ function BuildSheet({
               <Text style={s.planTag}>{plan.tagline}</Text>
               {pkg ? (
                 <Text style={[s.planTag, { marginTop: 6 }]}>
-                  {pkg.name} package: {pkg.tagline}
+                  {pkg.name} trim package: {pkg.tagline}
                 </Text>
               ) : null}
             </View>
@@ -269,7 +269,7 @@ function BuildSheet({
             </View>
             {pkg && breakdown.packageDelta > 0 ? (
               <View style={s.totalRow}>
-                <Text>{pkg.name} package</Text>
+                <Text>{pkg.name} trim package</Text>
                 <Text>{formatPrice(breakdown.packageDelta)}</Text>
               </View>
             ) : null}

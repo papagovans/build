@@ -270,7 +270,7 @@ function Hero() {
             Build Your Van
           </h1>
           <p className="mt-3 text-white/75">
-            Five floor plans, three build packages, then customize across nine
+            Five floor plans, three trim packages, then customize across nine
             categories. Your estimated total updates as you go.
           </p>
         </div>
@@ -459,7 +459,7 @@ function Stepper({
     "Your Info",
     "Floor Plan",
     "Layout",
-    "Package",
+    "Trim Package",
     ...CATEGORIES.map((c) => c.name),
     "Build Sheet",
   ];
@@ -582,7 +582,7 @@ function StepGallery({
       <StepHeading
         eyebrow="Step 3"
         title={`Explore the ${plan.name}`}
-        blurb="Take a closer look at the layout from every angle before you choose a package."
+        blurb="Take a closer look at the layout from every angle before you choose a trim package."
       />
 
       <div className="bg-white rounded-lg overflow-hidden">
@@ -650,7 +650,7 @@ function StepGallery({
           onClick={onContinue}
           className="px-10 py-4 rounded bg-gold text-navy text-sm font-bold uppercase tracking-wide hover:bg-gold-deep transition-colors"
         >
-          Choose Your Package →
+          Choose Your Trim Package →
         </button>
       </div>
     </section>
@@ -765,8 +765,8 @@ function StepPackage({
     <section>
       <StepHeading
         eyebrow="Step 4"
-        title="Choose Your Package"
-        blurb={`Every package below is pre-configured to fit the ${plan?.name}. You can change any individual option afterward.`}
+        title="Choose Your Trim Package"
+        blurb={`Every trim package below is pre-configured to fit the ${plan?.name}. You can change any individual option afterward.`}
       />
       <div className="grid gap-6 lg:grid-cols-3">
         {packages.map((pkg) => {
@@ -1036,14 +1036,14 @@ function StepSummary({
         <div className="flex flex-wrap items-baseline justify-between gap-2 pb-4 border-b border-black/10">
           <div>
             <h3 className="brand-heading text-2xl">{plan?.name}</h3>
-            <p className="text-sm text-steel">{pkg?.name} package</p>
+            <p className="text-sm text-steel">{pkg?.name} trim package</p>
           </div>
           <p className="text-sm text-steel">Base {formatPrice(breakdown.base)}</p>
         </div>
 
         {breakdown.packageDelta > 0 && (
           <LineItem
-            label={`${pkg?.name} package`}
+            label={`${pkg?.name} trim package`}
             price={breakdown.packageDelta}
           />
         )}

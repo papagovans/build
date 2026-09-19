@@ -63,16 +63,22 @@ Not customer-facing yet.
 Intro (name/email)
   → Floor Plan        5 layouts
   → Layout            gallery, 8 views of the chosen plan
-  → Package           3 tiers, each pre-fills every category
+  → Trim Package      3 tiers, each pre-fills every category
   → 9 Categories      Electricity, Plumbing, Heating/Cooling, Kitchen,
                       Finishes, Storage, Seating/Sleeping,
                       Exterior/Off-Road, Miscellaneous
   → Build Sheet       itemized total
 ```
 
-Packages **pre-fill** every category, so the category steps are refinement
+Trim packages **pre-fill** every category, so the category steps are refinement
 rather than data entry. A buyer can jump to the Build Sheet at any point after
-picking a package.
+picking a trim package.
+
+**The customer-facing term is "trim package," never "package" alone.** Plain
+"package" reads as a bolt-on bundle in this industry, and the catalog already
+ships products literally named that way (Premium Insulation Package,
+All-Terrain Wheels and Tires Package). Code identifiers stay `package` /
+`packageId` / `BuildPackage`, which is correct shorthand for the full term.
 
 ### Pricing model
 
@@ -129,7 +135,7 @@ app/
 components/
   Configurator.tsx     the whole wizard: steps, state, lightbox
 lib/
-  catalog.ts           floor plans, packages, categories, 49 options,
+  catalog.ts           floor plans, trim packages, categories, 49 options,
                        4 colour groups
   pricing.ts           pricing + rules engine + URL state + customer type
 public/
