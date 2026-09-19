@@ -311,15 +311,27 @@ function VanContextBar({
 }) {
   return (
     <div className="bg-cream border-b border-black/10">
+      {/*
+        The van overhangs a navy shelf that belongs to this bar rather than to
+        the hero above it. Flush under the hero it reads as one header, and the
+        overlap survives the bar going sticky instead of clipping at the
+        viewport edge.
+      */}
+      <div className="bg-navy-deep h-[29px] sm:h-[37px]" />
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-2.5 flex items-center justify-between gap-4">
         <div className="flex items-center gap-3 min-w-0">
-          <div className="relative w-20 sm:w-28 h-11 sm:h-14 shrink-0">
+          {/*
+            Twice the old render. The box holds the lower two thirds and the
+            image, bottom-anchored, spills its top third onto the shelf.
+          */}
+          <div className="relative w-[132px] sm:w-[168px] h-[59px] sm:h-[75px] shrink-0">
             <Image
               src="/sprinter.webp"
               alt="Mercedes-Benz Sprinter"
-              fill
-              sizes="112px"
-              className="object-contain"
+              width={168}
+              height={112}
+              sizes="168px"
+              className="absolute bottom-0 left-0 w-full h-auto"
               priority
             />
           </div>
