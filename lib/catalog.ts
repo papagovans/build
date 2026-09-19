@@ -73,7 +73,11 @@ const PLACEHOLDER_GALLERY: GalleryImage[] = [
 /**
  * Colors behave differently from the three option types: exactly one choice per
  * group is always active, so they are a separate concept rather than a fourth
- * option type. Most carry no upcharge; premium materials do.
+ * option type.
+ *
+ * All choices are $0 for now per Jerry (2026-09-18). The `price` field is kept
+ * so premium finishes can carry an upcharge later without a schema change; it
+ * already flows through pricing, the Build Sheet, and the shared URL.
  */
 export interface ColorChoice {
   id: string;
@@ -102,7 +106,7 @@ export const COLOR_GROUPS: ColorGroup[] = [
       { id: "floor-natural-oak", name: "Natural Oak", hex: "#c8a072", hex2: "#b08a5c", price: 0 },
       { id: "floor-weathered-grey", name: "Weathered Grey", hex: "#9b9791", hex2: "#847f79", price: 0 },
       { id: "floor-walnut", name: "Walnut", hex: "#6b4630", hex2: "#563524", price: 0 },
-      { id: "floor-charcoal", name: "Charcoal Ash", hex: "#4a4a4c", hex2: "#3a3a3c", price: 350 },
+      { id: "floor-charcoal", name: "Charcoal Ash", hex: "#4a4a4c", hex2: "#3a3a3c", price: 0 },
     ],
   },
   {
@@ -113,8 +117,8 @@ export const COLOR_GROUPS: ColorGroup[] = [
     choices: [
       { id: "wall-birch", name: "Birch Ply", hex: "#e2cba4", hex2: "#cdb389", price: 0 },
       { id: "wall-warm-white", name: "Warm White", hex: "#f2efe8", price: 0 },
-      { id: "wall-sage", name: "Desert Sage", hex: "#9aa88f", price: 450 },
-      { id: "wall-charcoal-felt", name: "Charcoal Felt", hex: "#45484d", price: 450 },
+      { id: "wall-sage", name: "Desert Sage", hex: "#9aa88f", price: 0 },
+      { id: "wall-charcoal-felt", name: "Charcoal Felt", hex: "#45484d", price: 0 },
     ],
   },
   {
@@ -126,7 +130,7 @@ export const COLOR_GROUPS: ColorGroup[] = [
       { id: "cab-papago-navy", name: "Papago Navy", hex: "#303c47", price: 0 },
       { id: "cab-slate", name: "Slate Grey", hex: "#7d848b", price: 0 },
       { id: "cab-warm-white", name: "Warm White", hex: "#eeebe3", price: 0 },
-      { id: "cab-walnut", name: "Walnut Veneer", hex: "#5f3f2b", hex2: "#7a5238", price: 1200 },
+      { id: "cab-walnut", name: "Walnut Veneer", hex: "#5f3f2b", hex2: "#7a5238", price: 0 },
     ],
   },
   {
@@ -136,9 +140,9 @@ export const COLOR_GROUPS: ColorGroup[] = [
     blurb: "Galley and dinette surfaces",
     choices: [
       { id: "counter-acacia", name: "Acacia Butcher Block", hex: "#b5834a", hex2: "#9a6c3a", price: 0 },
-      { id: "counter-walnut", name: "Walnut Block", hex: "#6b4630", hex2: "#523425", price: 600 },
-      { id: "counter-white-quartz", name: "White Quartz", hex: "#eceae5", price: 900 },
-      { id: "counter-black", name: "Matte Black", hex: "#2f3133", price: 600 },
+      { id: "counter-walnut", name: "Walnut Block", hex: "#6b4630", hex2: "#523425", price: 0 },
+      { id: "counter-white-quartz", name: "White Quartz", hex: "#eceae5", price: 0 },
+      { id: "counter-black", name: "Matte Black", hex: "#2f3133", price: 0 },
     ],
   },
 ];
