@@ -174,6 +174,7 @@ export interface Media {
    * What the photo shows. Read aloud by screen readers.
    */
   alt: string;
+  _objectKey?: string | null;
   updatedAt: string;
   createdAt: string;
   url?: string | null;
@@ -546,6 +547,7 @@ export interface ColorGroupsSelect<T extends boolean = true> {
  */
 export interface MediaSelect<T extends boolean = true> {
   alt?: T;
+  _objectKey?: T;
   updatedAt?: T;
   createdAt?: T;
   url?: T;

@@ -2,6 +2,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 
 import { postgresAdapter } from "@payloadcms/db-postgres";
+import { vercelBlobStorage } from "@payloadcms/storage-vercel-blob";
 import sharp from "sharp";
 import { buildConfig, type CollectionConfig } from "payload";
 
@@ -378,6 +379,14 @@ export default buildConfig({
     // generated migrations before the shop enters content worth keeping.
     push: true,
   }),
+  plugins: [
+    // Vercel's filesystem is read-only, so uploads cannot live on disk.
+    vercelBlobStorage({
+      enabled: Boolean(process.env.BLOB_READ_WRITE_TOKEN),
+      collections: { media: true },
+      token: process.env.BLOB_READ_WRITE_TOKEN ?? "",
+    }),
+  ],
   secret: process.env.PAYLOAD_SECRET ?? "",
   typescript: { outputFile: path.resolve(dirname, "payload-types.ts") },
   sharp,
