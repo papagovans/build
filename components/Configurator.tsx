@@ -172,6 +172,7 @@ export default function Configurator() {
           <StepSummary
             build={build}
             breakdown={breakdown}
+            customer={customer}
             possessive={possessive}
             firstName={customer.firstName.trim()}
           />
@@ -971,16 +972,45 @@ function StepCategory({
 function StepSummary({
   build,
   breakdown,
+  customer,
   possessive,
   firstName,
 }: {
   build: BuildState;
   breakdown: ReturnType<typeof priceBuild>;
+  customer: Customer;
   possessive: string;
   firstName: string;
 }) {
   const plan = getFloorPlan(build.floorPlanId!);
   const pkg = getPackages(build.floorPlanId!).find((p) => p.id === build.packageId);
+  const [pdfState, setPdfState] = useState<"idle" | "working" | "error">("idle");
+
+  async function downloadBuildSheet() {
+    setPdfState("working");
+    try {
+      const response = await fetch("/api/build-sheet", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ b: encodeBuild(build), ...customer }),
+      });
+      if (!response.ok) throw new Error(await response.text());
+
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download =
+        response.headers
+          .get("Content-Disposition")
+          ?.match(/filename="(.+)"/)?.[1] ?? "Papago-Build-Sheet.pdf";
+      link.click();
+      URL.revokeObjectURL(url);
+      setPdfState("idle");
+    } catch {
+      setPdfState("error");
+    }
+  }
 
   return (
     <section>
@@ -1049,14 +1079,23 @@ function StepSummary({
         <div className="mt-8 p-6 rounded-lg bg-cream text-center">
           <p className="brand-heading text-lg">Download Your Build Sheet</p>
           <p className="mt-1 text-sm text-steel">
-            PDF generation and HubSpot lead capture land in the next phase.
+            An itemized PDF of this exact configuration, every system spelled
+            out, ready to bring to a build consultation.
           </p>
           <button
-            disabled
-            className="mt-4 px-8 py-3 rounded bg-gold text-navy text-sm font-bold uppercase tracking-wide opacity-50 cursor-not-allowed"
+            onClick={downloadBuildSheet}
+            disabled={pdfState === "working"}
+            className="mt-4 px-8 py-3 rounded bg-gold text-navy text-sm font-bold uppercase tracking-wide hover:brightness-95 disabled:opacity-60 disabled:cursor-wait transition"
           >
-            Get My Build Sheet (PDF)
+            {pdfState === "working"
+              ? "Building your sheet…"
+              : "Get My Build Sheet (PDF)"}
           </button>
+          {pdfState === "error" && (
+            <p className="mt-3 text-sm text-red-700">
+              That did not download. Try once more, or call (480) 724-8372.
+            </p>
+          )}
         </div>
       </div>
     </section>
