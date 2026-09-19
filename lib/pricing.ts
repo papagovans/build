@@ -1,12 +1,11 @@
 import {
-  COLOR_GROUPS,
-  OPTIONS,
   defaultColors,
   getColorChoice,
   getOption,
   getFloorPlan,
   getPackages,
   isAvailable,
+  type Catalog,
   type Option,
 } from "./catalog";
 
@@ -25,12 +24,19 @@ export interface BuildState {
   colors: Record<string, string>;
 }
 
-export const EMPTY_BUILD: BuildState = {
-  floorPlanId: null,
-  packageId: null,
-  selected: [],
-  colors: defaultColors(),
-};
+/**
+ * An empty build for a given catalog. This used to be a module constant, but
+ * the colour defaults now come from whatever the shop has published, so it has
+ * to be built per catalog.
+ */
+export function emptyBuild(catalog: Catalog): BuildState {
+  return {
+    floorPlanId: null,
+    packageId: null,
+    selected: [],
+    colors: defaultColors(catalog),
+  };
+}
 
 export const EMPTY_CUSTOMER: Customer = {
   firstName: "",
@@ -56,29 +62,30 @@ export interface PriceBreakdown {
   total: number;
 }
 
-export function priceBuild(state: BuildState): PriceBreakdown {
-  const plan = state.floorPlanId ? getFloorPlan(state.floorPlanId) : undefined;
+export function priceBuild(catalog: Catalog, state: BuildState): PriceBreakdown {
+  const plan = state.floorPlanId ? getFloorPlan(catalog, state.floorPlanId) : undefined;
   const base = plan?.basePrice ?? 0;
 
-  const pkg = state.floorPlanId && state.packageId
-    ? getPackages(state.floorPlanId).find((p) => p.id === state.packageId)
-    : undefined;
+  const pkg =
+    state.floorPlanId && state.packageId
+      ? getPackages(catalog, state.floorPlanId).find((p) => p.id === state.packageId)
+      : undefined;
   const packageDelta = pkg?.priceDelta ?? 0;
 
   const upgrades: PriceBreakdown["upgrades"] = [];
   const addons: PriceBreakdown["addons"] = [];
 
   for (const id of state.selected) {
-    const option = getOption(id);
+    const option = getOption(catalog, id);
     if (!option) continue;
     if (option.type === "upgrade") upgrades.push({ option, price: option.price });
     else if (option.type === "addon") addons.push({ option, price: option.price });
   }
 
   const colors: PriceBreakdown["colors"] = [];
-  for (const group of COLOR_GROUPS) {
+  for (const group of catalog.colorGroups) {
     const choiceId = state.colors?.[group.id];
-    const choice = choiceId ? getColorChoice(group.id, choiceId) : undefined;
+    const choice = choiceId ? getColorChoice(catalog, group.id, choiceId) : undefined;
     if (choice) {
       colors.push({ group: group.name, choice: choice.name, price: choice.price });
     }
@@ -107,10 +114,11 @@ export function priceBuild(state: BuildState): PriceBreakdown {
  * options that required it, so you can never end up with a winch and no bumper.
  */
 export function toggleOption(
+  catalog: Catalog,
   state: BuildState,
   optionId: string,
 ): BuildState {
-  const option = getOption(optionId);
+  const option = getOption(catalog, optionId);
   if (!option || !state.floorPlanId) return state;
 
   const selected = new Set(state.selected);
@@ -122,7 +130,7 @@ export function toggleOption(
     while (changed) {
       changed = false;
       for (const id of [...selected]) {
-        const dependent = getOption(id);
+        const dependent = getOption(catalog, id);
         if (dependent?.requires?.some((req) => !selected.has(req))) {
           selected.delete(id);
           changed = true;
@@ -138,7 +146,7 @@ export function toggleOption(
 
     // Two upgrades replacing the same base item are mutually exclusive.
     if (option.replaces) {
-      for (const other of OPTIONS) {
+      for (const other of catalog.options) {
         if (
           other.id !== option.id &&
           other.replaces === option.replaces &&
@@ -150,7 +158,7 @@ export function toggleOption(
     }
 
     for (const requiredId of option.requires ?? []) {
-      const required = getOption(requiredId);
+      const required = getOption(catalog, requiredId);
       if (required && isAvailable(required, state.floorPlanId)) {
         selected.add(requiredId);
       }
@@ -170,11 +178,12 @@ export function setColor(
 
 /** Applying a package replaces the current selections with its defaults. */
 export function applyPackage(
+  catalog: Catalog,
   state: BuildState,
   floorPlanId: string,
   packageId: string,
 ): BuildState {
-  const pkg = getPackages(floorPlanId).find((p) => p.id === packageId);
+  const pkg = getPackages(catalog, floorPlanId).find((p) => p.id === packageId);
   return {
     floorPlanId,
     packageId,
@@ -190,8 +199,12 @@ export function setFloorPlan(state: BuildState, floorPlanId: string): BuildState
 }
 
 /** An included item is superseded when an upgrade replacing it is selected. */
-export function isSuperseded(optionId: string, selected: string[]): boolean {
-  return selected.some((id) => getOption(id)?.replaces === optionId);
+export function isSuperseded(
+  catalog: Catalog,
+  optionId: string,
+  selected: string[],
+): boolean {
+  return selected.some((id) => getOption(catalog, id)?.replaces === optionId);
 }
 
 export function formatPrice(value: number): string {
@@ -219,23 +232,23 @@ export function encodeBuild(state: BuildState): string {
   ].join("~");
 }
 
-export function decodeBuild(raw: string | null): BuildState {
-  if (!raw) return EMPTY_BUILD;
+export function decodeBuild(catalog: Catalog, raw: string | null): BuildState {
+  if (!raw) return emptyBuild(catalog);
   const [floorPlanId, packageId, selectedRaw, colorsRaw] = raw.split("~");
-  if (!floorPlanId || !getFloorPlan(floorPlanId)) return EMPTY_BUILD;
+  if (!floorPlanId || !getFloorPlan(catalog, floorPlanId)) return emptyBuild(catalog);
 
   const selected = (selectedRaw ?? "")
     .split(".")
     .filter(Boolean)
     .filter((id) => {
-      const option = getOption(id);
+      const option = getOption(catalog, id);
       return option && isAvailable(option, floorPlanId);
     });
 
-  const colors = defaultColors();
+  const colors = defaultColors(catalog);
   for (const pair of (colorsRaw ?? "").split(",").filter(Boolean)) {
     const [groupId, choiceId] = pair.split(":");
-    if (groupId && choiceId && getColorChoice(groupId, choiceId)) {
+    if (groupId && choiceId && getColorChoice(catalog, groupId, choiceId)) {
       colors[groupId] = choiceId;
     }
   }

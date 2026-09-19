@@ -1,25 +1,32 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import Image from "next/image";
 import {
-  CATEGORIES,
-  FLOOR_PLANS,
   getFloorPlan,
   getOption,
   getPackages,
   optionsFor,
   colorGroupsFor,
+  type Catalog,
+  type Category,
   type ColorChoice,
   type ColorGroup,
   type FloorPlan,
   type Option,
 } from "@/lib/catalog";
 import {
-  EMPTY_BUILD,
   EMPTY_CUSTOMER,
   applyPackage,
   decodeBuild,
+  emptyBuild,
   encodeBuild,
   formatPrice,
   isSuperseded,
@@ -32,19 +39,34 @@ import {
   type Customer,
 } from "@/lib/pricing";
 
-/** 0 = intro, 1 = floor plan, 2 = gallery, 3 = package, 4..12 = categories, 13 = summary. */
+/**
+ * The first five indices are fixed. Everything from CATEGORY_STEP_OFFSET on
+ * depends on how many categories the shop has published, so the total and the
+ * summary index are computed per catalog rather than hardcoded.
+ */
 const INTRO_STEP = 0;
 const PLAN_STEP = 1;
 const GALLERY_STEP = 2;
 const PACKAGE_STEP = 3;
 const CATEGORY_STEP_OFFSET = 4;
-const TOTAL_STEPS = CATEGORY_STEP_OFFSET + CATEGORIES.length + 1;
-const SUMMARY_STEP = TOTAL_STEPS - 1;
 
 const CUSTOMER_KEY = "pv_customer";
 
-export default function Configurator() {
-  const [build, setBuild] = useState<BuildState>(EMPTY_BUILD);
+/**
+ * The loaded catalog, shared with the whole wizard. Eight components read it;
+ * threading it through every one of them as a prop would be all noise.
+ */
+const CatalogContext = createContext<Catalog | null>(null);
+
+function useCatalog(): Catalog {
+  const catalog = useContext(CatalogContext);
+  if (!catalog) throw new Error("useCatalog must be used inside the wizard");
+  return catalog;
+}
+
+export default function Configurator({ catalog }: { catalog: Catalog }) {
+  const summaryStep = CATEGORY_STEP_OFFSET + catalog.categories.length;
+  const [build, setBuild] = useState<BuildState>(() => emptyBuild(catalog));
   const [customer, setCustomer] = useState<Customer>(EMPTY_CUSTOMER);
   const [step, setStep] = useState(INTRO_STEP);
 
@@ -58,13 +80,14 @@ export default function Configurator() {
       // Private mode or blocked storage. Non-fatal.
     }
     const restored = decodeBuild(
+      catalog,
       new URLSearchParams(window.location.search).get("b"),
     );
     if (restored.floorPlanId) {
       setBuild(restored);
       setStep(restored.packageId ? CATEGORY_STEP_OFFSET : GALLERY_STEP);
     }
-  }, []);
+  }, [catalog]);
 
   useEffect(() => {
     try {
@@ -85,8 +108,10 @@ export default function Configurator() {
     window.history.replaceState(null, "", url);
   }, [build]);
 
-  const plan = build.floorPlanId ? getFloorPlan(build.floorPlanId) : undefined;
-  const breakdown = useMemo(() => priceBuild(build), [build]);
+  const plan = build.floorPlanId
+    ? getFloorPlan(catalog, build.floorPlanId)
+    : undefined;
+  const breakdown = useMemo(() => priceBuild(catalog, build), [catalog, build]);
 
   const canAdvance =
     step <= GALLERY_STEP ? Boolean(build.floorPlanId) : Boolean(build.packageId);
@@ -95,12 +120,16 @@ export default function Configurator() {
   const surname = customer.lastName.trim();
   const possessive = surname ? `The ${surname} Build` : "Your Build";
 
-  const goTo = useCallback((next: number) => {
-    setStep(Math.max(0, Math.min(SUMMARY_STEP, next)));
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }, []);
+  const goTo = useCallback(
+    (next: number) => {
+      setStep(Math.max(0, Math.min(summaryStep, next)));
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    },
+    [summaryStep],
+  );
 
   return (
+    <CatalogContext.Provider value={catalog}>
     <div className="flex flex-col min-h-screen pb-28">
       <Header />
       <Hero />
@@ -149,26 +178,26 @@ export default function Configurator() {
             floorPlanId={build.floorPlanId}
             selectedId={build.packageId}
             onSelect={(pkgId) => {
-              setBuild((b) => applyPackage(b, build.floorPlanId!, pkgId));
+              setBuild((b) => applyPackage(catalog, b, build.floorPlanId!, pkgId));
               goTo(CATEGORY_STEP_OFFSET);
             }}
           />
         )}
 
-        {step >= CATEGORY_STEP_OFFSET && step < SUMMARY_STEP && build.floorPlanId && (
+        {step >= CATEGORY_STEP_OFFSET && step < summaryStep && build.floorPlanId && (
           <StepCategory
-            category={CATEGORIES[step - CATEGORY_STEP_OFFSET]}
+            category={catalog.categories[step - CATEGORY_STEP_OFFSET]}
             floorPlanId={build.floorPlanId}
             selected={build.selected}
             colors={build.colors}
-            onToggle={(id) => setBuild((b) => toggleOption(b, id))}
+            onToggle={(id) => setBuild((b) => toggleOption(catalog, b, id))}
             onColor={(groupId, choiceId) =>
               setBuild((b) => setColor(b, groupId, choiceId))
             }
           />
         )}
 
-        {step === SUMMARY_STEP && plan && (
+        {step === summaryStep && plan && (
           <StepSummary
             build={build}
             breakdown={breakdown}
@@ -186,7 +215,7 @@ export default function Configurator() {
             >
               ← Back
             </button>
-            {step < SUMMARY_STEP && (
+            {step < summaryStep && (
               <button
                 onClick={() => goTo(step + 1)}
                 disabled={!canAdvance}
@@ -202,11 +231,12 @@ export default function Configurator() {
       <SummaryBar
         breakdown={breakdown}
         planName={plan?.name}
-        onGetBuildSheet={() => goTo(SUMMARY_STEP)}
+        onGetBuildSheet={() => goTo(summaryStep)}
         canFinish={Boolean(build.packageId)}
-        atSummary={step === SUMMARY_STEP}
+        atSummary={step === summaryStep}
       />
     </div>
+    </CatalogContext.Provider>
   );
 }
 
@@ -458,12 +488,13 @@ function Stepper({
   hasPlan: boolean;
   hasPackage: boolean;
 }) {
+  const catalog = useCatalog();
   const labels = [
     "Your Info",
     "Floor Plan",
     "Layout",
     "Trim Package",
-    ...CATEGORIES.map((c) => c.name),
+    ...catalog.categories.map((c) => c.name),
     "Build Sheet",
   ];
 
@@ -511,6 +542,7 @@ function StepFloorPlan({
   possessive: string;
   onSelect: (id: string) => void;
 }) {
+  const catalog = useCatalog();
   return (
     <section>
       <StepHeading
@@ -519,7 +551,7 @@ function StepFloorPlan({
         blurb="Every plan is built to order on a Mercedes Sprinter, and every price includes the van. Pick the layout that fits how you travel."
       />
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {FLOOR_PLANS.map((plan) => {
+        {catalog.floorPlans.map((plan) => {
           const isSelected = plan.id === selectedId;
           return (
             <button
@@ -706,22 +738,23 @@ function CategoryIcon({
 }
 
 /** Which categories a package actually touches, for the at-a-glance comparison. */
-function categoriesUpgradedBy(defaults: string[]): Set<string> {
+function categoriesUpgradedBy(catalog: Catalog, defaults: string[]): Set<string> {
   const ids = new Set<string>();
   for (const optionId of defaults) {
-    const option = getOption(optionId);
+    const option = getOption(catalog, optionId);
     if (option) ids.add(option.categoryId);
   }
   return ids;
 }
 
 function PackageIconRow({ defaults }: { defaults: string[] }) {
-  const upgraded = categoriesUpgradedBy(defaults);
+  const catalog = useCatalog();
+  const upgraded = categoriesUpgradedBy(catalog, defaults);
 
   return (
     <div className="mt-4">
       <div className="flex flex-wrap gap-1.5">
-        {CATEGORIES.map((c) => {
+        {catalog.categories.map((c) => {
           const active = upgraded.has(c.id);
           return (
             <span
@@ -746,7 +779,7 @@ function PackageIconRow({ defaults }: { defaults: string[] }) {
       <p className="mt-2 text-xs text-steel">
         {upgraded.size === 0
           ? "Standard build across all 9 categories"
-          : `Upgrades in ${upgraded.size} of ${CATEGORIES.length} categories`}
+          : `Upgrades in ${upgraded.size} of ${catalog.categories.length} categories`}
       </p>
     </div>
   );
@@ -761,8 +794,9 @@ function StepPackage({
   selectedId: string | null;
   onSelect: (id: string) => void;
 }) {
-  const packages = getPackages(floorPlanId);
-  const plan = getFloorPlan(floorPlanId);
+  const catalog = useCatalog();
+  const packages = getPackages(catalog, floorPlanId);
+  const plan = getFloorPlan(catalog, floorPlanId);
 
   return (
     <section>
@@ -798,7 +832,7 @@ function StepPackage({
                 {pkg.defaults.slice(0, 6).map((id) => (
                   <li key={id} className="flex gap-2 text-charcoal">
                     <span className="text-gold font-bold">✓</span>
-                    <span>{getOption(id)?.name}</span>
+                    <span>{getOption(catalog, id)?.name}</span>
                   </li>
                 ))}
                 {pkg.defaults.length > 6 && (
@@ -899,17 +933,18 @@ function StepCategory({
   onToggle,
   onColor,
 }: {
-  category: (typeof CATEGORIES)[number];
+  category: Category;
   floorPlanId: string;
   selected: string[];
   colors: Record<string, string>;
   onToggle: (id: string) => void;
   onColor: (groupId: string, choiceId: string) => void;
 }) {
-  const groups = colorGroupsFor(category.id);
+  const catalog = useCatalog();
+  const groups = colorGroupsFor(catalog, category.id);
   const [expanded, setExpanded] = useState<Option | null>(null);
 
-  const options = optionsFor(category.id, floorPlanId);
+  const options = optionsFor(catalog, category.id, floorPlanId);
   const included = options.filter((o) => o.type === "included");
   const upgrades = options.filter((o) => o.type === "upgrade");
   const addons = options.filter((o) => o.type === "addon");
@@ -942,7 +977,7 @@ function StepCategory({
             <IncludedRow
               key={o.id}
               option={o}
-              superseded={isSuperseded(o.id, selected)}
+              superseded={isSuperseded(catalog, o.id, selected)}
               onExpand={setExpanded}
             />
           ))}
@@ -997,8 +1032,11 @@ function StepSummary({
   possessive: string;
   firstName: string;
 }) {
-  const plan = getFloorPlan(build.floorPlanId!);
-  const pkg = getPackages(build.floorPlanId!).find((p) => p.id === build.packageId);
+  const catalog = useCatalog();
+  const plan = getFloorPlan(catalog, build.floorPlanId!);
+  const pkg = getPackages(catalog, build.floorPlanId!).find(
+    (p) => p.id === build.packageId,
+  );
   const [pdfState, setPdfState] = useState<"idle" | "working" | "error">("idle");
 
   async function downloadBuildSheet() {
@@ -1317,8 +1355,11 @@ function OptionRow({
   onToggle: (id: string) => void;
   onExpand: (option: Option) => void;
 }) {
+  const catalog = useCatalog();
   const requirement = option.requires?.[0];
-  const requirementName = requirement ? getOption(requirement)?.name : undefined;
+  const requirementName = requirement
+    ? getOption(catalog, requirement)?.name
+    : undefined;
   const requirementMissing = Boolean(requirement && !selected.includes(requirement));
 
   return (

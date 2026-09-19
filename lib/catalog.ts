@@ -147,28 +147,52 @@ export const COLOR_GROUPS: ColorGroup[] = [
   },
 ];
 
-export function colorGroupsFor(categoryId: string): ColorGroup[] {
-  return COLOR_GROUPS.filter((g) => g.categoryId === categoryId);
-}
-
-export function getColorChoice(groupId: string, choiceId: string) {
-  return COLOR_GROUPS.find((g) => g.id === groupId)?.choices.find(
-    (c) => c.id === choiceId,
-  );
-}
-
-/** First choice in each group is the no-cost default. */
-export function defaultColors(): Record<string, string> {
-  return Object.fromEntries(COLOR_GROUPS.map((g) => [g.id, g.choices[0].id]));
-}
-
 export interface BuildPackage {
   id: string;
   name: string;
   tagline: string;
   priceDelta: number;
+  /** Which floor plan offers this trim package. */
+  floorPlanId: string;
   /** Option ids pre-selected when this package is chosen. */
   defaults: string[];
+}
+
+/**
+ * One loaded catalog. Everything below takes this rather than reading module
+ * constants, because the live catalog now comes out of Payload and only the
+ * seed still uses the hardcoded copy. Ids are slugs in both, so the two are
+ * interchangeable and a `?b=` link built against either one still resolves.
+ */
+export interface Catalog {
+  categories: Category[];
+  floorPlans: FloorPlan[];
+  options: Option[];
+  colorGroups: ColorGroup[];
+  packages: BuildPackage[];
+}
+
+export function colorGroupsFor(catalog: Catalog, categoryId: string): ColorGroup[] {
+  return catalog.colorGroups.filter((g) => g.categoryId === categoryId);
+}
+
+export function getColorChoice(
+  catalog: Catalog,
+  groupId: string,
+  choiceId: string,
+) {
+  return catalog.colorGroups
+    .find((g) => g.id === groupId)
+    ?.choices.find((c) => c.id === choiceId);
+}
+
+/** First choice in each group is the no-cost default. */
+export function defaultColors(catalog: Catalog): Record<string, string> {
+  return Object.fromEntries(
+    catalog.colorGroups
+      .filter((g) => g.choices.length > 0)
+      .map((g) => [g.id, g.choices[0].id]),
+  );
 }
 
 /** Base price is uniform in Phase 1 per Jerry, 2026-09-18. */
@@ -741,7 +765,7 @@ export const OPTIONS: Option[] = [
  * Three package tiers. In Phase 1 these apply to every floor plan; the CMS will
  * allow per-plan overrides, which is why getPackages() takes a plan id.
  */
-const PACKAGE_TIERS: Omit<BuildPackage, "id">[] = [
+const PACKAGE_TIERS: Omit<BuildPackage, "id" | "floorPlanId">[] = [
   {
     name: "Essential",
     tagline: "The core build, ready for the road.",
@@ -787,32 +811,51 @@ const PACKAGE_TIERS: Omit<BuildPackage, "id">[] = [
   },
 ];
 
-/** Packages for a plan, filtered so defaults never include an option that plan can't fit. */
-export function getPackages(floorPlanId: string): BuildPackage[] {
-  return PACKAGE_TIERS.map((tier) => ({
-    ...tier,
-    id: `${floorPlanId}--${tier.name.toLowerCase()}`,
-    defaults: tier.defaults.filter((optionId) => {
-      const option = OPTIONS.find((o) => o.id === optionId);
-      return option ? isAvailable(option, floorPlanId) : false;
-    }),
-  }));
+export function getPackages(catalog: Catalog, floorPlanId: string): BuildPackage[] {
+  return catalog.packages.filter((p) => p.floorPlanId === floorPlanId);
 }
 
 export function isAvailable(option: Option, floorPlanId: string): boolean {
-  return !option.availableFor || option.availableFor.includes(floorPlanId);
+  return !option.availableFor?.length || option.availableFor.includes(floorPlanId);
 }
 
-export function getOption(id: string): Option | undefined {
-  return OPTIONS.find((o) => o.id === id);
+export function getOption(catalog: Catalog, id: string): Option | undefined {
+  return catalog.options.find((o) => o.id === id);
 }
 
-export function optionsFor(categoryId: string, floorPlanId: string): Option[] {
-  return OPTIONS.filter(
+export function optionsFor(
+  catalog: Catalog,
+  categoryId: string,
+  floorPlanId: string,
+): Option[] {
+  return catalog.options.filter(
     (o) => o.categoryId === categoryId && isAvailable(o, floorPlanId),
   );
 }
 
-export function getFloorPlan(id: string): FloorPlan | undefined {
-  return FLOOR_PLANS.find((p) => p.id === id);
+export function getFloorPlan(catalog: Catalog, id: string): FloorPlan | undefined {
+  return catalog.floorPlans.find((p) => p.id === id);
 }
+
+/**
+ * The hardcoded catalog, as a Catalog. Only the seed reads this now. Packages
+ * are expanded per floor plan, with each plan's defaults filtered down to
+ * options that actually fit it.
+ */
+export const HARDCODED_CATALOG: Catalog = {
+  categories: CATEGORIES,
+  floorPlans: FLOOR_PLANS,
+  options: OPTIONS,
+  colorGroups: COLOR_GROUPS,
+  packages: FLOOR_PLANS.flatMap((plan) =>
+    PACKAGE_TIERS.map((tier) => ({
+      ...tier,
+      id: `${plan.id}--${tier.name.toLowerCase()}`,
+      floorPlanId: plan.id,
+      defaults: tier.defaults.filter((optionId) => {
+        const option = OPTIONS.find((o) => o.id === optionId);
+        return option ? isAvailable(option, plan.id) : false;
+      }),
+    })),
+  ),
+};

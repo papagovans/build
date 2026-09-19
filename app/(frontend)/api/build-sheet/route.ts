@@ -1,4 +1,5 @@
 import { decodeBuild } from "@/lib/pricing";
+import { loadCatalog } from "@/lib/cms";
 import { buildSheetFilename, renderBuildSheet } from "@/lib/build-sheet";
 
 /**
@@ -15,7 +16,10 @@ export async function POST(request: Request) {
     return new Response("Bad request", { status: 400 });
   }
 
-  const build = decodeBuild(body.b);
+  // The sheet is priced against the live catalog, not a copy the client sent,
+  // so a tampered payload cannot invent prices.
+  const catalog = await loadCatalog();
+  const build = decodeBuild(catalog, body.b);
   if (!build.floorPlanId) {
     return new Response("Pick a floor plan first", { status: 400 });
   }
@@ -28,12 +32,12 @@ export async function POST(request: Request) {
     email: clean(body.email),
   };
 
-  const pdf = await renderBuildSheet(build, customer);
+  const pdf = await renderBuildSheet(catalog, build, customer);
 
   return new Response(new Uint8Array(pdf), {
     headers: {
       "Content-Type": "application/pdf",
-      "Content-Disposition": `attachment; filename="${buildSheetFilename(build, customer)}"`,
+      "Content-Disposition": `attachment; filename="${buildSheetFilename(catalog, build, customer)}"`,
       "Cache-Control": "no-store",
     },
   });

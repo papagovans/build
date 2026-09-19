@@ -18,12 +18,11 @@ import {
   renderToBuffer,
 } from "@react-pdf/renderer";
 import {
-  CATEGORIES,
-  COLOR_GROUPS,
   getColorChoice,
   getFloorPlan,
   getPackages,
   optionsFor,
+  type Catalog,
 } from "./catalog";
 import {
   formatPrice,
@@ -135,14 +134,18 @@ interface Line {
 }
 
 /** Everything in one category: included items still in force, then what was added. */
-function linesFor(categoryId: string, build: BuildState): Line[] {
+function linesFor(
+  catalog: Catalog,
+  categoryId: string,
+  build: BuildState,
+): Line[] {
   const planId = build.floorPlanId!;
   const lines: Line[] = [];
 
-  for (const option of optionsFor(categoryId, planId)) {
+  for (const option of optionsFor(catalog, categoryId, planId)) {
     const picked = build.selected.includes(option.id);
     if (option.type === "included") {
-      if (!isSuperseded(option.id, build.selected)) {
+      if (!isSuperseded(catalog, option.id, build.selected)) {
         lines.push({ name: option.name, note: option.description, price: null });
       }
     } else if (picked) {
@@ -154,8 +157,14 @@ function linesFor(categoryId: string, build: BuildState): Line[] {
     }
   }
 
-  for (const group of COLOR_GROUPS.filter((g) => g.categoryId === categoryId)) {
-    const choice = getColorChoice(group.id, build.colors?.[group.id] ?? "");
+  for (const group of catalog.colorGroups.filter(
+    (g) => g.categoryId === categoryId,
+  )) {
+    const choice = getColorChoice(
+      catalog,
+      group.id,
+      build.colors?.[group.id] ?? "",
+    );
     if (choice) {
       lines.push({
         name: `${group.name}: ${choice.name}`,
@@ -168,15 +177,19 @@ function linesFor(categoryId: string, build: BuildState): Line[] {
 }
 
 function BuildSheet({
+  catalog,
   build,
   customer,
 }: {
+  catalog: Catalog;
   build: BuildState;
   customer: Customer;
 }) {
-  const plan = getFloorPlan(build.floorPlanId!)!;
-  const pkg = getPackages(build.floorPlanId!).find((p) => p.id === build.packageId);
-  const breakdown = priceBuild(build);
+  const plan = getFloorPlan(catalog, build.floorPlanId!)!;
+  const pkg = getPackages(catalog, build.floorPlanId!).find(
+    (p) => p.id === build.packageId,
+  );
+  const breakdown = priceBuild(catalog, build);
   const optionsTotal =
     breakdown.total - breakdown.base - breakdown.packageDelta;
 
@@ -237,8 +250,8 @@ function BuildSheet({
             </View>
           </View>
 
-          {CATEGORIES.map((category) => {
-            const lines = linesFor(category.id, build);
+          {catalog.categories.map((category) => {
+            const lines = linesFor(catalog, category.id, build);
             if (lines.length === 0) return null;
             return (
               <View key={category.id} style={s.section} wrap={false}>
@@ -323,15 +336,25 @@ function BuildSheet({
   );
 }
 
-export function renderBuildSheet(build: BuildState, customer: Customer) {
-  return renderToBuffer(<BuildSheet build={build} customer={customer} />);
+export function renderBuildSheet(
+  catalog: Catalog,
+  build: BuildState,
+  customer: Customer,
+) {
+  return renderToBuffer(
+    <BuildSheet catalog={catalog} build={build} customer={customer} />,
+  );
 }
 
 /** `Papago-Build-Sheet-El-Capitan-Suhrstedt.pdf` */
-export function buildSheetFilename(build: BuildState, customer: Customer) {
+export function buildSheetFilename(
+  catalog: Catalog,
+  build: BuildState,
+  customer: Customer,
+) {
   const parts = [
     "Papago-Build-Sheet",
-    getFloorPlan(build.floorPlanId!)?.name,
+    getFloorPlan(catalog, build.floorPlanId!)?.name,
     customer.lastName,
   ];
   return `${parts
