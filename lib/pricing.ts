@@ -1,5 +1,8 @@
 import {
+  COLOR_GROUPS,
   OPTIONS,
+  defaultColors,
+  getColorChoice,
   getOption,
   getFloorPlan,
   getPackages,
@@ -18,12 +21,15 @@ export interface BuildState {
   packageId: string | null;
   /** Selected upgrade and add-on ids. Included items are implicit. */
   selected: string[];
+  /** groupId -> choiceId. Exactly one choice per colour group, always. */
+  colors: Record<string, string>;
 }
 
 export const EMPTY_BUILD: BuildState = {
   floorPlanId: null,
   packageId: null,
   selected: [],
+  colors: defaultColors(),
 };
 
 export const EMPTY_CUSTOMER: Customer = {
@@ -46,6 +52,7 @@ export interface PriceBreakdown {
   packageDelta: number;
   upgrades: { option: Option; price: number }[];
   addons: { option: Option; price: number }[];
+  colors: { group: string; choice: string; price: number }[];
   total: number;
 }
 
@@ -68,9 +75,28 @@ export function priceBuild(state: BuildState): PriceBreakdown {
     else if (option.type === "addon") addons.push({ option, price: option.price });
   }
 
-  const extras = [...upgrades, ...addons].reduce((sum, e) => sum + e.price, 0);
+  const colors: PriceBreakdown["colors"] = [];
+  for (const group of COLOR_GROUPS) {
+    const choiceId = state.colors?.[group.id];
+    const choice = choiceId ? getColorChoice(group.id, choiceId) : undefined;
+    if (choice) {
+      colors.push({ group: group.name, choice: choice.name, price: choice.price });
+    }
+  }
 
-  return { base, packageDelta, upgrades, addons, total: base + packageDelta + extras };
+  const extras = [...upgrades, ...addons, ...colors].reduce(
+    (sum, e) => sum + e.price,
+    0,
+  );
+
+  return {
+    base,
+    packageDelta,
+    upgrades,
+    addons,
+    colors,
+    total: base + packageDelta + extras,
+  };
 }
 
 /**
@@ -134,6 +160,14 @@ export function toggleOption(
   return { ...state, selected: [...selected] };
 }
 
+export function setColor(
+  state: BuildState,
+  groupId: string,
+  choiceId: string,
+): BuildState {
+  return { ...state, colors: { ...state.colors, [groupId]: choiceId } };
+}
+
 /** Applying a package replaces the current selections with its defaults. */
 export function applyPackage(
   state: BuildState,
@@ -145,13 +179,14 @@ export function applyPackage(
     floorPlanId,
     packageId,
     selected: pkg ? [...pkg.defaults] : [],
+    colors: state.colors,
   };
 }
 
 /** Changing the floor plan drops selections that no longer fit. */
 export function setFloorPlan(state: BuildState, floorPlanId: string): BuildState {
   if (state.floorPlanId === floorPlanId) return state;
-  return { floorPlanId, packageId: null, selected: [] };
+  return { floorPlanId, packageId: null, selected: [], colors: state.colors };
 }
 
 /** An included item is superseded when an upgrade replacing it is selected. */
@@ -173,13 +208,20 @@ export function formatPrice(value: number): string {
 
 export function encodeBuild(state: BuildState): string {
   if (!state.floorPlanId) return "";
-  return [state.floorPlanId, state.packageId ?? "", state.selected.join(".")]
-    .join("~");
+  const colors = Object.entries(state.colors ?? {})
+    .map(([g, c]) => `${g}:${c}`)
+    .join(",");
+  return [
+    state.floorPlanId,
+    state.packageId ?? "",
+    state.selected.join("."),
+    colors,
+  ].join("~");
 }
 
 export function decodeBuild(raw: string | null): BuildState {
   if (!raw) return EMPTY_BUILD;
-  const [floorPlanId, packageId, selectedRaw] = raw.split("~");
+  const [floorPlanId, packageId, selectedRaw, colorsRaw] = raw.split("~");
   if (!floorPlanId || !getFloorPlan(floorPlanId)) return EMPTY_BUILD;
 
   const selected = (selectedRaw ?? "")
@@ -190,5 +232,13 @@ export function decodeBuild(raw: string | null): BuildState {
       return option && isAvailable(option, floorPlanId);
     });
 
-  return { floorPlanId, packageId: packageId || null, selected };
+  const colors = defaultColors();
+  for (const pair of (colorsRaw ?? "").split(",").filter(Boolean)) {
+    const [groupId, choiceId] = pair.split(":");
+    if (groupId && choiceId && getColorChoice(groupId, choiceId)) {
+      colors[groupId] = choiceId;
+    }
+  }
+
+  return { floorPlanId, packageId: packageId || null, selected, colors };
 }

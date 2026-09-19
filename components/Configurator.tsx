@@ -9,6 +9,9 @@ import {
   getOption,
   getPackages,
   optionsFor,
+  colorGroupsFor,
+  type ColorChoice,
+  type ColorGroup,
   type FloorPlan,
   type Option,
 } from "@/lib/catalog";
@@ -21,6 +24,7 @@ import {
   formatPrice,
   isSuperseded,
   priceBuild,
+  setColor,
   setFloorPlan,
   isValidCustomer,
   toggleOption,
@@ -156,7 +160,11 @@ export default function Configurator() {
             category={CATEGORIES[step - CATEGORY_STEP_OFFSET]}
             floorPlanId={build.floorPlanId}
             selected={build.selected}
+            colors={build.colors}
             onToggle={(id) => setBuild((b) => toggleOption(b, id))}
+            onColor={(groupId, choiceId) =>
+              setBuild((b) => setColor(b, groupId, choiceId))
+            }
           />
         )}
 
@@ -791,17 +799,98 @@ function StepPackage({
   );
 }
 
+function ColorSwatch({
+  choice,
+  active,
+  onSelect,
+}: {
+  choice: ColorChoice;
+  active: boolean;
+  onSelect: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      aria-pressed={active}
+      className="group text-left w-[104px] shrink-0"
+    >
+      <span
+        className={`block h-16 w-full rounded-md border-2 transition-all ${
+          active
+            ? "border-gold ring-2 ring-gold/30"
+            : "border-black/10 group-hover:border-sky"
+        }`}
+        style={
+          choice.hex2
+            ? {
+                backgroundImage: `repeating-linear-gradient(115deg, ${choice.hex} 0 7px, ${choice.hex2} 7px 13px)`,
+              }
+            : { backgroundColor: choice.hex }
+        }
+      />
+      <span className="mt-1.5 block text-xs font-semibold text-charcoal leading-tight">
+        {choice.name}
+      </span>
+      <span className="block text-[11px] text-steel">
+        {choice.price === 0 ? "Included" : `+${formatPrice(choice.price)}`}
+      </span>
+    </button>
+  );
+}
+
+function ColorGroupPicker({
+  group,
+  activeChoiceId,
+  onSelect,
+}: {
+  group: ColorGroup;
+  activeChoiceId?: string;
+  onSelect: (choiceId: string) => void;
+}) {
+  return (
+    <div className="bg-white rounded-lg p-5">
+      <div className="flex items-baseline justify-between gap-3 mb-3">
+        <div>
+          <h4 className="font-bold text-charcoal">{group.name}</h4>
+          <p className="text-xs text-steel">{group.blurb}</p>
+        </div>
+        <p className="text-xs text-steel shrink-0">Choose one</p>
+      </div>
+      <div
+        role="radiogroup"
+        aria-label={group.name}
+        className="flex gap-3 overflow-x-auto pb-1"
+      >
+        {group.choices.map((c) => (
+          <ColorSwatch
+            key={c.id}
+            choice={c}
+            active={c.id === activeChoiceId}
+            onSelect={() => onSelect(c.id)}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function StepCategory({
   category,
   floorPlanId,
   selected,
+  colors,
   onToggle,
+  onColor,
 }: {
   category: (typeof CATEGORIES)[number];
   floorPlanId: string;
   selected: string[];
+  colors: Record<string, string>;
   onToggle: (id: string) => void;
+  onColor: (groupId: string, choiceId: string) => void;
 }) {
+  const groups = colorGroupsFor(category.id);
   const [expanded, setExpanded] = useState<Option | null>(null);
 
   const options = optionsFor(category.id, floorPlanId);
@@ -812,6 +901,24 @@ function StepCategory({
   return (
     <section>
       <StepHeading eyebrow={category.name} title={category.name} blurb={category.blurb} />
+
+      {groups.length > 0 && (
+        <div className="mb-10">
+          <h3 className="text-xs font-bold uppercase tracking-widest text-steel mb-3">
+            Choose your colors
+          </h3>
+          <div className="grid gap-4 lg:grid-cols-2">
+            {groups.map((g) => (
+              <ColorGroupPicker
+                key={g.id}
+                group={g}
+                activeChoiceId={colors[g.id]}
+                onSelect={(choiceId) => onColor(g.id, choiceId)}
+              />
+            ))}
+          </div>
+        </div>
+      )}
 
       {included.length > 0 && (
         <OptionGroup title="Included in your build">
@@ -903,6 +1010,18 @@ function StepSummary({
           <SummaryGroup title="Upgrades">
             {breakdown.upgrades.map(({ option, price }) => (
               <LineItem key={option.id} label={option.name} price={price} />
+            ))}
+          </SummaryGroup>
+        )}
+
+        {breakdown.colors.length > 0 && (
+          <SummaryGroup title="Finishes">
+            {breakdown.colors.map((c) => (
+              <LineItem
+                key={c.group}
+                label={`${c.group}: ${c.choice}`}
+                price={c.price}
+              />
             ))}
           </SummaryGroup>
         )}

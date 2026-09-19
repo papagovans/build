@@ -70,6 +70,94 @@ const PLACEHOLDER_GALLERY: GalleryImage[] = [
   { id: "rear-garage", label: "Rear Garage", src: "/floorplans/rear-garage.webp" },
 ];
 
+/**
+ * Colors behave differently from the three option types: exactly one choice per
+ * group is always active, so they are a separate concept rather than a fourth
+ * option type. Most carry no upcharge; premium materials do.
+ */
+export interface ColorChoice {
+  id: string;
+  name: string;
+  /** Swatch fill. `hex2` renders a two-tone swatch for grained materials. */
+  hex: string;
+  hex2?: string;
+  price: number;
+}
+
+export interface ColorGroup {
+  id: string;
+  categoryId: string;
+  name: string;
+  blurb: string;
+  choices: ColorChoice[];
+}
+
+export const COLOR_GROUPS: ColorGroup[] = [
+  {
+    id: "flooring",
+    categoryId: "finishes",
+    name: "Flooring",
+    blurb: "Waterproof luxury vinyl plank",
+    choices: [
+      { id: "floor-natural-oak", name: "Natural Oak", hex: "#c8a072", hex2: "#b08a5c", price: 0 },
+      { id: "floor-weathered-grey", name: "Weathered Grey", hex: "#9b9791", hex2: "#847f79", price: 0 },
+      { id: "floor-walnut", name: "Walnut", hex: "#6b4630", hex2: "#563524", price: 0 },
+      { id: "floor-charcoal", name: "Charcoal Ash", hex: "#4a4a4c", hex2: "#3a3a3c", price: 350 },
+    ],
+  },
+  {
+    id: "walls",
+    categoryId: "finishes",
+    name: "Wall Panels",
+    blurb: "Upholstered and paneled surfaces",
+    choices: [
+      { id: "wall-birch", name: "Birch Ply", hex: "#e2cba4", hex2: "#cdb389", price: 0 },
+      { id: "wall-warm-white", name: "Warm White", hex: "#f2efe8", price: 0 },
+      { id: "wall-sage", name: "Desert Sage", hex: "#9aa88f", price: 450 },
+      { id: "wall-charcoal-felt", name: "Charcoal Felt", hex: "#45484d", price: 450 },
+    ],
+  },
+  {
+    id: "cabinets",
+    categoryId: "finishes",
+    name: "Cabinet Faces",
+    blurb: "Powder-coated or hardwood fronts",
+    choices: [
+      { id: "cab-papago-navy", name: "Papago Navy", hex: "#303c47", price: 0 },
+      { id: "cab-slate", name: "Slate Grey", hex: "#7d848b", price: 0 },
+      { id: "cab-warm-white", name: "Warm White", hex: "#eeebe3", price: 0 },
+      { id: "cab-walnut", name: "Walnut Veneer", hex: "#5f3f2b", hex2: "#7a5238", price: 1200 },
+    ],
+  },
+  {
+    id: "counter",
+    categoryId: "finishes",
+    name: "Countertop",
+    blurb: "Galley and dinette surfaces",
+    choices: [
+      { id: "counter-acacia", name: "Acacia Butcher Block", hex: "#b5834a", hex2: "#9a6c3a", price: 0 },
+      { id: "counter-walnut", name: "Walnut Block", hex: "#6b4630", hex2: "#523425", price: 600 },
+      { id: "counter-white-quartz", name: "White Quartz", hex: "#eceae5", price: 900 },
+      { id: "counter-black", name: "Matte Black", hex: "#2f3133", price: 600 },
+    ],
+  },
+];
+
+export function colorGroupsFor(categoryId: string): ColorGroup[] {
+  return COLOR_GROUPS.filter((g) => g.categoryId === categoryId);
+}
+
+export function getColorChoice(groupId: string, choiceId: string) {
+  return COLOR_GROUPS.find((g) => g.id === groupId)?.choices.find(
+    (c) => c.id === choiceId,
+  );
+}
+
+/** First choice in each group is the no-cost default. */
+export function defaultColors(): Record<string, string> {
+  return Object.fromEntries(COLOR_GROUPS.map((g) => [g.id, g.choices[0].id]));
+}
+
 export interface BuildPackage {
   id: string;
   name: string;
@@ -160,7 +248,7 @@ export const CATEGORIES: Category[] = [
   { id: "plumbing", name: "Plumbing", blurb: "Water, sinks, and showers" },
   { id: "climate", name: "Heating / Cooling", blurb: "Comfortable in any season" },
   { id: "kitchen", name: "Kitchen", blurb: "Cook real meals on the road" },
-  { id: "aesthetic", name: "Aesthetic", blurb: "Finishes and materials" },
+  { id: "finishes", name: "Finishes", blurb: "Colors, materials, and trim" },
   { id: "storage", name: "Storage", blurb: "A place for all your gear" },
   { id: "sleeping", name: "Seating / Sleeping", blurb: "Where you rest and ride" },
   { id: "exterior", name: "Exterior / Off-Road", blurb: "Built for the rough stuff" },
@@ -413,10 +501,10 @@ export const OPTIONS: Option[] = [
     price: 1_250,
   },
 
-  // ----------------------------------------------------------------- Aesthetic
+  // ------------------------------------------------------------------ Finishes
   {
     id: "aes-vinyl",
-    categoryId: "aesthetic",
+    categoryId: "finishes",
     thumb: "/products/aes-vinyl.webp",
     name: "Luxury Vinyl Plank Flooring",
     description: "Waterproof, matched to cabinetry",
@@ -425,7 +513,7 @@ export const OPTIONS: Option[] = [
   },
   {
     id: "aes-cabinetry-standard",
-    categoryId: "aesthetic",
+    categoryId: "finishes",
     thumb: "/products/aes-cabinetry-standard.webp",
     name: "Standard Cabinetry Finish",
     description: "Powder-coated aluminum frames",
@@ -434,7 +522,7 @@ export const OPTIONS: Option[] = [
   },
   {
     id: "aes-cabinetry-premium",
-    categoryId: "aesthetic",
+    categoryId: "finishes",
     thumb: "/products/aes-cabinetry-premium.webp",
     name: "Upgrade to Premium Hardwood Cabinetry",
     description: "Solid face frames with soft-close everything",
@@ -444,7 +532,7 @@ export const OPTIONS: Option[] = [
   },
   {
     id: "aes-backsplash",
-    categoryId: "aesthetic",
+    categoryId: "finishes",
     thumb: "/products/aes-backsplash.webp",
     name: "Tiled Backsplash",
     description: "Hand-set tile behind the galley",
@@ -453,7 +541,7 @@ export const OPTIONS: Option[] = [
   },
   {
     id: "aes-ceiling",
-    categoryId: "aesthetic",
+    categoryId: "finishes",
     thumb: "/products/aes-ceiling.webp",
     name: "Slatted Wood Ceiling",
     description: "Warm cedar slat detail with integrated lighting",
