@@ -4,7 +4,12 @@ import { fileURLToPath } from "url";
 import { postgresAdapter } from "@payloadcms/db-postgres";
 import { vercelBlobStorage } from "@payloadcms/storage-vercel-blob";
 import sharp from "sharp";
-import { buildConfig, type CollectionConfig } from "payload";
+import {
+  buildConfig,
+  type Access,
+  type CollectionConfig,
+  type FieldAccess,
+} from "payload";
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -42,11 +47,86 @@ const slugField = {
   },
 };
 
+/**
+ * Two roles, because the people entering catalog data should not also be able
+ * to delete the owner's account.
+ *
+ * A user created before this field existed has `role` null in the database.
+ * That is read as "admin" on purpose: the alternative is that adding roles
+ * locks every existing account out of the Users collection, including the
+ * only one that could put it right.
+ */
+type Role = "admin" | "staff";
+
+function roleOf(user: unknown): Role {
+  return (user as { role?: Role } | null | undefined)?.role ?? "admin";
+}
+
+const isAdmin: Access = ({ req: { user } }) =>
+  Boolean(user) && roleOf(user) === "admin";
+
+// Same rule, different signature: collection access and field access are
+// separate types in Payload because field access also receives the document.
+const isAdminField: FieldAccess = ({ req: { user } }) =>
+  Boolean(user) && roleOf(user) === "admin";
+
+/** Admins see everyone. Everyone else sees only their own account. */
+const adminOrSelf: Access = ({ req: { user } }) => {
+  if (!user) return false;
+  if (roleOf(user) === "admin") return true;
+  return { id: { equals: user.id } };
+};
+
 const Users: CollectionConfig = {
   slug: "users",
   auth: true,
-  admin: { useAsTitle: "email", group: "Admin" },
-  fields: [{ name: "name", type: "text" }],
+  admin: {
+    useAsTitle: "email",
+    defaultColumns: ["email", "name", "role"],
+    group: "Admin",
+    description:
+      "Staff accounts for this admin. Create one here with an email and a starting password, then have the person change it under their own account.",
+  },
+  access: {
+    read: adminOrSelf,
+    create: isAdmin,
+    update: adminOrSelf,
+    delete: isAdmin,
+  },
+  fields: [
+    { name: "name", type: "text" },
+    {
+      name: "role",
+      type: "select",
+      required: true,
+      defaultValue: "staff",
+      // Only an admin can hand out a role, so staff cannot promote themselves
+      // on the way through their own profile.
+      access: { create: isAdminField, update: isAdminField },
+      options: [
+        {
+          label: "Admin — full access, including managing these accounts",
+          value: "admin",
+        },
+        {
+          label: "Staff — can edit the catalog, cannot manage accounts",
+          value: "staff",
+        },
+      ],
+    },
+  ],
+  hooks: {
+    beforeDelete: [
+      ({ req, id }) => {
+        // Deleting the account you are signed in with locks you out mid-click.
+        if (req.user && String(req.user.id) === String(id)) {
+          throw new Error(
+            "You cannot delete the account you are signed in with. Ask another admin to do it.",
+          );
+        }
+      },
+    ],
+  },
 };
 
 const Media: CollectionConfig = {
@@ -369,6 +449,15 @@ export default buildConfig({
   admin: {
     user: Users.slug,
     meta: { titleSuffix: " | Papago Vans" },
+    // Component paths, not imports: Payload resolves these against the project
+    // root and writes them into app/(payload)/admin/importMap.js. Regenerate
+    // with `npx payload generate:importmap` after changing them.
+    components: {
+      graphics: {
+        Logo: "/components/admin/PapagoLogo#Logo",
+        Icon: "/components/admin/PapagoLogo#Icon",
+      },
+    },
   },
   collections: [
     FloorPlans,

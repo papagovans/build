@@ -325,12 +325,15 @@ export interface ColorGroup {
   createdAt: string;
 }
 /**
+ * Staff accounts for this admin. Create one here with an email and a starting password, then have the person change it under their own account.
+ *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "users".
  */
 export interface User {
   id: number;
   name?: string | null;
+  role: 'admin' | 'staff';
   updatedAt: string;
   createdAt: string;
   email: string;
@@ -590,6 +593,7 @@ export interface MediaSelect<T extends boolean = true> {
  */
 export interface UsersSelect<T extends boolean = true> {
   name?: T;
+  role?: T;
   updatedAt?: T;
   createdAt?: T;
   email?: T;
