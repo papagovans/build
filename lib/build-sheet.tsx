@@ -222,11 +222,14 @@ function BuildSheet({
             <View>
               <Text style={s.metaLabel}>PREPARED FOR</Text>
               <Text style={s.metaValue}>{name || "Guest build"}</Text>
-              {customer.email.trim() ? (
-                <Text style={[s.metaValue, { fontSize: 8, color: STEEL }]}>
-                  {customer.email.trim()}
-                </Text>
-              ) : null}
+              {[customer.email, customer.phone]
+                .map((v) => v.trim())
+                .filter(Boolean)
+                .map((v) => (
+                  <Text key={v} style={[s.metaValue, { fontSize: 8, color: STEEL }]}>
+                    {v}
+                  </Text>
+                ))}
             </View>
             <View>
               <Text style={[s.metaLabel, { textAlign: "right" }]}>DATE</Text>

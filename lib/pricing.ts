@@ -13,6 +13,7 @@ export interface Customer {
   firstName: string;
   lastName: string;
   email: string;
+  phone: string;
 }
 
 export interface BuildState {
@@ -42,14 +43,26 @@ export const EMPTY_CUSTOMER: Customer = {
   firstName: "",
   lastName: "",
   email: "",
+  phone: "",
 };
+
+/**
+ * Count the digits in a phone number so formatting does not matter.
+ * Ten digits is a US number; eleven is the same number with a leading 1.
+ */
+export function phoneDigits(value: string): string {
+  return value.replace(/\D/g, "");
+}
 
 /** Basic shape check only. Real validation happens server-side at submit. */
 export function isValidCustomer(c: Customer): boolean {
+  const digits = phoneDigits(c.phone);
   return (
     c.firstName.trim().length > 0 &&
     c.lastName.trim().length > 0 &&
-    /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(c.email.trim())
+    /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(c.email.trim()) &&
+    digits.length >= 10 &&
+    digits.length <= 15
   );
 }
 

@@ -3,11 +3,11 @@ import { loadCatalog } from "@/lib/cms";
 import { buildSheetFilename, renderBuildSheet } from "@/lib/build-sheet";
 
 /**
- * POST { b, firstName, lastName, email } -> the Build Sheet PDF.
+ * POST { b, firstName, lastName, email, phone } -> the Build Sheet PDF.
  *
  * It is a POST on purpose. The build itself is the shareable `?b=` string, but
- * the customer's name and email must never ride in a URL, so they travel in
- * the body. Everything is decoded through `decodeBuild()`, which drops unknown
+ * the customer's name, email and phone must never ride in a URL, so they
+ * travel in the body. Everything is decoded through `decodeBuild()`, which drops unknown
  * or unavailable option ids, so a hand-edited payload cannot invent a build.
  */
 export async function POST(request: Request) {
@@ -30,6 +30,7 @@ export async function POST(request: Request) {
     firstName: clean(body.firstName),
     lastName: clean(body.lastName),
     email: clean(body.email),
+    phone: clean(body.phone),
   };
 
   const pdf = await renderBuildSheet(catalog, build, customer);

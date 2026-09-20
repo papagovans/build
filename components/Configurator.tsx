@@ -75,7 +75,9 @@ export default function Configurator({ catalog }: { catalog: Catalog }) {
   useEffect(() => {
     try {
       const saved = sessionStorage.getItem(CUSTOMER_KEY);
-      if (saved) setCustomer(JSON.parse(saved));
+      // Merged onto the empty customer so a session saved before a field
+      // existed restores as "" rather than undefined.
+      if (saved) setCustomer({ ...EMPTY_CUSTOMER, ...JSON.parse(saved) });
     } catch {
       // Private mode or blocked storage. Non-fatal.
     }
@@ -393,6 +395,13 @@ function VanContextBar({
   );
 }
 
+const AUTOCOMPLETE: Record<keyof Customer, string> = {
+  firstName: "given-name",
+  lastName: "family-name",
+  email: "email",
+  phone: "tel",
+};
+
 function StepIntro({
   customer,
   onChange,
@@ -422,9 +431,7 @@ function StepIntro({
         type={type}
         value={customer[key]}
         placeholder={placeholder}
-        autoComplete={
-          key === "firstName" ? "given-name" : key === "lastName" ? "family-name" : "email"
-        }
+        autoComplete={AUTOCOMPLETE[key]}
         onChange={(e) => onChange({ ...customer, [key]: e.target.value })}
         className="w-full rounded-md border border-black/15 bg-white px-4 py-3 text-charcoal outline-none focus:border-sky focus:ring-2 focus:ring-sky/30"
       />
@@ -456,6 +463,7 @@ function StepIntro({
           {field("lastName", "Last Name")}
         </div>
         {field("email", "Email", "email", "where should we send your build sheet?")}
+        {field("phone", "Phone", "tel", "(480) 555-0134")}
 
         <button
           type="submit"
