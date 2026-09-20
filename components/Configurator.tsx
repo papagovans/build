@@ -573,13 +573,22 @@ function StepFloorPlan({
               }`}
             >
               <div className="relative aspect-[2/1] bg-offwhite">
-                <Image
-                  src={plan.image}
-                  alt={`${plan.name} layout`}
-                  fill
-                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                  className="object-cover"
-                />
+                {/* A plan added in the admin has no gallery until someone
+                    uploads one. Rendering <Image src=""> makes the browser
+                    refetch the whole page, so show the empty state instead. */}
+                {plan.image ? (
+                  <Image
+                    src={plan.image}
+                    alt={`${plan.name} layout`}
+                    fill
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                    className="object-cover"
+                  />
+                ) : (
+                  <div className="absolute inset-0 grid place-content-center text-xs uppercase tracking-widest text-steel">
+                    No layout image yet
+                  </div>
+                )}
               </div>
               <div className="p-5">
                 <h3 className="brand-heading text-xl">{plan.name}</h3>

@@ -157,8 +157,12 @@ export interface BuildPackage {
   name: string;
   tagline: string;
   priceDelta: number;
-  /** Which floor plan offers this trim package. */
-  floorPlanId: string;
+  /**
+   * Which floor plans offer this trim package. Empty means every plan,
+   * including any added later, which is what the admin's unticked state
+   * saves.
+   */
+  floorPlanIds: string[];
   /** Option ids pre-selected when this package is chosen. */
   defaults: string[];
 }
@@ -770,7 +774,7 @@ export const OPTIONS: Option[] = [
  * Three package tiers. In Phase 1 these apply to every floor plan; the CMS will
  * allow per-plan overrides, which is why getPackages() takes a plan id.
  */
-const PACKAGE_TIERS: Omit<BuildPackage, "id" | "floorPlanId">[] = [
+const PACKAGE_TIERS: Omit<BuildPackage, "id" | "floorPlanIds">[] = [
   {
     name: "Essential",
     tagline: "The core build, ready for the road.",
@@ -817,7 +821,9 @@ const PACKAGE_TIERS: Omit<BuildPackage, "id" | "floorPlanId">[] = [
 ];
 
 export function getPackages(catalog: Catalog, floorPlanId: string): BuildPackage[] {
-  return catalog.packages.filter((p) => p.floorPlanId === floorPlanId);
+  return catalog.packages.filter(
+    (p) => p.floorPlanIds.length === 0 || p.floorPlanIds.includes(floorPlanId),
+  );
 }
 
 export function isAvailable(option: Option, floorPlanId: string): boolean {
@@ -856,7 +862,7 @@ export const HARDCODED_CATALOG: Catalog = {
     PACKAGE_TIERS.map((tier) => ({
       ...tier,
       id: `${plan.id}--${tier.name.toLowerCase()}`,
-      floorPlanId: plan.id,
+      floorPlanIds: [plan.id],
       defaults: tier.defaults.filter((optionId) => {
         const option = OPTIONS.find((o) => o.id === optionId);
         return option ? isAvailable(option, plan.id) : false;

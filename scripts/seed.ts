@@ -154,7 +154,7 @@ async function main() {
         tagline: pkg.tagline,
         priceDelta: pkg.priceDelta,
         order: i,
-        floorPlan: planIds.get(plan.id),
+        floorPlans: [planIds.get(plan.id)],
         defaults: pkg.defaults.map((id) => productIds.get(id)).filter(Boolean),
       });
       packageCount += 1;

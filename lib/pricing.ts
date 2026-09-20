@@ -200,7 +200,15 @@ export function applyPackage(
   return {
     floorPlanId,
     packageId,
-    selected: pkg ? [...pkg.defaults] : [],
+    // Filtered against the chosen plan, not taken as given. A trim package can
+    // now be offered on several floor plans, so its defaults may name an
+    // option that does not fit this one.
+    selected: pkg
+      ? pkg.defaults.filter((id) => {
+          const option = getOption(catalog, id);
+          return option ? isAvailable(option, floorPlanId) : false;
+        })
+      : [],
     colors: state.colors,
   };
 }

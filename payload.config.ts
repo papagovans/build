@@ -8,7 +8,10 @@ import {
   buildConfig,
   type Access,
   type CollectionConfig,
+  type Field,
   type FieldAccess,
+  type FieldHook,
+  type Payload,
 } from "payload";
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -34,18 +37,75 @@ const connectionString =
  *   2. It makes the seed idempotent. Re-running it updates rows in place
  *      instead of duplicating the catalog.
  */
-const slugField = {
-  name: "slug",
-  type: "text" as const,
-  required: true,
-  unique: true,
-  index: true,
-  admin: {
-    position: "sidebar" as const,
-    description:
-      "Permanent id used in shared build links. Safe to set once, expensive to change later.",
-  },
-};
+/** "All-Terrain Wheels & Tires Package" -> "all-terrain-wheels-tires-package" */
+export function slugify(input: string) {
+  return input
+    .normalize("NFKD")
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .trim()
+    .replace(/[\s_-]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 60);
+}
+
+/**
+ * The slug is generated from the name on first save and then frozen.
+ *
+ * Frozen rather than merely discouraged because shared `?b=` build links
+ * encode these ids. Editing one silently breaks every link a salesperson has
+ * already sent. `access.update` returning false is what enforces it; the
+ * greyed-out box is only the part staff can see.
+ *
+ * Not marked `required`, deliberately: the admin's client-side validation
+ * would refuse to submit an empty read-only field before the server ever got
+ * the chance to fill it in.
+ */
+// The collection slug is passed in so the uniqueness probe queries the right
+// table. Typed off the generated Config so a typo is a compile error.
+type CatalogCollection = Parameters<Payload["find"]>[0]["collection"];
+
+const slugField = (collection: CatalogCollection): Field => ({
+    name: "slug",
+    type: "text" as const,
+    unique: true,
+    index: true,
+    access: { update: () => false },
+    admin: {
+      position: "sidebar" as const,
+      readOnly: true,
+      description:
+        "Generated from the name when you first save. Permanent: shared build links encode it.",
+    },
+    hooks: {
+      beforeValidate: [
+        (async ({ value, data, originalDoc, req }) => {
+          // Already has one: keep it, whatever the form sent.
+          if (originalDoc?.slug) return originalDoc.slug;
+          // The seed and the restore set slugs explicitly and must win.
+          if (value) return value;
+
+          const base = slugify(String(data?.name ?? ""));
+          if (!base) return value;
+
+          // Two products can legitimately share a name. Without this the save
+          // fails on the unique index with a raw Postgres error.
+          let candidate = base;
+          for (let n = 2; n <= 50; n++) {
+            const { totalDocs } = await req.payload.find({
+              collection,
+              where: { slug: { equals: candidate } },
+              limit: 1,
+              depth: 0,
+            });
+            if (totalDocs === 0) break;
+            candidate = `${base}-${n}`;
+          }
+          return candidate;
+        }) as FieldHook,
+      ],
+    },
+});
 
 /**
  * Two roles, because the people entering catalog data should not also be able
@@ -169,7 +229,7 @@ const Categories: CollectionConfig = {
   defaultSort: "order",
   fields: [
     { name: "name", type: "text", required: true },
-    slugField,
+    slugField("categories"),
     { name: "blurb", type: "text", required: true },
     { name: "order", type: "number", required: true, defaultValue: 0 },
   ],
@@ -186,7 +246,7 @@ const FloorPlans: CollectionConfig = {
   defaultSort: "order",
   fields: [
     { name: "name", type: "text", required: true },
-    slugField,
+    slugField("floor-plans"),
     { name: "tagline", type: "text", required: true },
     {
       name: "basePrice",
@@ -233,7 +293,7 @@ const Products: CollectionConfig = {
   },
   fields: [
     { name: "name", type: "text", required: true },
-    slugField,
+    slugField("products"),
     { name: "description", type: "text" },
     {
       name: "category",
@@ -360,7 +420,7 @@ const TrimPackages: CollectionConfig = {
   defaultSort: "order",
   fields: [
     { name: "name", type: "text", required: true },
-    slugField,
+    slugField("trim-packages"),
     { name: "tagline", type: "text", required: true },
     {
       name: "priceDelta",
@@ -371,12 +431,17 @@ const TrimPackages: CollectionConfig = {
     },
     { name: "order", type: "number", required: true, defaultValue: 0 },
     {
-      name: "floorPlan",
+      name: "floorPlans",
       type: "relationship",
       relationTo: "floor-plans",
+      hasMany: true,
+      label: "Floor plans",
       admin: {
         description:
-          "Leave empty to offer this trim package on every floor plan.",
+          "Leave every box unticked to offer this trim package on all floor plans.",
+        components: {
+          Field: "/components/admin/FloorPlanCheckboxes#FloorPlanCheckboxes",
+        },
       },
     },
     {
@@ -406,7 +471,7 @@ const ColorGroups: CollectionConfig = {
   defaultSort: "order",
   fields: [
     { name: "name", type: "text", required: true },
-    slugField,
+    slugField("color-groups"),
     { name: "blurb", type: "text", required: true },
     { name: "order", type: "number", required: true, defaultValue: 0 },
     {

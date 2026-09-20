@@ -55,7 +55,7 @@ export async function loadCatalog(): Promise<Catalog> {
 
   return {
     categories: categories.docs.map((c) => ({
-      id: c.slug,
+      id: c.slug ?? "",
       name: c.name,
       blurb: c.blurb,
     })),
@@ -63,13 +63,13 @@ export async function loadCatalog(): Promise<Catalog> {
     floorPlans: floorPlans.docs.map((p): FloorPlan => {
       const gallery = (p.gallery ?? [])
         .map((g, i) => ({
-          id: `${p.slug}-${i}`,
+          id: `${p.slug ?? ""}-${i}`,
           label: g.label,
           src: mediaUrl(g.image) ?? "",
         }))
         .filter((g) => g.src);
       return {
-        id: p.slug,
+        id: p.slug ?? "",
         name: p.name,
         tagline: p.tagline,
         basePrice: p.basePrice,
@@ -82,7 +82,7 @@ export async function loadCatalog(): Promise<Catalog> {
     }),
 
     options: products.docs.map((o): Option => ({
-      id: o.slug,
+      id: o.slug ?? "",
       categoryId: relSlug(o.category) ?? "",
       name: o.name,
       description: o.description ?? undefined,
@@ -96,16 +96,16 @@ export async function loadCatalog(): Promise<Catalog> {
     })),
 
     packages: packages.docs.map((p) => ({
-      id: p.slug,
+      id: p.slug ?? "",
       name: p.name,
       tagline: p.tagline,
       priceDelta: p.priceDelta,
-      floorPlanId: relSlug(p.floorPlan) ?? "",
+      floorPlanIds: relSlugs(p.floorPlans),
       defaults: relSlugs(p.defaults),
     })),
 
     colorGroups: colorGroups.docs.map((g): ColorGroup => ({
-      id: g.slug,
+      id: g.slug ?? "",
       categoryId: relSlug(g.category) ?? "",
       name: g.name,
       blurb: g.blurb,

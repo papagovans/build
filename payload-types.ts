@@ -135,9 +135,9 @@ export interface FloorPlan {
   id: number;
   name: string;
   /**
-   * Permanent id used in shared build links. Safe to set once, expensive to change later.
+   * Generated from the name when you first save. Permanent: shared build links encode it.
    */
-  slug: string;
+  slug?: string | null;
   tagline: string;
   /**
    * Includes the Mercedes Sprinter itself. Every price surface in the app says so.
@@ -215,9 +215,9 @@ export interface TrimPackage {
   id: number;
   name: string;
   /**
-   * Permanent id used in shared build links. Safe to set once, expensive to change later.
+   * Generated from the name when you first save. Permanent: shared build links encode it.
    */
-  slug: string;
+  slug?: string | null;
   tagline: string;
   /**
    * Added on top of the floor plan base price.
@@ -225,9 +225,9 @@ export interface TrimPackage {
   priceDelta: number;
   order: number;
   /**
-   * Leave empty to offer this trim package on every floor plan.
+   * Leave every box unticked to offer this trim package on all floor plans.
    */
-  floorPlan?: (number | null) | FloorPlan;
+  floorPlans?: (number | FloorPlan)[] | null;
   /**
    * Ticked on automatically when a buyer picks this trim package. They can still change any of it.
    */
@@ -245,9 +245,9 @@ export interface Product {
   id: number;
   name: string;
   /**
-   * Permanent id used in shared build links. Safe to set once, expensive to change later.
+   * Generated from the name when you first save. Permanent: shared build links encode it.
    */
-  slug: string;
+  slug?: string | null;
   description?: string | null;
   category: number | Category;
   type: 'included' | 'upgrade' | 'addon';
@@ -280,9 +280,9 @@ export interface Category {
   id: number;
   name: string;
   /**
-   * Permanent id used in shared build links. Safe to set once, expensive to change later.
+   * Generated from the name when you first save. Permanent: shared build links encode it.
    */
-  slug: string;
+  slug?: string | null;
   blurb: string;
   order: number;
   updatedAt: string;
@@ -298,9 +298,9 @@ export interface ColorGroup {
   id: number;
   name: string;
   /**
-   * Permanent id used in shared build links. Safe to set once, expensive to change later.
+   * Generated from the name when you first save. Permanent: shared build links encode it.
    */
-  slug: string;
+  slug?: string | null;
   blurb: string;
   order: number;
   /**
@@ -485,7 +485,7 @@ export interface TrimPackagesSelect<T extends boolean = true> {
   tagline?: T;
   priceDelta?: T;
   order?: T;
-  floorPlan?: T;
+  floorPlans?: T;
   defaults?: T;
   updatedAt?: T;
   createdAt?: T;
