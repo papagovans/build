@@ -25,7 +25,8 @@ npm run dev          # storefront localhost:3000, admin localhost:3000/admin
 ```bash
 npm run build        # production build + typecheck
 npm run lint
-npx tsx scripts/seed.ts      # load the catalog into an empty database
+npm run seed                 # load the catalog into an empty database
+npm run backup               # snapshot the database to ./backups
 ```
 
 **This needs a database now.** The catalog lives in Payload on Neon Postgres,
@@ -159,8 +160,11 @@ lib/
   cms.ts               loads the live catalog out of Payload
   pricing.ts           pricing + rules engine + URL state + customer type
   build-sheet.tsx      the PDF document
+  db-backup.ts         logical dump and restore for the Neon database
 payload.config.ts      7 collections, fit-rule guards, storage adapter
 scripts/seed.ts        loads HARDCODED_CATALOG into an empty database
+scripts/backup.ts      snapshots the database to a gzipped JSON file
+scripts/restore.ts     loads a snapshot back, replacing everything
 public/                original art, now also the seed's image source
 ```
 
@@ -242,12 +246,74 @@ back to build-time data.
 
 ### Reseeding
 
-`npx tsx scripts/seed.ts` is safe to re-run: it matches on slug, so it updates
+`npm run seed` is safe to re-run: it matches on slug, so it updates
 in place and re-uploads nothing. Run it after editing `HARDCODED_CATALOG` in
 `lib/catalog.ts`, or to fill a fresh database.
 
 It runs under `tsx` rather than `payload run`, because that runner exits
 without awaiting the script and the seed silently does nothing.
+
+---
+
+## Backing up the catalog
+
+Two layers, because they fail differently.
+
+**Layer 1: Neon's point-in-time restore.** Free, automatic, nothing to run.
+It rewinds the database to any moment inside the retention window, which is
+the right tool for "someone deleted a floor plan an hour ago." Check the
+window in the Neon console under the project's **Settings → Storage →
+History retention**, and raise it to whatever the plan allows before the shop
+starts entering real data. It does not survive the Neon project itself being
+deleted or the Vercel integration being removed, which is why there is a
+layer 2.
+
+**Layer 2: a file you hold.**
+
+```bash
+npm run backup                              # -> ./backups (gitignored)
+BACKUP_DIR="/path/in/Dropbox" npm run backup
+npm run restore -- backups/papago-catalog-<stamp>.json.gz
+```
+
+`npm run backup` only reads, so it is safe any time. It writes a gzipped
+JSON snapshot of every table in the `public` schema, primary keys included;
+the whole catalog is about 11 KB. **Set `BACKUP_DIR`** or the backup sits on
+the same disk as everything else and protects against nothing.
+
+`npm run restore` **replaces the entire database**. It prints which database
+it is pointing at and how many rows it is about to destroy, then waits for
+you to type `restore`. Pass `--yes` to skip that in a script. The whole thing
+runs in one transaction, so a failure leaves the database exactly as it was.
+
+Snapshots carry real pricing and the admin account's password hash, and this
+repo is public, so `/backups` is gitignored. Keep them somewhere private.
+
+**What a snapshot does not contain.** Product images live in Vercel Blob, not
+Postgres; the snapshot records their filenames and URLs, so restoring into a
+database whose Blob store was also wiped gives you a catalog with dead image
+links. The `neon_auth` schema is skipped too: the Vercel integration creates
+it, and this app does not use it, since Payload has its own `users`.
+
+Live sessions, document locks and admin UI preferences are deliberately not
+restored. Everyone signs in again after a restore.
+
+### Verifying a backup
+
+A snapshot nobody has restored is not a backup. The round trip has been run
+against the dev database and is worth repeating after any schema change:
+
+```bash
+npm run backup
+npm run restore -- backups/<the file you just wrote> --yes
+```
+
+Then check the row counts match, `/admin` and the storefront both load, and
+a product image still returns 200 anonymously. Two things that specifically
+broke during development and are now handled: `products.replaces_id` points
+at another product, so those columns go in as null and are filled once every
+row exists; and rows arrive with their original ids, so every identity
+sequence is walked forward afterwards or the next admin save collides.
 
 ---
 

@@ -39,3 +39,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# database snapshots from `npm run backup`. They carry real pricing and the
+# admin account's password hash, and the repo is public.
+/backups

@@ -67,7 +67,11 @@ app renders until you reseed.
 10. **`push` is dev only.** Drizzle syncs the schema straight to Neon, which
     keeps schema changes free while the shape is moving. Generate migrations
     before the shop enters content worth keeping.
-11. **Never deploy against an empty database.** Payload's create-first-user
+11. **Back up before anything destructive.** `npm run backup` writes a
+    gzipped snapshot of every table and only reads, so there is no excuse
+    for skipping it before a migration, a reseed, or a restore. `npm run
+    restore` replaces the whole database and asks first. See README.
+12. **Never deploy against an empty database.** Payload's create-first-user
     screen is open to whoever reaches it first until one account exists.
 
 ## Verifying your work
