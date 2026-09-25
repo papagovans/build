@@ -11,7 +11,8 @@
     "backup": "tsx scripts/backup.ts",
     "restore": "tsx scripts/restore.ts",
     "seed": "tsx scripts/seed.ts",
-    "backup:all": "bash scripts/backup-all.sh"
+    "backup:all": "bash scripts/backup-all.sh",
+    "van-model": "tsx scripts/van-model.ts"
   },
   "dependencies": {
     "@payloadcms/db-postgres": "^3.90.1",
@@ -29,6 +30,9 @@
     "sharp": "^0.35.4"
   },
   "devDependencies": {
+    "@gltf-transform/core": "^4.5.0",
+    "@gltf-transform/extensions": "^4.5.0",
+    "@gltf-transform/functions": "^4.5.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/pg": "^8.20.0",

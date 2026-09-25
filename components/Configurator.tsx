@@ -74,6 +74,11 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://papagovans.com";
  * it here instead of one shared file. */
 const FLOOR_PLAN_MODEL = "/models/floor-plan.glb";
 
+/* A procedural studio light map: one key light from the side, a softer fill,
+ * a dim floor. The viewer's built-in "neutral" light is even from every
+ * direction, which is what made the model look flat and washed out. */
+const STUDIO_LIGHT = "/models/studio.hdr";
+
 /* Google's viewer ships as a web component. Loaded from the CDN rather than
  * npm so three.js stays out of the wizard bundle for the steps without it. */
 const MODEL_VIEWER_SRC =
@@ -880,9 +885,10 @@ function StepFloorPlan({
                   interaction-prompt={isSelected ? "auto" : "none"}
                   disable-zoom=""
                   touch-action="pan-y"
-                  shadow-intensity="1"
-                  exposure="0.8"
-                  environment-image="neutral"
+                  shadow-intensity="1.5"
+                  shadow-softness="0.4"
+                  exposure="0.9"
+                  environment-image={STUDIO_LIGHT}
                   style={{ width: "100%", height: "100%" }}
                 />
                 {!isSelected && (
@@ -950,9 +956,10 @@ function StepGallery({
           max-camera-orbit="auto 88deg auto"
           camera-controls=""
           touch-action="pan-y"
-          shadow-intensity="1"
-          exposure="0.8"
-          environment-image="neutral"
+          shadow-intensity="1.5"
+          shadow-softness="0.4"
+          exposure="0.9"
+          environment-image={STUDIO_LIGHT}
           style={{ width: "100%", height: "100%" }}
         />
         <span className="pointer-events-none absolute left-4 bottom-4 px-3 py-1 rounded-full bg-navy/85 text-white text-xs font-bold uppercase tracking-widest">

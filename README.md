@@ -70,6 +70,23 @@ Not customer-facing yet.
   `public/models/floor-plan.glb`. Fine for testing the flow, will confuse a
   real buyer comparing El Capitan against Rainier. Builds 2 to 4 exist as
   `.skp` in Dropbox and need exporting to `.glb`.
+
+### Making a 3D model
+
+Export from SketchUp as `.glb` (the SimLab exporter), delete any placeholder
+boxes first, then:
+
+```bash
+npm run van-model -- "<export>.glb" public/models/floor-plan.glb
+```
+
+The raw export renders flat and washed out. The script fixes the exporter's
+colour-space mistake, gives each material a real finish from its name (wood
+matte, steel metallic), deepens the colours, and compresses about 50 MB down
+to under 3 MB. Name materials plainly in SketchUp ("Oak", "Brushed Steel")
+and they come out right. It also lays a teal bedspread over any mattress
+whose material is named "Bedding". The lighting is `public/models/studio.hdr`, drawn by
+`scripts/studio-light.py`.
 - **Product photos are retailer/manufacturer images used as mockup placeholders.
   They are not licensed for public launch.** Replace with owned, licensed, or
   supplier-provided imagery before going customer-facing.
