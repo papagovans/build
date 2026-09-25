@@ -50,7 +50,7 @@ Not customer-facing yet.
 
 | Working | Not built yet |
 |---|---|
-| 14-step wizard | Email adapter (writes to console today) |
+| 5-stage wizard, van length first | Email adapter (writes to console today) |
 | Pricing engine | |
 | Compatibility rules engine | Real catalog data and pricing |
 | **HubSpot lead submission** | |
@@ -78,7 +78,8 @@ Not customer-facing yet.
 
 ```
 Intro (name/email)
-  → Floor Plan        5 layouts
+  → Van Length        144, 170, 170 EXT
+  → Floor Plan        5 layouts, filtered to the ones built on that chassis
   → Layout            gallery, 8 views of the chosen plan
   → Trim Package      3 tiers, each pre-fills every category
   → 9 Categories      Electricity, Plumbing, Heating/Cooling, Kitchen,
@@ -109,7 +110,8 @@ engine — do not flatten it into a generic list.
 | `addon` | Purely additive | the **full** amount |
 
 ```
-total = floorPlan.basePrice
+total = floorPlan.basePrice          the price on the shortest van
+      + vanLength.priceDelta        0 on a 144, +12k on a 170, +20k on a 170 EXT
       + package.priceDelta
       + Σ(selected upgrade deltas)
       + Σ(selected addon prices)
@@ -122,7 +124,10 @@ every choice keeps a `price` field that already flows through `priceBuild()`,
 the Build Sheet, and the `?b=` URL, so a premium finish can carry an upcharge
 later with no schema change.
 
-**Base price is $180,000 for all five plans and includes the van.** This
+**Base price is $180,000 for all five plans on a 144, and includes the van.**
+The chassis adds a delta on top: the 170 adds $12,000 and the 170 EXT adds
+$20,000. `basePrice` stays on the floor plan so three lengths times five plans
+is eight numbers to maintain rather than fifteen that drift apart. This
 differs from the public marketing site, which quotes $53k–$127k *excluding*
 the van. Every price surface in the app must say "van included."
 

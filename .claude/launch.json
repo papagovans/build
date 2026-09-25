@@ -25,6 +25,18 @@
         "4399"
       ],
       "port": 4399
+    },
+    {
+      "name": "configurator",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "--prefix",
+        "/Users/jerry/projects/papagovans-build",
+        "run",
+        "dev"
+      ],
+      "port": 3000,
+      "autoPort": true
     }
   ]
 }

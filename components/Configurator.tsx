@@ -17,6 +17,8 @@ import {
   colorGroupsFor,
   type Catalog,
   type Category,
+  getVanLength,
+  planFitsLength,
   type ColorChoice,
   type ColorGroup,
   type FloorPlan,
@@ -33,6 +35,7 @@ import {
   priceBuild,
   setColor,
   setFloorPlan,
+  setVanLength,
   isValidCustomer,
   toggleOption,
   type BuildState,
@@ -40,15 +43,19 @@ import {
 } from "@/lib/pricing";
 
 /**
- * The first five indices are fixed. Everything from CATEGORY_STEP_OFFSET on
+ * The first six indices are fixed. Everything from CATEGORY_STEP_OFFSET on
  * depends on how many categories the shop has published, so the total and the
  * summary index are computed per catalog rather than hardcoded.
+ *
+ * Length comes before floor plan because the chassis narrows which plans are
+ * even offered, and because it is the question a buyer can answer first.
  */
 const INTRO_STEP = 0;
-const PLAN_STEP = 1;
-const GALLERY_STEP = 2;
-const PACKAGE_STEP = 3;
-const CATEGORY_STEP_OFFSET = 4;
+const LENGTH_STEP = 1;
+const PLAN_STEP = 2;
+const GALLERY_STEP = 3;
+const PACKAGE_STEP = 4;
+const CATEGORY_STEP_OFFSET = 5;
 
 const CUSTOMER_KEY = "pv_customer";
 
@@ -116,7 +123,11 @@ export default function Configurator({ catalog }: { catalog: Catalog }) {
   const breakdown = useMemo(() => priceBuild(catalog, build), [catalog, build]);
 
   const canAdvance =
-    step <= GALLERY_STEP ? Boolean(build.floorPlanId) : Boolean(build.packageId);
+    step === LENGTH_STEP
+      ? Boolean(build.vanLengthId)
+      : step <= GALLERY_STEP
+        ? Boolean(build.floorPlanId)
+        : Boolean(build.packageId);
 
   /** Last name drives the personalized headlines, with a neutral fallback. */
   const surname = customer.lastName.trim();
@@ -140,10 +151,11 @@ export default function Configurator({ catalog }: { catalog: Catalog }) {
       {step > INTRO_STEP && (
         <div className="sticky top-0 z-30 shadow-sm">
           <VanContextBar planName={plan?.name} surname={surname} />
-          {build.floorPlanId && (
+          {build.vanLengthId && (
             <Stepper
               step={step}
               onJump={goTo}
+              hasLength={Boolean(build.vanLengthId)}
               hasPlan={Boolean(build.floorPlanId)}
               hasPackage={Boolean(build.packageId)}
             />
@@ -156,13 +168,25 @@ export default function Configurator({ catalog }: { catalog: Catalog }) {
           <StepIntro
             customer={customer}
             onChange={setCustomer}
-            onContinue={() => goTo(PLAN_STEP)}
+            onContinue={() => goTo(LENGTH_STEP)}
+          />
+        )}
+
+        {step === LENGTH_STEP && (
+          <StepVanLength
+            selectedId={build.vanLengthId}
+            possessive={possessive}
+            onSelect={(id) => {
+              setBuild((b) => setVanLength(catalog, b, id));
+              goTo(PLAN_STEP);
+            }}
           />
         )}
 
         {step === PLAN_STEP && (
           <StepFloorPlan
             selectedId={build.floorPlanId}
+            vanLengthId={build.vanLengthId}
             possessive={possessive}
             onSelect={(id) => {
               setBuild((b) => setFloorPlan(b, id));
@@ -302,8 +326,8 @@ function Hero() {
             Build Your Van
           </h1>
           <p className="mt-3 text-white/75">
-            Five floor plans, three trim packages, then customize across nine
-            categories. Your estimated total updates as you go.
+            Three van lengths, five floor plans and three trim packages, then
+            customize from there. Your estimated total updates as you go.
           </p>
         </div>
 
@@ -488,17 +512,20 @@ function StepIntro({
 function Stepper({
   step,
   onJump,
+  hasLength,
   hasPlan,
   hasPackage,
 }: {
   step: number;
   onJump: (n: number) => void;
+  hasLength: boolean;
   hasPlan: boolean;
   hasPackage: boolean;
 }) {
   const catalog = useCatalog();
   const labels = [
     "Your Info",
+    "Van Length",
     "Floor Plan",
     "Layout",
     "Trim Package",
@@ -515,7 +542,14 @@ function Stepper({
         <ol className="flex gap-1 overflow-x-auto py-3 text-xs">
           {labels.map((label, i) => {
             const isCurrent = i === step;
-            const reachable = i <= PLAN_STEP || (i <= PACKAGE_STEP ? hasPlan : hasPackage);
+            const reachable =
+              i <= LENGTH_STEP
+                ? true
+                : i === PLAN_STEP
+                  ? hasLength
+                  : i <= PACKAGE_STEP
+                    ? hasPlan
+                    : hasPackage;
             return (
               <li key={label} className="shrink-0">
                 <button
@@ -541,7 +575,16 @@ function Stepper({
   );
 }
 
-function StepFloorPlan({
+/**
+ * Step one after the intro: which Sprinter.
+ *
+ * Cards lead with what the length gets you and carry the wheelbase underneath,
+ * because nobody arrives at a van site having already decided they want 170
+ * inches. The price shown is what the chassis adds, not a total, since no floor
+ * plan has been chosen yet and a total here would be a number we cannot stand
+ * behind.
+ */
+function StepVanLength({
   selectedId,
   possessive,
   onSelect,
@@ -555,11 +598,85 @@ function StepFloorPlan({
     <section>
       <StepHeading
         eyebrow={possessive}
+        title="Choose Your Van"
+        blurb="Every build starts with a Mercedes-Benz Sprinter, and the length decides how much room you have to work with. You can change it later."
+      />
+      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        {catalog.vanLengths.map((length) => {
+          const isSelected = length.id === selectedId;
+          return (
+            <button
+              key={length.id}
+              onClick={() => onSelect(length.id)}
+              aria-pressed={isSelected}
+              className={`group text-left bg-white rounded-lg overflow-hidden border-2 transition-all hover:shadow-lg ${
+                isSelected
+                  ? "border-gold shadow-lg"
+                  : "border-transparent hover:border-sky/40"
+              }`}
+            >
+              <div className="relative aspect-[2/1] bg-offwhite">
+                {length.image ? (
+                  <Image
+                    src={length.image}
+                    alt={`${length.name} Sprinter`}
+                    fill
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                    className="object-cover"
+                  />
+                ) : (
+                  <div className="absolute inset-0 grid place-content-center text-xs uppercase tracking-widest text-steel">
+                    No image yet
+                  </div>
+                )}
+              </div>
+              <div className="p-5">
+                <h3 className="brand-heading text-xl">{length.name}</h3>
+                <p className="mt-1 text-sm text-steel min-h-10">{length.tagline}</p>
+                <p className="mt-4 text-sm font-bold text-navy">
+                  {length.priceDelta === 0
+                    ? "Included in the base price"
+                    : `${formatPrice(length.priceDelta)} more van`}
+                </p>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+function StepFloorPlan({
+  selectedId,
+  vanLengthId,
+  possessive,
+  onSelect,
+}: {
+  selectedId: string | null;
+  vanLengthId: string | null;
+  possessive: string;
+  onSelect: (id: string) => void;
+}) {
+  const catalog = useCatalog();
+  /* Only the plans the shop builds on this chassis. A plan with no lengths set
+   * fits all of them, so an unconfigured catalog shows everything rather than
+   * nothing. */
+  const plans = vanLengthId
+    ? catalog.floorPlans.filter((p) => planFitsLength(catalog, p.id, vanLengthId))
+    : catalog.floorPlans;
+  const lengthDelta = vanLengthId
+    ? (getVanLength(catalog, vanLengthId)?.priceDelta ?? 0)
+    : 0;
+  return (
+    <section>
+      <StepHeading
+        eyebrow={possessive}
         title="Choose Your Floor Plan"
         blurb="Every plan is built to order on a Mercedes Sprinter, and every price includes the van. Pick the layout that fits how you travel."
       />
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {catalog.floorPlans.map((plan) => {
+        {plans.map((plan) => {
           const isSelected = plan.id === selectedId;
           return (
             <button
@@ -600,8 +717,11 @@ function StepFloorPlan({
                     </span>
                   ))}
                 </div>
+                {/* basePrice is the price on the shortest van, so the chosen
+                    chassis has to be added back or this card undercuts the
+                    total the buyer sees on the next screen. */}
                 <p className="mt-4 text-sm font-bold text-navy">
-                  Starts at {formatPrice(plan.basePrice)}
+                  Starts at {formatPrice(plan.basePrice + lengthDelta)}
                 </p>
                 <p className="text-xs text-steel">Van included</p>
               </div>

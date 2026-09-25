@@ -912,7 +912,7 @@ const VAN_LENGTHS: VanLength[] = [
   {
     id: "sprinter-144",
     name: "Fits A Standard Garage",
-    tagline: '144" wheelbase, for solo travellers and couples',
+    tagline: '144" wheelbase, for solo travelers and couples',
     priceDelta: 0,
     image: "/floorplans/cutaway.webp",
   },
