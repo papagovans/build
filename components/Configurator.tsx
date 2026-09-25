@@ -83,6 +83,34 @@ const FLOOR_PLAN_MODEL = "/models/floor-plan.glb";
  * direction, which is what made the model look flat and washed out. */
 const STUDIO_LIGHT = "/models/studio.hdr";
 
+/* Walking the aisle in first person. Metres, in the model's own coordinates:
+ * the floor is at 0.12, the aisle runs from the bed edge (x 1.64) to behind
+ * the cab seats, between the fridge face and the kitchen counter.
+ * ponytail: hand-measured on Build 1. Each plan needs its own aisle once
+ * Builds 2 to 4 have models. */
+const WALK = {
+  eye: 1.62,
+  x: [1.85, 4.25] as const,
+  z: [-1.45, -1.1] as const,
+  start: { x: 4.2, z: -1.28, theta: 90 },
+  /* Degrees from straight up; 90 is level. A little below level is how
+   * people look round a room, and it keeps counters and floor in frame. */
+  gaze: 78,
+  step: 0.1,
+  turnDeg: 5,
+};
+
+/* The slice of model-viewer's element API the walk mode drives. */
+type ModelViewerElement = HTMLElement & {
+  cameraTarget: string;
+  cameraOrbit: string;
+  getCameraOrbit(): { theta: number; phi: number; radius: number };
+  getCameraTarget(): { x: number; y: number; z: number };
+};
+
+const clamp = (v: number, [lo, hi]: readonly [number, number]) =>
+  Math.min(hi, Math.max(lo, v));
+
 /* Google's viewer ships as a web component. Loaded from the CDN rather than
  * npm so three.js stays out of the wizard bundle for the steps without it. */
 const MODEL_VIEWER_SRC =
@@ -943,6 +971,43 @@ function StepFloorPlan({
   );
 }
 
+/* On-screen arrows, for phones and tablets with no keyboard. Hold to keep
+ * walking: one step every 60ms while the pointer is down. */
+function WalkPad({ onStep }: { onStep: (forward: number, turn: number) => void }) {
+  const timer = useRef<ReturnType<typeof setInterval> | null>(null);
+  const stop = () => {
+    if (timer.current) clearInterval(timer.current);
+    timer.current = null;
+  };
+  useEffect(() => stop, []);
+  const hold = (forward: number, turn: number, label: string, glyph: string, cls: string) => (
+    <button
+      type="button"
+      aria-label={label}
+      onPointerDown={(e) => {
+        e.preventDefault();
+        stop();
+        onStep(forward, turn);
+        timer.current = setInterval(() => onStep(forward, turn), 60);
+      }}
+      onPointerUp={stop}
+      onPointerLeave={stop}
+      onPointerCancel={stop}
+      className={`${cls} grid place-content-center w-10 h-10 rounded-md bg-navy/85 text-white text-lg select-none touch-none hover:bg-navy`}
+    >
+      {glyph}
+    </button>
+  );
+  return (
+    <div className="absolute right-4 bottom-4 grid grid-cols-3 grid-rows-2 gap-1">
+      {hold(1, 0, "Walk forward", "\u2191", "col-start-2")}
+      {hold(0, 1, "Turn left", "\u2190", "col-start-1 row-start-2")}
+      {hold(-1, 0, "Walk back", "\u2193", "col-start-2 row-start-2")}
+      {hold(0, -1, "Turn right", "\u2192", "col-start-3 row-start-2")}
+    </div>
+  );
+}
+
 function StepGallery({
   plan,
   onContinue,
@@ -950,6 +1015,88 @@ function StepGallery({
   plan: FloorPlan;
   onContinue: () => void;
 }) {
+  const viewer = useRef<ModelViewerElement>(null);
+  const [walking, setWalking] = useState(false);
+  /* Where the walker is heading, kept here rather than read off the viewer:
+   * the viewer glides toward each new pose, so reading it mid-glide loses
+   * part of every step when a key is held. Radians. */
+  const pose = useRef({ x: 0, z: 0, heading: 0, phi: Math.PI / 2 });
+
+  /* The camera sits a centimetre behind its target, so orbiting the target
+   * is turning your head, and moving the target is walking. */
+  const place = useCallback(() => {
+    const el = viewer.current;
+    if (!el) return;
+    const { x, z, heading, phi } = pose.current;
+    el.cameraTarget = `${x}m ${WALK.eye}m ${z}m`;
+    el.cameraOrbit = `${heading}rad ${phi}rad 0.01m`;
+  }, []);
+
+  const walk = useCallback((forward: number, turn: number) => {
+    const p = pose.current;
+    p.heading += (turn * WALK.turnDeg * Math.PI) / 180;
+    // The camera looks from its orbit position toward the target, so
+    // "forward" points away from where the orbit angle puts the camera.
+    p.x = clamp(p.x - Math.sin(p.heading) * forward * WALK.step, WALK.x);
+    p.z = clamp(p.z - Math.cos(p.heading) * forward * WALK.step, WALK.z);
+    place();
+  }, [place]);
+
+  /* Dragging to look around changes the heading; pick it up so the next
+   * step goes where the buyer is now facing. */
+  useEffect(() => {
+    const el = viewer.current;
+    if (!el || !walking) return;
+    const onChange = (e: Event) => {
+      if ((e as CustomEvent<{ source: string }>).detail.source !== "user-interaction") return;
+      const { theta, phi } = el.getCameraOrbit();
+      pose.current.heading = theta;
+      pose.current.phi = phi;
+    };
+    el.addEventListener("camera-change", onChange);
+    return () => el.removeEventListener("camera-change", onChange);
+  }, [walking]);
+
+  const enterWalk = () => {
+    const { x, z, theta } = WALK.start;
+    pose.current = { x, z, heading: (theta * Math.PI) / 180, phi: (WALK.gaze * Math.PI) / 180 };
+    setWalking(true);
+  };
+  // After the render that loosens the orbit limits, or the viewer clamps
+  // the starting pose to the orbit view's limits.
+  useEffect(() => {
+    if (walking) place();
+  }, [walking, place]);
+
+  const exitWalk = useCallback(() => {
+    const el = viewer.current;
+    if (el) {
+      el.cameraTarget = "auto auto auto";
+      el.cameraOrbit = "35deg 65deg 70%";
+    }
+    setWalking(false);
+  }, []);
+
+  /* Capture phase, so the arrows reach us before the viewer's own orbit
+   * keys and before the page scrolls. Only while walking. */
+  useEffect(() => {
+    if (!walking) return;
+    const keys: Record<string, [number, number]> = {
+      ArrowUp: [1, 0], w: [1, 0], ArrowDown: [-1, 0], s: [-1, 0],
+      ArrowLeft: [0, 1], a: [0, 1], ArrowRight: [0, -1], d: [0, -1],
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") return exitWalk();
+      const k = keys[e.key.length === 1 ? e.key.toLowerCase() : e.key];
+      if (!k) return;
+      e.preventDefault();
+      e.stopPropagation();
+      walk(...k);
+    };
+    window.addEventListener("keydown", onKey, true);
+    return () => window.removeEventListener("keydown", onKey, true);
+  }, [walking, walk, exitWalk]);
+
   return (
     <section>
       <Script type="module" src={MODEL_VIEWER_SRC} strategy="afterInteractive" />
@@ -964,10 +1111,17 @@ function StepGallery({
           shop decides it is not needed. */}
       <div className="relative aspect-[2/1] bg-offwhite rounded-lg overflow-hidden">
         <model-viewer
+          ref={viewer}
           src={FLOOR_PLAN_MODEL}
           alt={`${plan.name} 3D layout`}
           camera-orbit="35deg 65deg 70%"
-          max-camera-orbit="auto 88deg auto"
+          /* Walking: head turns all the way round and tilts up and down, the
+             distance is pinned at a centimetre, and scroll-zoom is off so it
+             cannot pull the camera out of your head. */
+          min-camera-orbit={walking ? "-Infinity 35deg 0.01m" : "auto auto auto"}
+          max-camera-orbit={walking ? "Infinity 145deg 0.01m" : "auto 88deg auto"}
+          field-of-view={walking ? "70deg" : "auto"}
+          disable-zoom={walking ? "" : undefined}
           camera-controls=""
           touch-action="pan-y"
           shadow-intensity="1.5"
@@ -977,8 +1131,20 @@ function StepGallery({
           style={{ width: "100%", height: "100%" }}
         />
         <span className="pointer-events-none absolute left-4 bottom-4 px-3 py-1 rounded-full bg-navy/85 text-white text-xs font-bold uppercase tracking-widest">
-          Drag to rotate · Scroll to zoom
+          {walking ? (
+            <>Drag to look<span className="hidden sm:inline"> · Arrows to walk · Esc to exit</span></>
+          ) : (
+            "Drag to rotate · Scroll to zoom"
+          )}
         </span>
+        <button
+          type="button"
+          onClick={walking ? exitWalk : enterWalk}
+          className="absolute right-4 top-4 px-4 py-2 rounded-full bg-gold text-navy text-xs font-bold uppercase tracking-widest shadow hover:bg-gold-deep transition-colors"
+        >
+          {walking ? "Exit walk-through" : "Walk inside"}
+        </button>
+        {walking && <WalkPad onStep={walk} />}
       </div>
 
       <div className="mt-6 grid gap-4 sm:grid-cols-3">
