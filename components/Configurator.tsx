@@ -1281,10 +1281,12 @@ function CategorySection({
       {included.length > 0 && (
         <OptionGroup title="Included in your build">
           {included.map((o) => (
-            <IncludedRow
+            <OptionCard
               key={o.id}
               option={o}
-              superseded={isSuperseded(catalog, o.id, selected)}
+              state={isSuperseded(catalog, o.id, selected) ? "superseded" : "included"}
+              selected={selected}
+              onToggle={onToggle}
               onExpand={onExpand}
             />
           ))}
@@ -1294,10 +1296,10 @@ function CategorySection({
       {upgrades.length > 0 && (
         <OptionGroup title="Upgrade options">
           {upgrades.map((o) => (
-            <OptionRow
+            <OptionCard
               key={o.id}
               option={o}
-              checked={selected.includes(o.id)}
+              state="choosable"
               selected={selected}
               onToggle={onToggle}
               onExpand={onExpand}
@@ -1309,10 +1311,10 @@ function CategorySection({
       {addons.length > 0 && (
         <OptionGroup title="Add-ons">
           {addons.map((o) => (
-            <OptionRow
+            <OptionCard
               key={o.id}
               option={o}
-              checked={selected.includes(o.id)}
+              state="choosable"
               selected={selected}
               onToggle={onToggle}
               onExpand={onExpand}
@@ -1600,6 +1602,14 @@ function StepHeading({
   );
 }
 
+/**
+ * A run of option cards under a small heading.
+ *
+ * Cards rather than list rows, following the reference configurator. A row
+ * gives every option the same visual weight and buries the photograph at
+ * thumbnail size; a card leads with the photograph, which is what someone
+ * deciding between two water heaters actually wants to look at.
+ */
 function OptionGroup({
   title,
   children,
@@ -1608,60 +1618,146 @@ function OptionGroup({
   children: React.ReactNode;
 }) {
   return (
-    <div className="mb-8">
+    <div className="mb-9">
       <h3 className="text-xs font-bold uppercase tracking-widest text-steel mb-3">
         {title}
       </h3>
-      <div className="space-y-2">{children}</div>
+      <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+        {children}
+      </div>
     </div>
   );
 }
 
-/**
- * Square 1:1 slot so rows stay aligned whether or not an image exists yet.
- * Clicking expands into the lightbox. Because these sit inside the option's
- * <label>, the click must be stopped from toggling the checkbox.
- */
-function OptionThumb({
+/** 4:3 photo slot. Cover, so a card is the same height whatever it holds. */
+function CardImage({
   option,
   onExpand,
 }: {
   option: Option;
-  onExpand?: (option: Option) => void;
+  onExpand: (option: Option) => void;
 }) {
-  const base =
-    "shrink-0 w-20 h-20 rounded-md overflow-hidden bg-white border border-black/10 relative";
-
   if (!option.thumb) {
     return (
-      <div className={`${base} grid place-items-center`}>
-        <span className="text-steel/40 text-2xl font-bold">
+      <div className="aspect-[4/3] rounded-md bg-offwhite grid place-items-center">
+        <span className="text-steel/30 text-3xl font-bold">
           {option.name.charAt(0)}
         </span>
       </div>
     );
   }
-
   return (
     <button
       type="button"
-      onClick={(e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        onExpand?.(option);
-      }}
-      aria-label={`Expand photo of ${option.name}`}
-      className={`${base} group cursor-zoom-in hover:border-sky transition-colors`}
+      onClick={() => onExpand(option)}
+      aria-label={`More about ${option.name}`}
+      className="relative aspect-[4/3] w-full rounded-md overflow-hidden bg-white cursor-zoom-in group"
     >
-      <Image src={option.thumb} alt="" fill sizes="80px" className="object-contain p-1" />
-      <span className="absolute inset-0 bg-navy/0 group-hover:bg-navy/10 transition-colors" />
-      <span className="absolute bottom-1 right-1 w-5 h-5 rounded bg-navy/75 text-white text-[11px] leading-5 text-center opacity-0 group-hover:opacity-100 transition-opacity">
-        ⤢
-      </span>
+      <Image
+        src={option.thumb}
+        alt=""
+        fill
+        sizes="(max-width: 640px) 50vw, (max-width: 1280px) 25vw, 20vw"
+        className="object-cover transition-transform duration-300 group-hover:scale-[1.04]"
+      />
     </button>
   );
 }
 
+/**
+ * One option.
+ *
+ * Included items are cards too, not a separate list. They are part of the van
+ * whether or not the buyer picked them, and showing them the same way is how
+ * someone sees what their trim package already bought.
+ */
+function OptionCard({
+  option,
+  state,
+  selected,
+  onToggle,
+  onExpand,
+}: {
+  option: Option;
+  /** included: ships as standard. superseded: replaced by a chosen upgrade. */
+  state: "choosable" | "included" | "superseded";
+  selected: string[];
+  onToggle: (id: string) => void;
+  onExpand: (option: Option) => void;
+}) {
+  const catalog = useCatalog();
+  const checked = selected.includes(option.id);
+  const requirement = option.requires?.[0];
+  const requirementName = requirement ? getOption(catalog, requirement)?.name : undefined;
+  const blocked = Boolean(requirement && !selected.includes(requirement));
+
+  const border = checked
+    ? "border-gold"
+    : state === "superseded"
+      ? "border-transparent"
+      : "border-transparent hover:border-sky/40";
+
+  return (
+    <div
+      className={`bg-white rounded-lg border-2 p-2.5 flex flex-col transition-colors ${border} ${
+        state === "superseded" ? "opacity-45" : ""
+      }`}
+    >
+      <CardImage option={option} onExpand={onExpand} />
+
+      <p
+        className={`mt-2.5 text-[13px] font-semibold leading-snug text-charcoal ${
+          state === "superseded" ? "line-through" : ""
+        }`}
+      >
+        {option.name}
+      </p>
+
+      {state === "superseded" && (
+        <p className="mt-1 text-[11px] text-sky">Replaced by your upgrade</p>
+      )}
+      {blocked && state === "choosable" && (
+        <p className="mt-1 text-[11px] text-steel">Needs {requirementName}</p>
+      )}
+
+      {/* Pushed to the bottom so price and control line up across a row
+          regardless of how long the names above them run. */}
+      <div className="mt-auto pt-3 flex items-center justify-between gap-2">
+        <span className="text-[13px] font-bold text-navy">
+          {state === "choosable" && option.price > 0 ? formatPrice(option.price) : "$0"}
+        </span>
+
+        {state === "choosable" ? (
+          <button
+            type="button"
+            onClick={() => onToggle(option.id)}
+            aria-pressed={checked}
+            className={`shrink-0 rounded border px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide transition-colors ${
+              checked
+                ? "bg-navy border-navy text-white hover:bg-navy-deep"
+                : "border-navy/40 text-navy hover:border-navy"
+            }`}
+          >
+            {checked ? "Added" : "Add"}
+          </button>
+        ) : (
+          <span className="shrink-0 rounded border border-black/10 bg-offwhite px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-steel">
+            Included
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Detail panel for one option.
+ *
+ * A drawer off the right edge rather than a centred modal. The grid stays
+ * visible behind it, so someone comparing two water heaters can open one, read
+ * it, close it and open the next without losing their place on a page that is
+ * seven thousand pixels long.
+ */
 function Lightbox({
   option,
   onClose,
@@ -1671,148 +1767,64 @@ function Lightbox({
 }) {
   useEffect(() => {
     if (!option) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
     window.addEventListener("keydown", onKey);
-    document.body.style.overflow = "hidden";
-    return () => {
-      window.removeEventListener("keydown", onKey);
-      document.body.style.overflow = "";
-    };
+    return () => window.removeEventListener("keydown", onKey);
   }, [option, onClose]);
 
-  if (!option?.thumb) return null;
+  if (!option) return null;
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-label={option.name}
-      onClick={onClose}
-      className="fixed inset-0 z-50 bg-navy/80 backdrop-blur-sm grid place-items-center p-4 animate-[fadeIn_150ms_ease-out]"
-    >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        className="bg-white rounded-lg max-w-2xl w-full overflow-hidden"
-      >
-        <div className="relative aspect-square max-h-[60vh] bg-white">
-          <Image
-            src={option.thumb}
-            alt={option.name}
-            fill
-            sizes="(max-width: 768px) 100vw, 672px"
-            className="object-contain p-6"
-          />
-        </div>
-        <div className="flex items-start gap-4 p-5 border-t border-black/10">
-          <div className="flex-1">
-            <p className="brand-heading text-lg">{option.name}</p>
-            {option.description && (
-              <p className="text-sm text-steel mt-1">{option.description}</p>
-            )}
-            <p className="text-xs text-steel/70 mt-2">
-              Representative product photo. Final components confirmed at build
-              consultation.
-            </p>
-          </div>
+    <div className="fixed inset-0 z-50" role="dialog" aria-modal="true" aria-label={option.name}>
+      <button
+        type="button"
+        aria-label="Close"
+        onClick={onClose}
+        className="absolute inset-0 bg-navy/45 cursor-default"
+      />
+      <aside className="absolute right-0 top-0 h-full w-full max-w-[440px] bg-white shadow-2xl overflow-y-auto">
+        <div className="sticky top-0 flex justify-end p-3 bg-white">
           <button
+            type="button"
             onClick={onClose}
-            autoFocus
             aria-label="Close"
-            className="shrink-0 px-4 py-2 rounded bg-navy text-white text-xs font-bold uppercase tracking-wide hover:bg-navy-deep transition-colors"
+            className="w-9 h-9 rounded-full bg-navy text-white text-lg leading-none hover:bg-navy-deep"
           >
-            Close
+            ×
           </button>
         </div>
-      </div>
-    </div>
-  );
-}
 
-function IncludedRow({
-  option,
-  superseded,
-  onExpand,
-}: {
-  option: Option;
-  superseded: boolean;
-  onExpand: (option: Option) => void;
-}) {
-  return (
-    <div
-      className={`flex items-center gap-3 bg-white rounded-lg p-4 ${
-        superseded ? "opacity-45" : ""
-      }`}
-    >
-      <span className="text-gold font-bold">✓</span>
-      <OptionThumb option={option} onExpand={onExpand} />
-      <div className="flex-1">
-        <p
-          className={`font-semibold text-charcoal ${superseded ? "line-through" : ""}`}
-        >
-          {option.name}
-        </p>
-        {option.description && (
-          <p className="text-sm text-steel">{option.description}</p>
-        )}
-        {superseded && (
-          <p className="text-xs text-sky mt-1">Replaced by your selected upgrade</p>
-        )}
-      </div>
-      <span className="text-sm text-steel whitespace-nowrap">Included</span>
-    </div>
-  );
-}
+        <div className="px-6 pb-10">
+          {option.thumb && (
+            <div className="relative aspect-[4/3] rounded-lg overflow-hidden bg-offwhite">
+              <Image
+                src={option.thumb}
+                alt={option.name}
+                fill
+                sizes="440px"
+                className="object-cover"
+              />
+            </div>
+          )}
 
-function OptionRow({
-  option,
-  checked,
-  selected,
-  onToggle,
-  onExpand,
-}: {
-  option: Option;
-  checked: boolean;
-  selected: string[];
-  onToggle: (id: string) => void;
-  onExpand: (option: Option) => void;
-}) {
-  const catalog = useCatalog();
-  const requirement = option.requires?.[0];
-  const requirementName = requirement
-    ? getOption(catalog, requirement)?.name
-    : undefined;
-  const requirementMissing = Boolean(requirement && !selected.includes(requirement));
+          <h2 className="brand-heading text-2xl mt-5">{option.name}</h2>
 
-  return (
-    <label
-      className={`flex items-center gap-3 bg-white rounded-lg p-4 cursor-pointer border-2 transition-colors ${
-        checked ? "border-gold" : "border-transparent hover:border-sky/40"
-      }`}
-    >
-      <input
-        type="checkbox"
-        checked={checked}
-        onChange={() => onToggle(option.id)}
-        className="h-4 w-4 accent-[#303c47]"
-      />
-      <OptionThumb option={option} onExpand={onExpand} />
-      <div className="flex-1">
-        <p className="font-semibold text-charcoal">{option.name}</p>
-        {option.description && (
-          <p className="text-sm text-steel">{option.description}</p>
-        )}
-        {requirementName && requirementMissing && (
-          <p className="text-xs text-sky mt-1">
-            Selecting this will also add {requirementName}
+          {option.description && (
+            <p className="mt-3 text-[15px] leading-relaxed text-steel">
+              {option.description}
+            </p>
+          )}
+
+          <p className="mt-5 text-sm font-bold text-navy">
+            {option.type === "included"
+              ? "Included in your build"
+              : option.type === "upgrade"
+                ? `${formatPrice(option.price)} to upgrade`
+                : `${formatPrice(option.price)} to add`}
           </p>
-        )}
-      </div>
-      <span className="text-sm font-bold text-navy whitespace-nowrap">
-        +{formatPrice(option.price)}
-      </span>
-    </label>
+        </div>
+      </aside>
+    </div>
   );
 }
 
