@@ -1,11 +1,30 @@
 {
-	"version": "0.0.1",
-	"configurations": [
-		{
-			"name": "build-app",
-			"runtimeExecutable": "npm",
-			"runtimeArgs": ["run", "dev"],
-			"port": 3000
-		}
-	]
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "papagovans-site",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "--prefix",
+        "/Users/jerry/projects/papagovans-site",
+        "run",
+        "dev"
+      ],
+      "port": 3000,
+      "autoPort": true
+    },
+    {
+      "name": "papago-plan",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "astro",
+        "preview",
+        "--root",
+        "/Volumes/4TB ExtremePro/Dropbox/SumoLab/Clients/Papago Vans/papago-site",
+        "--port",
+        "4399"
+      ],
+      "port": 4399
+    }
+  ]
 }

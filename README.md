@@ -50,11 +50,12 @@ Not customer-facing yet.
 
 | Working | Not built yet |
 |---|---|
-| 14-step wizard | HubSpot lead submission |
-| Pricing engine | Per-floor-plan renders |
+| 14-step wizard | Email adapter (writes to console today) |
+| Pricing engine | |
 | Compatibility rules engine | Real catalog data and pricing |
-| 49 product thumbnails + lightbox | Generated DB migrations (dev uses push) |
-| Layout gallery, 8 views | Email adapter (writes to console today) |
+| **HubSpot lead submission** | |
+| 49 product thumbnails + lightbox | |
+| Layout gallery, 8 views | Generated DB migrations (dev uses push) |
 | Name/email capture + personalization | |
 | **Build Sheet PDF** | |
 | **Payload admin at `/admin`, catalog in Postgres** | |
@@ -386,9 +387,35 @@ Astro landing page with Google Ads and Meta conversion tracking.
 
 ## Roadmap
 
-**Phase 2, mostly done** — Build Sheet PDF and the Payload admin both ship.
-Remaining: HubSpot lead submission, an email adapter, generated migrations to
+**Phase 2, mostly done** — Build Sheet PDF, the Payload admin, and HubSpot
+lead submission all ship. Remaining: an email adapter, generated migrations to
 replace Drizzle push, and admin polish (drag-to-reorder, a preview link).
+
+### Lead submission
+
+Every Build Sheet request posts to a HubSpot **form**, not to the CRM API.
+That keeps a private app token out of this repo, and it lets whoever owns the
+form change its fields, notifications and follow-up without a deploy.
+
+```bash
+vercel env add HUBSPOT_PORTAL_ID --scope papago          # 43782575
+vercel env add HUBSPOT_BUILD_SHEET_FORM_ID --scope papago
+```
+
+Until both are set, `submitBuildSheetLead()` returns `"skipped"` and the Build
+Sheet works exactly as before. It never throws: a customer who asked for their
+Build Sheet gets it whether or not HubSpot is reachable.
+
+Alongside the contact fields it sends the floor plan, the trim package, the
+total, the option count, and **a link back to the exact build**, so whoever
+picks up the phone can open what the customer configured rather than reading
+it off a PDF. Create those as properties on the HubSpot form:
+`papago_floor_plan`, `papago_trim_package`, `papago_build_total`,
+`papago_option_count`, `papago_build_link`.
+
+```bash
+npx tsx scripts/check-hubspot.ts    # asserts it skips cleanly and never throws
+```
 
 **Phase 3** — Additional chassis (Transit, Promaster), Hearth financing
 calculator, book-a-call handoff, sales-rep view of submitted builds.

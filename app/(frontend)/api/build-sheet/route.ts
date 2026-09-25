@@ -1,6 +1,7 @@
 import { decodeBuild } from "@/lib/pricing";
 import { loadCatalog } from "@/lib/cms";
 import { buildSheetFilename, renderBuildSheet } from "@/lib/build-sheet";
+import { submitBuildSheetLead } from "@/lib/hubspot";
 
 /**
  * POST { b, firstName, lastName, email, phone } -> the Build Sheet PDF.
@@ -32,6 +33,15 @@ export async function POST(request: Request) {
     email: clean(body.email),
     phone: clean(body.phone),
   };
+
+  /* The lead goes to HubSpot before the PDF is rendered, but a failure there
+   * is logged and swallowed: submitBuildSheetLead never throws, because a
+   * customer who asked for their Build Sheet must get it whether or not our
+   * CRM is reachable. */
+  const lead = await submitBuildSheetLead(catalog, build, customer);
+  if (lead === "failed") {
+    console.error("Build Sheet lead did not reach HubSpot", { email: customer.email });
+  }
 
   const pdf = await renderBuildSheet(catalog, build, customer);
 
