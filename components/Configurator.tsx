@@ -158,20 +158,21 @@ export default function Configurator({ catalog }: { catalog: Catalog }) {
       <Hero />
 
       {/* Van context and step nav travel together so neither scrolls away. */}
-      {step > LENGTH_STEP && (
-        <div className="sticky top-0 z-30 shadow-sm">
+      {/* The stepper shows from the very first screen, because "step 1 of 8" is
+          most useful to someone deciding whether to start at all. The van bar
+          above it waits until there is a van to name. */}
+      <div className="sticky top-0 z-30 shadow-sm">
+        {step > LENGTH_STEP && (
           <VanContextBar planName={plan?.name} surname={surname} />
-          {build.vanLengthId && (
-            <Stepper
-              step={step}
-              onJump={goTo}
-              hasDetails={isValidCustomer(customer)}
-              hasPlan={Boolean(build.floorPlanId)}
-              hasPackage={Boolean(build.packageId)}
-            />
-          )}
-        </div>
-      )}
+        )}
+        <Stepper
+          step={step}
+          onJump={goTo}
+          hasDetails={isValidCustomer(customer)}
+          hasPlan={Boolean(build.floorPlanId)}
+          hasPackage={Boolean(build.packageId)}
+        />
+      </div>
 
       <main className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 py-10">
         {step === INTRO_STEP && (
@@ -570,12 +571,34 @@ function Stepper({
     "Build Sheet",
   ];
 
+  /* A progress count beats a row of pills on its own: a buyer scanning a
+   * configurator wants to know how much is left, not what the stages are
+   * called. The nudges start where the finish is genuinely in sight, which is
+   * also where people abandon. Nothing before step 6 gets one, because
+   * cheerleading at step 2 is a lie about how far along you are. */
+  const total = labels.length;
+  const nudge: Record<number, string> = {
+    [COLOR_STEP]: "almost there",
+    [OPTIONS_STEP]: "just one more!",
+    [SUMMARY_STEP]: "that\u2019s the whole van",
+  };
+
   return (
     <nav
       aria-label="Build steps"
       className="bg-white border-b border-black/10"
     >
-      <div className="max-w-6xl mx-auto px-4 sm:px-6">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 flex items-center gap-5">
+        <p className="shrink-0 py-3 leading-tight">
+          <span className="brand-heading block text-base sm:text-lg text-navy whitespace-nowrap">
+            Step {step + 1} of {total}
+          </span>
+          {nudge[step] && (
+            <span className="block text-[11px] font-semibold uppercase tracking-wide text-steel">
+              {nudge[step]}
+            </span>
+          )}
+        </p>
         <ol className="flex gap-1 overflow-x-auto py-3 text-xs">
           {labels.map((label, i) => {
             const isCurrent = i === step;
