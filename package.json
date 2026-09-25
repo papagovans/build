@@ -10,7 +10,8 @@
     "lint": "eslint",
     "backup": "tsx scripts/backup.ts",
     "restore": "tsx scripts/restore.ts",
-    "seed": "tsx scripts/seed.ts"
+    "seed": "tsx scripts/seed.ts",
+    "backup:all": "bash scripts/backup-all.sh"
   },
   "dependencies": {
     "@payloadcms/db-postgres": "^3.90.1",

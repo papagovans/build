@@ -321,17 +321,27 @@ starts entering real data. It does not survive the Neon project itself being
 deleted or the Vercel integration being removed, which is why there is a
 layer 2.
 
-**Layer 0: mirror everything to Dropbox.** `~/projects/backup-papago.sh`
-mirrors all three Papago repos and snapshots the database into
-`Dropbox/SumoLab/Clients/Papago Vans/repo-backups/`. A mirror is a full bare
-clone, every branch and commit, not a copy of the working tree:
+**Layer 0: mirror everything to Dropbox.**
 
 ```bash
-~/projects/backup-papago.sh
+npm run backup:all
 git clone "<vault>/papagovans-build.git" papagovans-build   # to restore
 ```
 
-It refuses to run rather than half-finish if the 4TB drive is not mounted.
+`scripts/backup-all.sh` mirrors all three Papago repos and snapshots the
+database into `Dropbox/SumoLab/Clients/Papago Vans/repo-backups/`. A mirror is
+a full bare clone, every branch and every commit, not a copy of the working
+tree, so any of them restores with a plain `git clone`.
+
+It refuses to run rather than half-finish if the 4TB drive is not mounted, and
+it resolves the sibling repos from its own location rather than a hardcoded
+path, so it survives `~/projects` being renamed.
+
+**Two things it does not carry.** Uploaded media lives in Vercel Blob, so the
+snapshot records filenames and URLs but not the files; restoring into a wiped
+Blob store gives a catalog with dead image links. And `.env.local` is
+deliberately excluded, because it holds the Neon string and the Blob token,
+and Vercel is their real home.
 
 **Layer 2: a file you hold.**
 
