@@ -46,7 +46,7 @@ app renders until you reseed.
    `conflictsWith`, shared-`replaces` exclusivity, and `availableFor` all have
    to keep working. A winch must never outlive its bumper.
 3. **Never put customer PII in the `?b=` URL param.** It is built to be shared.
-   Name and email belong in `sessionStorage`.
+   Name and email belong in `localStorage`.
 4. **Do not add a database** to solve something the URL state already solves.
 5. **Wizard step indices are all constant** at the top of `Configurator.tsx`.
    They used to be partly computed, because each category had its own step and

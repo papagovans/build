@@ -214,7 +214,7 @@ fully loaded 16-option build is ~318 characters. The catalog moving to Postgres
 did not change this and must not. Add a table for build state only when
 abandoned-build analytics are actually needed.
 
-**Customer PII stays out of the URL.** Name and email live in `sessionStorage`
+**Customer PII stays out of the URL.** Name and email live in `localStorage`
 only. The `?b=` param is designed to be shared, so PII must never ride along.
 
 **Slugs are the ids, everywhere.** Every catalog row carries a `slug` holding

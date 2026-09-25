@@ -63,7 +63,11 @@ const SUMMARY_STEP = 7;
  * other category is a section on the single Options page. */
 const COLOR_CATEGORY = "finishes";
 
+/* Both live in localStorage, so a buyer who comes back tomorrow on the same
+ * browser picks up where they left off instead of starting over. Device only:
+ * neither ever rides in the URL, and a shared ?b= link beats the saved build. */
 const CUSTOMER_KEY = "pv_customer";
+const BUILD_KEY = "pv_build";
 
 /* The marketing site the header logo returns to. Env so it can be pointed at
  * the rebuilt site the day that launches, without a code change. */
@@ -113,11 +117,14 @@ export default function Configurator({ catalog }: { catalog: Catalog }) {
    * navigation, not a second person, and HubSpot would happily log both. */
   const leadSent = useRef(false);
 
-  // Restore a shared build from the URL, and the customer from this session.
+  // Restore a shared build from the URL, else the last build on this device,
+  // and the customer from this device.
   // Customer details deliberately stay out of the URL so shared links carry no PII.
   useEffect(() => {
+    let savedBuild: string | null = null;
     try {
-      const saved = sessionStorage.getItem(CUSTOMER_KEY);
+      savedBuild = localStorage.getItem(BUILD_KEY);
+      const saved = localStorage.getItem(CUSTOMER_KEY);
       // Merged onto the empty customer so a session saved before a field
       // existed restores as "" rather than undefined.
       if (saved) setCustomer({ ...EMPTY_CUSTOMER, ...JSON.parse(saved) });
@@ -126,7 +133,7 @@ export default function Configurator({ catalog }: { catalog: Catalog }) {
     }
     const restored = decodeBuild(
       catalog,
-      new URLSearchParams(window.location.search).get("b"),
+      new URLSearchParams(window.location.search).get("b") ?? savedBuild,
     );
     if (restored.floorPlanId) {
       setBuild(restored);
@@ -137,7 +144,7 @@ export default function Configurator({ catalog }: { catalog: Catalog }) {
   useEffect(() => {
     try {
       if (customer.firstName || customer.email) {
-        sessionStorage.setItem(CUSTOMER_KEY, JSON.stringify(customer));
+        localStorage.setItem(CUSTOMER_KEY, JSON.stringify(customer));
       }
     } catch {
       // Non-fatal.
@@ -151,6 +158,11 @@ export default function Configurator({ catalog }: { catalog: Catalog }) {
     if (encoded) url.searchParams.set("b", encoded);
     else url.searchParams.delete("b");
     window.history.replaceState(null, "", url);
+    try {
+      if (encoded) localStorage.setItem(BUILD_KEY, encoded);
+    } catch {
+      // Non-fatal.
+    }
   }, [build]);
 
   const plan = build.floorPlanId
@@ -237,7 +249,9 @@ export default function Configurator({ catalog }: { catalog: Catalog }) {
             selectedId={build.vanLengthId}
             possessive={possessive}
             onChoose={(id) => setBuild((b) => setVanLength(catalog, b, id))}
-            onContinue={() => goTo(INTRO_STEP)}
+            /* Details already on file: going back to change the van is not
+               a reason to fill the form in again. */
+            onContinue={() => goTo(isValidCustomer(customer) ? PLAN_STEP : INTRO_STEP)}
           />
         )}
 
