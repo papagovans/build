@@ -302,6 +302,18 @@ starts entering real data. It does not survive the Neon project itself being
 deleted or the Vercel integration being removed, which is why there is a
 layer 2.
 
+**Layer 0: mirror everything to Dropbox.** `~/projects/backup-papago.sh`
+mirrors all three Papago repos and snapshots the database into
+`Dropbox/SumoLab/Clients/Papago Vans/repo-backups/`. A mirror is a full bare
+clone, every branch and commit, not a copy of the working tree:
+
+```bash
+~/projects/backup-papago.sh
+git clone "<vault>/papagovans-build.git" papagovans-build   # to restore
+```
+
+It refuses to run rather than half-finish if the 4TB drive is not mounted.
+
 **Layer 2: a file you hold.**
 
 ```bash

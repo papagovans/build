@@ -639,7 +639,10 @@ function StepVanLength({
         photographs. A grid of three side-by-side cards cannot do that: each van
         fills its own card and they all look the same size.
       */}
-      <div className="relative w-full aspect-[911/584] bg-offwhite rounded-lg overflow-hidden">
+      {/* Capped rather than full-bleed. The Mercedes render is 903px of real
+          pixels and no more exists, so stretching the stage past that only
+          spreads the same detail thinner and reads as soft. */}
+      <div className="relative w-full max-w-[720px] mx-auto aspect-[903/576] bg-offwhite rounded-lg overflow-hidden">
         {catalog.vanLengths.map((length) => (
           <Image
             key={length.id}
