@@ -219,7 +219,7 @@ export interface FloorPlan {
   basePrice: number;
   order: number;
   /**
-   * Which chassis this plan is built on. Leave empty for all of them.
+   * Which chassis this floor plan is built on. Leave empty for all of them.
    */
   availableLengths?: (number | VanLength)[] | null;
   /**

@@ -265,6 +265,23 @@ decide there is 400W or 600W of solar.
 It is not a soft delete. An unticked product a package carries is as real as any
 other, worth $8,180 on the Summit build today.
 
+**Availability is ticked, not typed.** Two relationships decide what a buyer
+is offered, and both render as checkbox lists rather than Payload's default
+type-ahead select:
+
+```
+Floor Plans   → Van lengths    which chassis this plan is built on
+Trim Packages → Floor plans    which plans this package is offered on
+```
+
+Leaving every box unticked means *all of them*, including any added later.
+That is the safe default: a plan quietly missing from a chassis is a worse
+failure than one offered too widely, and the shop sees the miss immediately.
+
+Both use `components/admin/RelationshipCheckboxes.tsx`, one component
+configured twice through `clientProps`. The stored value is an ordinary
+relationship array, so nothing downstream knows the control is custom.
+
 **Fit rules** are plain-English pickers on a product: requires these first,
 cannot be combined with, replaces this included item, only fits these floor
 plans. Payload refuses to save a contradiction: nothing may require, conflict

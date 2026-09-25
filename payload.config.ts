@@ -321,9 +321,21 @@ const FloorPlans: CollectionConfig = {
       type: "relationship",
       relationTo: "van-lengths",
       hasMany: true,
+      label: "Van lengths",
       admin: {
         description:
-          "Which chassis this plan is built on. Leave empty for all of them.",
+          "Which chassis this floor plan is built on. Leave empty for all of them.",
+        components: {
+          Field: {
+            path: "/components/admin/RelationshipCheckboxes#RelationshipCheckboxes",
+            clientProps: {
+              collection: "van-lengths",
+              label: "Van lengths",
+              help: "Tick every chassis this floor plan is built on. The wizard hides the plan from anyone who picked a length that is not ticked.",
+              emptyNoun: "van lengths",
+            },
+          },
+        },
       },
     },
     {
@@ -517,7 +529,15 @@ const TrimPackages: CollectionConfig = {
         description:
           "Leave every box unticked to offer this trim package on all floor plans.",
         components: {
-          Field: "/components/admin/FloorPlanCheckboxes#FloorPlanCheckboxes",
+          Field: {
+            path: "/components/admin/RelationshipCheckboxes#RelationshipCheckboxes",
+            clientProps: {
+              collection: "floor-plans",
+              label: "Floor plans",
+              help: "Tick every floor plan this trim package is offered on. Leave all unticked to offer it everywhere.",
+              emptyNoun: "floor plans",
+            },
+          },
         },
       },
     },
