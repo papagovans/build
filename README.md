@@ -90,6 +90,18 @@ whose material is named "Bedding". The lighting is `public/models/studio.hdr`, d
 - **Product photos are retailer/manufacturer images used as mockup placeholders.
   They are not licensed for public launch.** Replace with owned, licensed, or
   supplier-provided imagery before going customer-facing.
+
+  Four of them named one brand and pictured another: both Epoch batteries
+  carried Victron photos, the 100A DC-DC carried a 20A Orion-Tr, and the
+  Nomadic A2 awning carried a Fiamma F45S. All four are the right part now.
+  The batteries and the 100A charger are the real unit tiled to its count,
+  since both upgrades buy more of the same thing and Victron makes no single
+  100A DC-DC. Thumbnails are 800x600: the option card crops to 4:3 with
+  object-cover, so anything wider has to be letterboxed rather than cropped.
+
+  About forty of the fifty-three products name no manufacturer at all
+  ("Diesel Air Heater", "On-Demand Water Heater"). Those need Papago's real
+  spec sheet. Do not invent model numbers for them.
 - **The three van length renders come from Mercedes' own configurator**
   (`assets.mbvans.com`), cropped to a shared frame. Ownership confirmed these
   are cleared for use as a Mercedes-Benz reseller. Render codes are in the
