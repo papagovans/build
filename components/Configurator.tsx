@@ -949,7 +949,6 @@ function StepGallery({
           camera-orbit="35deg 65deg 70%"
           max-camera-orbit="auto 88deg auto"
           camera-controls=""
-          disable-zoom=""
           touch-action="pan-y"
           shadow-intensity="1"
           exposure="0.8"
@@ -957,7 +956,7 @@ function StepGallery({
           style={{ width: "100%", height: "100%" }}
         />
         <span className="pointer-events-none absolute left-4 bottom-4 px-3 py-1 rounded-full bg-navy/85 text-white text-xs font-bold uppercase tracking-widest">
-          Drag to rotate
+          Drag to rotate · Scroll to zoom
         </span>
       </div>
 
