@@ -87,8 +87,10 @@ Intro (name/email)
   → Floor Plan        5 layouts, filtered to the ones built on that chassis
   → Layout            gallery, 8 views of the chosen plan
   → Trim Package      3 tiers, each pre-fills every category
-  → 6 Categories      Electrical, Water System, Heating & Cooling,
-                      Interior, Exterior, Finishes
+  → Colors            the four swatch groups, plus finish upgrades
+  → Options           every remaining category on ONE page with a jump nav:
+                      Electrical, Water System, Heating & Cooling,
+                      Interior, Exterior
   → Build Sheet       itemized total
 ```
 
@@ -377,12 +379,16 @@ stylesheet so this reads as the same product:
 
 Font is **Prompt**. Headlines are uppercase via `.brand-heading`.
 
-**Wizard steps.** The first five indices are constants at the top of
-`components/Configurator.tsx`. Everything from `CATEGORY_STEP_OFFSET` on
-depends on how many categories the shop has published, so `summaryStep` is
-computed per catalog rather than hardcoded. Inserting a fixed step means
-updating the constants and the `labels` array together — never scatter magic
-numbers.
+**Wizard steps** are constants at the top of `components/Configurator.tsx`.
+
+They used to be partly computed: each category had its own step, so the length
+of the wizard depended on how many categories existed. That meant six Next
+clicks through screens most buyers did not care about. Categories are sections
+on a single Options page now, with a jump nav, so a buyer sees the whole shape
+of the decision and goes straight to the parts they have an opinion about.
+
+Inserting a step means updating the constants and the Stepper's `labels` array
+together. Never scatter magic numbers.
 
 **Images:** optimize anything new to max 800px, webp. The full set of 49 product
 images is under 1 MB. Always *look at* a sourced image before committing it —

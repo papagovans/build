@@ -44,9 +44,10 @@ import {
 } from "@/lib/pricing";
 
 /**
- * The first six indices are fixed. Everything from CATEGORY_STEP_OFFSET on
- * depends on how many categories the shop has published, so the total and the
- * summary index are computed per catalog rather than hardcoded.
+ * Every step index is fixed now. It used to be that the categories each got
+ * their own step, so the total depended on how many the shop had published and
+ * the summary index had to be computed. They are all sections on one Options
+ * page instead, which makes the wizard a known length.
  *
  * The van comes first and the name comes second, deliberately. Asking a
  * stranger for their details before showing them anything is the highest
@@ -60,7 +61,13 @@ const INTRO_STEP = 1;
 const PLAN_STEP = 2;
 const GALLERY_STEP = 3;
 const PACKAGE_STEP = 4;
-const CATEGORY_STEP_OFFSET = 5;
+const COLOR_STEP = 5;
+const OPTIONS_STEP = 6;
+const SUMMARY_STEP = 7;
+
+/* The category that owns the colour swatches. It gets its own step; every
+ * other category is a section on the single Options page. */
+const COLOR_CATEGORY = "finishes";
 
 const CUSTOMER_KEY = "pv_customer";
 
@@ -77,7 +84,6 @@ function useCatalog(): Catalog {
 }
 
 export default function Configurator({ catalog }: { catalog: Catalog }) {
-  const summaryStep = CATEGORY_STEP_OFFSET + catalog.categories.length;
   const [build, setBuild] = useState<BuildState>(() => emptyBuild(catalog));
   const [customer, setCustomer] = useState<Customer>(EMPTY_CUSTOMER);
   const [step, setStep] = useState(LENGTH_STEP);
@@ -99,7 +105,7 @@ export default function Configurator({ catalog }: { catalog: Catalog }) {
     );
     if (restored.floorPlanId) {
       setBuild(restored);
-      setStep(restored.packageId ? CATEGORY_STEP_OFFSET : GALLERY_STEP);
+      setStep(restored.packageId ? OPTIONS_STEP : GALLERY_STEP);
     }
   }, [catalog]);
 
@@ -140,13 +146,10 @@ export default function Configurator({ catalog }: { catalog: Catalog }) {
   const surname = customer.lastName.trim();
   const possessive = surname ? `The ${surname} Build` : "Your Build";
 
-  const goTo = useCallback(
-    (next: number) => {
-      setStep(Math.max(0, Math.min(summaryStep, next)));
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    },
-    [summaryStep],
-  );
+  const goTo = useCallback((next: number) => {
+    setStep(Math.max(0, Math.min(SUMMARY_STEP, next)));
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, []);
 
   return (
     <CatalogContext.Provider value={catalog}>
@@ -215,14 +218,13 @@ export default function Configurator({ catalog }: { catalog: Catalog }) {
             selectedId={build.packageId}
             onSelect={(pkgId) => {
               setBuild((b) => applyPackage(catalog, b, build.floorPlanId!, pkgId));
-              goTo(CATEGORY_STEP_OFFSET);
+              goTo(COLOR_STEP);
             }}
           />
         )}
 
-        {step >= CATEGORY_STEP_OFFSET && step < summaryStep && build.floorPlanId && (
-          <StepCategory
-            category={catalog.categories[step - CATEGORY_STEP_OFFSET]}
+        {step === COLOR_STEP && build.floorPlanId && (
+          <StepColors
             floorPlanId={build.floorPlanId}
             selected={build.selected}
             colors={build.colors}
@@ -233,7 +235,15 @@ export default function Configurator({ catalog }: { catalog: Catalog }) {
           />
         )}
 
-        {step === summaryStep && plan && (
+        {step === OPTIONS_STEP && build.floorPlanId && (
+          <StepOptions
+            floorPlanId={build.floorPlanId}
+            selected={build.selected}
+            onToggle={(id) => setBuild((b) => toggleOption(catalog, b, id))}
+          />
+        )}
+
+        {step === SUMMARY_STEP && plan && (
           <StepSummary
             build={build}
             breakdown={breakdown}
@@ -251,13 +261,20 @@ export default function Configurator({ catalog }: { catalog: Catalog }) {
             >
               ← Back
             </button>
-            {step < summaryStep && (
+            {step < SUMMARY_STEP && (
               <button
                 onClick={() => goTo(step + 1)}
                 disabled={!canAdvance}
                 className="px-8 py-3 rounded bg-navy text-white text-sm font-bold uppercase tracking-wide hover:bg-navy-deep transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
               >
-                {step === PACKAGE_STEP ? "Customize Your Build" : "Next"} →
+                {step === PACKAGE_STEP
+                  ? "Next: Colors"
+                  : step === COLOR_STEP
+                    ? "Next: Options"
+                    : step === OPTIONS_STEP
+                      ? "Next: Build Sheet"
+                      : "Next"}{" "}
+                →
               </button>
             )}
           </div>
@@ -267,9 +284,9 @@ export default function Configurator({ catalog }: { catalog: Catalog }) {
       <SummaryBar
         breakdown={breakdown}
         planName={plan?.name}
-        onGetBuildSheet={() => goTo(summaryStep)}
+        onGetBuildSheet={() => goTo(SUMMARY_STEP)}
         canFinish={Boolean(build.packageId)}
-        atSummary={step === summaryStep}
+        atSummary={step === SUMMARY_STEP}
       />
     </div>
     </CatalogContext.Provider>
@@ -548,7 +565,8 @@ function Stepper({
     "Floor Plan",
     "Layout",
     "Trim Package",
-    ...catalog.categories.map((c) => c.name),
+    "Colors",
+    "Options",
     "Build Sheet",
   ];
 
@@ -1171,53 +1189,41 @@ function ColorGroupPicker({
   );
 }
 
-function StepCategory({
+/**
+ * One category rendered as a section, not a step.
+ *
+ * Six category steps meant six Next clicks through screens a buyer mostly did
+ * not care about. They are sections on a single scrolling page now, which is
+ * how every configurator worth copying does it: the buyer sees the whole shape
+ * of the decision and jumps to the parts they have an opinion about.
+ */
+function CategorySection({
   category,
   floorPlanId,
   selected,
-  colors,
   onToggle,
-  onColor,
+  onExpand,
 }: {
   category: Category;
   floorPlanId: string;
   selected: string[];
-  colors: Record<string, string>;
   onToggle: (id: string) => void;
-  onColor: (groupId: string, choiceId: string) => void;
+  onExpand: (o: Option) => void;
 }) {
   const catalog = useCatalog();
-  const groups = colorGroupsFor(catalog, category.id);
-  const [expanded, setExpanded] = useState<Option | null>(null);
-
-  /* Only what the buyer is asked about. Components marked unselectable still
-   * price and still reach the Build Sheet; they just are not a question. */
   const options = selectableOptionsFor(catalog, category.id, floorPlanId);
+  if (options.length === 0) return null;
+
   const included = options.filter((o) => o.type === "included");
   const upgrades = options.filter((o) => o.type === "upgrade");
   const addons = options.filter((o) => o.type === "addon");
 
   return (
-    <section>
-      <StepHeading eyebrow={category.name} title={category.name} blurb={category.blurb} />
-
-      {groups.length > 0 && (
-        <div className="mb-10">
-          <h3 className="text-xs font-bold uppercase tracking-widest text-steel mb-3">
-            Choose your colors
-          </h3>
-          <div className="grid gap-4 lg:grid-cols-2">
-            {groups.map((g) => (
-              <ColorGroupPicker
-                key={g.id}
-                group={g}
-                activeChoiceId={colors[g.id]}
-                onSelect={(choiceId) => onColor(g.id, choiceId)}
-              />
-            ))}
-          </div>
-        </div>
-      )}
+    <section id={category.id} className="scroll-mt-28 pt-10 first:pt-0">
+      <div className="border-b border-black/10 pb-3 mb-6">
+        <h2 className="brand-heading text-2xl">{category.name}</h2>
+        <p className="mt-1 text-sm text-steel">{category.blurb}</p>
+      </div>
 
       {included.length > 0 && (
         <OptionGroup title="Included in your build">
@@ -1226,7 +1232,7 @@ function StepCategory({
               key={o.id}
               option={o}
               superseded={isSuperseded(catalog, o.id, selected)}
-              onExpand={setExpanded}
+              onExpand={onExpand}
             />
           ))}
         </OptionGroup>
@@ -1241,14 +1247,14 @@ function StepCategory({
               checked={selected.includes(o.id)}
               selected={selected}
               onToggle={onToggle}
-              onExpand={setExpanded}
+              onExpand={onExpand}
             />
           ))}
         </OptionGroup>
       )}
 
       {addons.length > 0 && (
-        <OptionGroup title="A la carte add-ons">
+        <OptionGroup title="Add-ons">
           {addons.map((o) => (
             <OptionRow
               key={o.id}
@@ -1256,13 +1262,129 @@ function StepCategory({
               checked={selected.includes(o.id)}
               selected={selected}
               onToggle={onToggle}
-              onExpand={setExpanded}
+              onExpand={onExpand}
             />
           ))}
         </OptionGroup>
       )}
+    </section>
+  );
+}
 
-      <Lightbox option={expanded} onClose={() => setExpanded(null)} />
+/** Colours get their own step, the way the reference configurator does it. */
+function StepColors({
+  floorPlanId,
+  selected,
+  colors,
+  onToggle,
+  onColor,
+}: {
+  floorPlanId: string;
+  selected: string[];
+  colors: Record<string, string>;
+  onToggle: (id: string) => void;
+  onColor: (groupId: string, choiceId: string) => void;
+}) {
+  const catalog = useCatalog();
+  const groups = colorGroupsFor(catalog, COLOR_CATEGORY);
+  const category = catalog.categories.find((c) => c.id === COLOR_CATEGORY);
+  const [expanded, setExpanded] = useState<Option | null>(null);
+
+  return (
+    <section>
+      <StepHeading
+        eyebrow="Colors"
+        title="Choose Your Finishes"
+        blurb={category?.blurb ?? "Cabinetry, flooring, walls and countertops."}
+      />
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        {groups.map((g) => (
+          <ColorGroupPicker
+            key={g.id}
+            group={g}
+            activeChoiceId={colors[g.id]}
+            onSelect={(choiceId) => onColor(g.id, choiceId)}
+          />
+        ))}
+      </div>
+
+      {/* Finish products, the ones that are a yes or no rather than a swatch. */}
+      {category && (
+        <div className="mt-10">
+          <CategorySection
+            category={{ ...category, name: "Finish Upgrades", blurb: "" }}
+            floorPlanId={floorPlanId}
+            selected={selected}
+            onToggle={onToggle}
+            onExpand={setExpanded}
+          />
+        </div>
+      )}
+
+      {expanded && <Lightbox option={expanded} onClose={() => setExpanded(null)} />}
+    </section>
+  );
+}
+
+/** Every remaining category, on one page, with a jump nav. */
+function StepOptions({
+  floorPlanId,
+  selected,
+  onToggle,
+}: {
+  floorPlanId: string;
+  selected: string[];
+  onToggle: (id: string) => void;
+}) {
+  const catalog = useCatalog();
+  const [expanded, setExpanded] = useState<Option | null>(null);
+  const sections = catalog.categories.filter(
+    (c) =>
+      c.id !== COLOR_CATEGORY &&
+      selectableOptionsFor(catalog, c.id, floorPlanId).length > 0,
+  );
+
+  return (
+    <section>
+      <StepHeading
+        eyebrow="Options"
+        title="Customize Your Build"
+        blurb="Everything is on this page. Jump to what you care about and skip the rest; your trim package has already made a sensible choice everywhere."
+      />
+
+      {/* Jump nav rather than six separate steps. Sticky under the stepper so
+          it stays reachable on a long page. */}
+      <nav
+        aria-label="Option categories"
+        className="sticky top-[104px] z-20 -mx-4 sm:-mx-6 px-4 sm:px-6 py-2 bg-white/95 backdrop-blur border-b border-black/10"
+      >
+        <ul className="flex gap-1 overflow-x-auto text-xs">
+          {sections.map((c) => (
+            <li key={c.id} className="shrink-0">
+              <a
+                href={`#${c.id}`}
+                className="block px-3 py-1.5 rounded-full whitespace-nowrap font-semibold uppercase tracking-wide text-steel hover:bg-offwhite"
+              >
+                {c.name}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </nav>
+
+      {sections.map((c) => (
+        <CategorySection
+          key={c.id}
+          category={c}
+          floorPlanId={floorPlanId}
+          selected={selected}
+          onToggle={onToggle}
+          onExpand={setExpanded}
+        />
+      ))}
+
+      {expanded && <Lightbox option={expanded} onClose={() => setExpanded(null)} />}
     </section>
   );
 }

@@ -48,10 +48,11 @@ app renders until you reseed.
 3. **Never put customer PII in the `?b=` URL param.** It is built to be shared.
    Name and email belong in `sessionStorage`.
 4. **Do not add a database** to solve something the URL state already solves.
-5. **Wizard step indices are only partly constant.** The first five are, at
-   the top of `Configurator.tsx`. Everything after `CATEGORY_STEP_OFFSET`
-   depends on the published category count, so `summaryStep` is computed.
-   Update the constants and the `labels` array together.
+5. **Wizard step indices are all constant** at the top of `Configurator.tsx`.
+   They used to be partly computed, because each category had its own step and
+   the total depended on how many the shop had published. Categories are
+   sections on one Options page now, so the wizard is a known length. Update
+   the constants and the Stepper's `labels` array together.
 6. **Look at any image you source** before committing it. Two were rejected
    during the initial pass: one carried a competitor's logo, one was a
    mid-construction DIY shot. Optimize to max 800px webp.
