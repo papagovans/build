@@ -95,8 +95,9 @@ for (const [tex, sat] of textures) {
 }
 
 await dressBed();
+shell();
 
-const graded = join(mkdtempSync(join(tmpdir(), "van-model-")), "graded.glb");
+const graded = process.env.GRADED_OUT ?? join(mkdtempSync(join(tmpdir(), "van-model-")), "graded.glb");
 await io.write(graded, doc);
 
 // instance, flatten and join stay off: together they wrecked the scale of the
@@ -104,9 +105,15 @@ await io.write(graded, doc);
 // trim is never mangled; compression alone gets it under 3 MB.
 execFileSync(
   "npx",
+  /* palette stays off: it merges flat-colour materials into one palette
+   * texture and the merge does not preserve doubleSided. The shell panels are
+   * single sided on purpose, so merging them silently made the van a closed
+   * box from the outside. It also renames every material, which makes the
+   * output impossible to inspect. */
   ["-y", "@gltf-transform/cli", "optimize", graded, output,
    "--compress", "draco", "--texture-compress", "webp", "--texture-size", "1024",
-   "--instance", "false", "--flatten", "false", "--join", "false", "--simplify", "false"],
+   "--instance", "false", "--flatten", "false", "--join", "false", "--simplify", "false",
+   "--palette", "false"],
   { stdio: ["ignore", "ignore", "inherit"] },
 );
 console.log(`${output} written`);
@@ -157,6 +164,127 @@ async function dressBed() {
   add(cloth, [x0 - 0.01, top, headZ], [aisle + 0.02, top + 0.02, z1 - 0.01]);         // the spread
   add(cloth, [aisle + 0.02, top - 0.13, headZ], [aisle + 0.035, top + 0.02, z1 - 0.01]); // drape
   add(cuff, [x0 - 0.005, top + 0.02, headZ], [aisle + 0.025, top + 0.035, headZ + 0.2]); // fold-back
+  doc.getRoot().listScenes()[0].addChild(node);
+}
+
+/**
+ * Closes the cutaway with a Sprinter interior: a ceiling, the sliding-door
+ * side wall, and a rear bulkhead above the doors.
+ *
+ * The model was drawn to be seen from outside, so it has no roof and its
+ * door side is cut away. That is right for the overview and wrong the moment
+ * anyone walks inside, where those openings show page background.
+ *
+ * Every panel here is SINGLE SIDED with its normal pointing into the van, so
+ * the two readings both work: from outside the camera meets the back face and
+ * it is culled, leaving the cutaway exactly as drawn; from inside the camera
+ * meets the front face and the van is enclosed.
+ *
+ * ponytail: measured to Build 1 (El Capitan) by raycasting the loaded model.
+ * A different floor plan needs these re-measured, same as the component's
+ * FEATURES and WALK numbers.
+ */
+function shell() {
+  const B = {
+    xRear: 0.06,   // inside face of the rear doors
+    xCab: 4.36,    // where the cab begins; the side wall stops here
+    xFront: 5.02,  // the windscreen header; only the ceiling runs this far
+    yFloor: 0.12,  // finished floor, same number the walk-through stands on
+    yRoof: 2.02,   // underside of the high roof at the crown
+    zDoor: -0.32,  // the cut-away sliding door side
+    zFar: -2.28,   // the wall the cabinets are mounted on, already modelled
+    arch: 0.12,    // how far the roof drops from crown to shoulder
+  };
+  const zc = (B.zDoor + B.zFar) / 2;
+  const half = (B.zDoor - B.zFar) / 2;
+  /* Shallow arc, flat through the middle and falling away at the shoulders,
+   * which is the shape of the high roof. Squared rather than a true radius:
+   * it keeps the crown flat where headroom is measured. */
+  const roofY = (z: number) => B.yRoof - B.arch * ((z - zc) / half) ** 2;
+
+  const panel = (mat: Material, quad: number[][]) => {
+    const pos: number[] = [], nrm: number[] = [], tc: number[] = [];
+    const [a, b, c] = quad;
+    const u = [b[0] - a[0], b[1] - a[1], b[2] - a[2]];
+    const v = [c[0] - a[0], c[1] - a[1], c[2] - a[2]];
+    const n = [u[1] * v[2] - u[2] * v[1], u[2] * v[0] - u[0] * v[2], u[0] * v[1] - u[1] * v[0]];
+    const len = Math.hypot(...n) || 1;
+    const uvs = [[0, 0], [1, 0], [1, 1], [0, 1]];
+    /* Wound so the front face points along n, which each quad below aims into
+     * the cabin. That is what makes the panel solid from inside and culled
+     * from outside, leaving the overview's cutaway exactly as drawn. */
+    quad.forEach((p, i) => { pos.push(...p); nrm.push(n[0] / len, n[1] / len, n[2] / len); tc.push(...uvs[i]); });
+    const acc = (type: "VEC3" | "VEC2" | "SCALAR", arr: Float32Array | Uint16Array) =>
+      doc.createAccessor().setType(type).setArray(arr);
+    return doc.createPrimitive().setMaterial(mat)
+      .setAttribute("POSITION", acc("VEC3", new Float32Array(pos)))
+      .setAttribute("NORMAL", acc("VEC3", new Float32Array(nrm)))
+      .setAttribute("TEXCOORD_0", acc("VEC2", new Float32Array(tc)))
+      .setIndices(acc("SCALAR", new Uint16Array([0, 1, 2, 0, 2, 3])));
+  };
+
+  /* Matte, because a van's headliner and wall panels are upholstered or
+   * painted, and the studio light glares off anything glossier. */
+  const matte = (name: string, rgb: number[], rough = 0.94) =>
+    doc.createMaterial(name).setBaseColorFactor([...rgb, 1] as [number, number, number, number])
+      .setRoughnessFactor(rough).setMetallicFactor(0).setDoubleSided(false);
+
+  /* Authored straight in linear, not run through deepen(). deepen undoes the
+   * exporter's sRGB-into-a-linear-field mistake, and these colours were never
+   * exported, so passing them through it would darken them for no reason.
+   *
+   * A headliner and the wall above a window face down and inward, away from
+   * the studio light, so lit on base colour alone they go muddy olive. A
+   * little emissive holds them at the cream a van's panels actually read as. */
+  const liner = matte("Shell headliner", [0.93, 0.92, 0.88]).setEmissiveFactor([0.16, 0.155, 0.145]);
+  const wall = matte("Shell wall panel", [0.86, 0.84, 0.79]).setEmissiveFactor([0.12, 0.117, 0.108]);
+  const glass = matte("Shell window", [0.06, 0.07, 0.08], 0.22);
+  const trim = matte("Shell trim", [0.26, 0.27, 0.28]).setEmissiveFactor([0.03, 0.03, 0.032]);
+
+  const node = doc.createNode("Van shell");
+  const add = (mat: Material, quad: number[][]) => node.addChild(
+    doc.createNode().setMesh(doc.createMesh().addPrimitive(panel(mat, quad))),
+  );
+
+  /* Ceiling, in strips across the van so the arc reads as a curve rather
+   * than a fold. Wound so the normal points down into the cabin. */
+  const STRIPS = 14;
+  for (let i = 0; i < STRIPS; i++) {
+    const z0 = B.zFar + (i / STRIPS) * (B.zDoor - B.zFar);
+    const z1 = B.zFar + ((i + 1) / STRIPS) * (B.zDoor - B.zFar);
+    const y0 = roofY(z0), y1 = roofY(z1);
+    /* A recessed strip either side of the crown, where the model already
+     * runs its LED coves, so the ceiling is not one flat sheet of cream. */
+    const mid = Math.abs(i - (STRIPS - 1) / 2);
+    const mat = mid > 2.2 && mid < 3.6 ? trim : liner;
+    /* Runs to the windscreen header, not to the cab bulkhead. The model has
+     * no cab roof either, so stopping at xCab left a hole straight overhead
+     * the moment anyone inside turned to face the front seats. */
+    add(mat, [
+      [B.xRear, y0, z0], [B.xFront, y0, z0], [B.xFront, y1, z1], [B.xRear, y1, z1],
+    ]);
+  }
+
+  /* The sliding-door side. Three bands: panel below the window line, the
+   * glazing, and a return up to the roof shoulder. The glass is dark rather
+   * than transparent on purpose, so a visitor who turns the camera around
+   * inside sees a tinted window and not the page behind the model. */
+  const zD = B.zDoor, yTop = roofY(zD);
+  const sill = 1.08, head = 1.62;
+  const vwall = (y0: number, y1: number, mat: Material, x0 = B.xRear, x1 = B.xCab) =>
+    add(mat, [[x0, y0, zD], [x0, y1, zD], [x1, y1, zD], [x1, y0, zD]]);
+  vwall(B.yFloor, sill, wall);
+  vwall(sill, head, glass, 0.45, 3.95);
+  vwall(sill, head, wall, B.xRear, 0.45);
+  vwall(sill, head, wall, 3.95, B.xCab);
+  vwall(head, yTop, wall);
+
+  /* No rear bulkhead. The model already draws its own rear doors, and a panel
+   * across the back both duplicated them and, being single sided, showed as a
+   * pale slab standing past the roofline whenever the camera sat forward of
+   * it in the overview.
+   */
+
   doc.getRoot().listScenes()[0].addChild(node);
 }
 

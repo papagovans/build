@@ -87,6 +87,24 @@ to under 3 MB. Name materials plainly in SketchUp ("Oak", "Brushed Steel")
 and they come out right. It also lays a teal bedspread over any mattress
 whose material is named "Bedding". The lighting is `public/models/studio.hdr`, drawn by
 `scripts/studio-light.py`.
+
+It also closes the cutaway with a Sprinter interior: an arched headliner from
+the rear doors to the windscreen header, and the sliding-door side wall with a
+tinted window band. The van is drawn with no roof and that side cut away so it
+reads from outside, which is right until somebody walks inside and sees page
+background where the roof should be.
+
+Every shell panel is **single sided with its normal pointing into the cabin**,
+so both readings work: from outside the camera meets the back face and it is
+culled, leaving the cutaway exactly as drawn; from inside the van is enclosed.
+Two things follow from that and are easy to undo by accident:
+
+- **`--palette false` is not optional.** The optimize pass merges flat-colour
+  materials into one palette texture and the merge does not carry
+  `doubleSided` across, which silently turned the van into a closed box in the
+  overview. It also renames every material, so the output cannot be inspected.
+- **The shell numbers are measured to Build 1**, like the site component's
+  `FEATURES` and `WALK`. A different floor plan needs them re-measured.
 - **Product photos are retailer/manufacturer images used as mockup placeholders.
   They are not licensed for public launch.** Replace with owned, licensed, or
   supplier-provided imagery before going customer-facing.
