@@ -64,6 +64,10 @@ const COLOR_CATEGORY = "finishes";
 
 const CUSTOMER_KEY = "pv_customer";
 
+/* The marketing site the header logo returns to. Env so it can be pointed at
+ * the rebuilt site the day that launches, without a code change. */
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://papagovans.com";
+
 /**
  * The loaded catalog, shared with the whole wizard. Eight components read it;
  * threading it through every one of them as a prop would be all noise.
@@ -315,12 +319,23 @@ function Header() {
   return (
     <header className="bg-navy">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="https://papagovans.com/wp-content/uploads/2023/06/papagovans.png"
-          alt="Papago Vans"
-          className="h-12 w-auto"
-        />
+        {/* New tab rather than same tab: a half-configured van lives in the
+            ?b= URL and in this page's state, and sending someone back to the
+            marketing site in place would quietly throw it away. */}
+        <a
+          href={SITE_URL}
+          target="_blank"
+          rel="noopener"
+          aria-label="Papago Vans home page, opens in a new tab"
+          className="inline-block rounded focus-visible:outline focus-visible:outline-2 focus-visible:outline-gold"
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="https://papagovans.com/wp-content/uploads/2023/06/papagovans.png"
+            alt="Papago Vans"
+            className="h-12 w-auto transition-opacity hover:opacity-80"
+          />
+        </a>
         <a href="tel:+14807248372" className="text-right leading-tight">
           <span className="block text-[11px] font-bold uppercase tracking-widest text-gold">
             Got Questions?
