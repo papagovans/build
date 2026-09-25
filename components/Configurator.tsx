@@ -2,6 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
+import Script from "next/script";
 import {
   getFloorPlan,
   getOption,
@@ -67,6 +68,25 @@ const CUSTOMER_KEY = "pv_customer";
 /* The marketing site the header logo returns to. Env so it can be pointed at
  * the rebuilt site the day that launches, without a code change. */
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://papagovans.com";
+
+/* ponytail: every floor plan card shows Build 1 until Builds 2 to 4 are
+ * exported. When they are, give FloorPlan a model upload in Payload and read
+ * it here instead of one shared file. */
+const FLOOR_PLAN_MODEL = "/models/floor-plan.glb";
+
+/* Google's viewer ships as a web component. Loaded from the CDN rather than
+ * npm so three.js stays out of the wizard bundle for the steps without it. */
+const MODEL_VIEWER_SRC =
+  "https://cdn.jsdelivr.net/npm/@google/model-viewer@4/dist/model-viewer.min.js";
+
+declare module "react" {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
+  namespace JSX {
+    interface IntrinsicElements {
+      "model-viewer": React.HTMLAttributes<HTMLElement> & Record<string, unknown>;
+    }
+  }
+}
 
 /**
  * The loaded catalog, shared with the whole wizard. Eight components read it;
@@ -221,10 +241,9 @@ export default function Configurator({ catalog }: { catalog: Catalog }) {
             selectedId={build.floorPlanId}
             vanLengthId={build.vanLengthId}
             possessive={possessive}
-            onSelect={(id) => {
-              setBuild((b) => setFloorPlan(b, id));
-              goTo(GALLERY_STEP);
-            }}
+            /* No auto-advance: picking a plan unlocks its 3D model on this
+               page, and the buyer moves on with Next once they have looked. */
+            onSelect={(id) => setBuild((b) => setFloorPlan(b, id))}
           />
         )}
 
@@ -830,6 +849,7 @@ function StepFloorPlan({
     : 0;
   return (
     <section>
+      <Script type="module" src={MODEL_VIEWER_SRC} strategy="afterInteractive" />
       <StepHeading
         eyebrow={possessive}
         title="Choose Your Floor Plan"
@@ -839,35 +859,45 @@ function StepFloorPlan({
         {plans.map((plan) => {
           const isSelected = plan.id === selectedId;
           return (
-            <button
+            <div
               key={plan.id}
-              onClick={() => onSelect(plan.id)}
-              aria-pressed={isSelected}
-              className={`group text-left bg-white rounded-lg overflow-hidden border-2 transition-all hover:shadow-lg ${
+              className={`group bg-white rounded-lg overflow-hidden border-2 transition-all hover:shadow-lg ${
                 isSelected
                   ? "border-gold shadow-lg"
                   : "border-transparent hover:border-sky/40"
               }`}
             >
+              {/* Static until chosen, then the buyer can turn it. The card is
+                  not one big <button> because a draggable viewer inside a
+                  button is invalid and every drag would also fire a click. */}
               <div className="relative aspect-[2/1] bg-offwhite">
-                {/* A plan added in the admin has no gallery until someone
-                    uploads one. Rendering <Image src=""> makes the browser
-                    refetch the whole page, so show the empty state instead. */}
-                {plan.image ? (
-                  <Image
-                    src={plan.image}
-                    alt={`${plan.name} layout`}
-                    fill
-                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                    className="object-cover"
+                <model-viewer
+                  src={FLOOR_PLAN_MODEL}
+                  alt={`${plan.name} 3D layout`}
+                  camera-orbit="35deg 65deg 70%"
+                  max-camera-orbit="auto 88deg auto"
+                  camera-controls={isSelected ? "" : undefined}
+                  interaction-prompt={isSelected ? "auto" : "none"}
+                  disable-zoom=""
+                  touch-action="pan-y"
+                  shadow-intensity="1"
+                  exposure="0.8"
+                  environment-image="neutral"
+                  style={{ width: "100%", height: "100%" }}
+                />
+                {!isSelected && (
+                  <button
+                    onClick={() => onSelect(plan.id)}
+                    aria-label={`Choose ${plan.name}`}
+                    className="absolute inset-0 cursor-pointer"
                   />
-                ) : (
-                  <div className="absolute inset-0 grid place-content-center text-xs uppercase tracking-widest text-steel">
-                    No layout image yet
-                  </div>
                 )}
               </div>
-              <div className="p-5">
+              <button
+                onClick={() => onSelect(plan.id)}
+                aria-pressed={isSelected}
+                className="block w-full text-left p-5"
+              >
                 <h3 className="brand-heading text-xl">{plan.name}</h3>
                 <p className="mt-1 text-sm text-steel min-h-10">{plan.tagline}</p>
                 <div className="mt-4 flex flex-wrap gap-x-4 gap-y-1 text-xs text-steel">
@@ -884,8 +914,8 @@ function StepFloorPlan({
                   Starts at {formatPrice(plan.basePrice + lengthDelta)}
                 </p>
                 <p className="text-xs text-steel">Van included</p>
-              </div>
-            </button>
+              </button>
+            </div>
           );
         })}
       </div>
@@ -900,70 +930,35 @@ function StepGallery({
   plan: FloorPlan;
   onContinue: () => void;
 }) {
-  const [activeId, setActiveId] = useState(plan.gallery[0]?.id);
-
-  // Reset to the first view whenever the selected plan changes.
-  useEffect(() => {
-    setActiveId(plan.gallery[0]?.id);
-  }, [plan.id, plan.gallery]);
-
-  const active = plan.gallery.find((g) => g.id === activeId) ?? plan.gallery[0];
-
   return (
     <section>
+      <Script type="module" src={MODEL_VIEWER_SRC} strategy="afterInteractive" />
       <StepHeading
         eyebrow="Step 3"
         title={`Explore the ${plan.name}`}
         blurb="Take a closer look at the layout from every angle before you choose a trim package."
       />
 
-      <div className="bg-white rounded-lg overflow-hidden">
-        <div className="relative aspect-[2/1] bg-offwhite">
-          <Image
-            key={active.id}
-            src={active.src}
-            alt={`${plan.name} ${active.label}`}
-            fill
-            priority
-            sizes="(max-width: 1024px) 100vw, 1024px"
-            className="object-contain animate-[fadeIn_200ms_ease-out]"
-          />
-          <span className="absolute left-4 bottom-4 px-3 py-1 rounded-full bg-navy/85 text-white text-xs font-bold uppercase tracking-widest">
-            {active.label}
-          </span>
-        </div>
-
-        <div
-          role="tablist"
-          aria-label={`${plan.name} views`}
-          className="flex gap-2 overflow-x-auto p-3 border-t border-black/10"
-        >
-          {plan.gallery.map((img) => {
-            const isActive = img.id === active.id;
-            return (
-              <button
-                key={img.id}
-                role="tab"
-                aria-selected={isActive}
-                onClick={() => setActiveId(img.id)}
-                title={img.label}
-                className={`relative shrink-0 w-28 aspect-[2/1] rounded overflow-hidden border-2 transition-all ${
-                  isActive
-                    ? "border-gold ring-2 ring-gold/30"
-                    : "border-transparent opacity-60 hover:opacity-100"
-                }`}
-              >
-                <Image
-                  src={img.src}
-                  alt={img.label}
-                  fill
-                  sizes="112px"
-                  className="object-cover"
-                />
-              </button>
-            );
-          })}
-        </div>
+      {/* One model the buyer turns, in place of the eight fixed views. The
+          gallery stays in the catalog, unused by the storefront, until the
+          shop decides it is not needed. */}
+      <div className="relative aspect-[2/1] bg-offwhite rounded-lg overflow-hidden">
+        <model-viewer
+          src={FLOOR_PLAN_MODEL}
+          alt={`${plan.name} 3D layout`}
+          camera-orbit="35deg 65deg 70%"
+          max-camera-orbit="auto 88deg auto"
+          camera-controls=""
+          disable-zoom=""
+          touch-action="pan-y"
+          shadow-intensity="1"
+          exposure="0.8"
+          environment-image="neutral"
+          style={{ width: "100%", height: "100%" }}
+        />
+        <span className="pointer-events-none absolute left-4 bottom-4 px-3 py-1 rounded-full bg-navy/85 text-white text-xs font-bold uppercase tracking-widest">
+          Drag to rotate
+        </span>
       </div>
 
       <div className="mt-6 grid gap-4 sm:grid-cols-3">

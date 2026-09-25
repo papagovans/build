@@ -55,7 +55,7 @@ Not customer-facing yet.
 | Compatibility rules engine | Real catalog data and pricing |
 | **HubSpot lead submission** | |
 | 49 product thumbnails + lightbox | |
-| Layout gallery, 8 views | Generated DB migrations (dev uses push) |
+| 3D layout model, rotatable | Generated DB migrations (dev uses push) |
 | Name/email capture + personalization | |
 | **Build Sheet PDF** | |
 | **Payload admin at `/admin`, catalog in Postgres** | |
@@ -66,8 +66,10 @@ Not customer-facing yet.
   it got there from `scripts/seed.ts`, so it is the same placeholder content.
   Only the Electricity options are verbatim from Papago's dev site. Everything
   else needs real spec sheets, entered through `/admin`.
-- **All 5 floor plans share one render set.** Fine for testing the flow, will
-  confuse a real buyer comparing El Capitan against Rainier.
+- **All 5 floor plans share one 3D model**, Build 1 from SketchUp, in
+  `public/models/floor-plan.glb`. Fine for testing the flow, will confuse a
+  real buyer comparing El Capitan against Rainier. Builds 2 to 4 exist as
+  `.skp` in Dropbox and need exporting to `.glb`.
 - **Product photos are retailer/manufacturer images used as mockup placeholders.
   They are not licensed for public launch.** Replace with owned, licensed, or
   supplier-provided imagery before going customer-facing.
@@ -85,7 +87,7 @@ Not customer-facing yet.
 Intro (name/email)
   → Van Length        144, 170, 170 EXT
   → Floor Plan        5 layouts, filtered to the ones built on that chassis
-  → Layout            gallery, 8 views of the chosen plan
+  → Layout            one large 3D model of the chosen plan, drag to rotate
   → Trim Package      3 tiers, each pre-fills every category
   → Colors            the four swatch groups, plus finish upgrades
   → Options           every remaining category on ONE page with a jump nav:
