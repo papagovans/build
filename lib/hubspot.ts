@@ -10,12 +10,20 @@
  * exist this is a no-op, so the Build Sheet keeps working before the form does.
  */
 import type { Catalog } from "./catalog";
-import { getFloorPlan, getPackages } from "./catalog";
+import { getFloorPlan, getPackages, getVanLength } from "./catalog";
 import type { BuildState } from "./pricing";
 import { priceBuild, encodeBuild } from "./pricing";
 
 const PORTAL_ID = process.env.HUBSPOT_PORTAL_ID;
+/* Two forms, not one submitted twice. Each gets its own notification and its
+ * own reporting, and "started but never finished" is the signal worth chasing;
+ * a single form makes that invisible. */
+const STARTED_FORM_ID = process.env.HUBSPOT_BUILD_STARTED_FORM_ID;
 const FORM_ID = process.env.HUBSPOT_BUILD_SHEET_FORM_ID;
+
+/** Written to papago_lead_source so both submissions are attributable. */
+const SOURCE_STARTED = "Van Builder Started";
+const SOURCE_COMPLETED = "Van Builder Completed";
 const BUILD_URL = process.env.NEXT_PUBLIC_BUILD_URL ?? "https://build.papagovans.com";
 
 export interface LeadCustomer {
@@ -23,6 +31,64 @@ export interface LeadCustomer {
   lastName: string;
   email: string;
   phone: string;
+}
+
+type Field = { name: string; value: string };
+
+/** Shared POST. Never throws; a CRM outage is not the customer's problem. */
+async function post(
+  formId: string,
+  fields: Field[],
+  context: { pageUri: string; pageName: string },
+): Promise<"sent" | "failed"> {
+  try {
+    const res = await fetch(
+      `https://api.hsforms.com/submissions/v3/integration/submit/${PORTAL_ID}/${formId}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fields: fields.filter((f) => f.value !== ""), context }),
+      },
+    );
+    if (!res.ok) {
+      console.error("HubSpot submission failed", res.status, await res.text().catch(() => ""));
+      return "failed";
+    }
+    return "sent";
+  } catch (error) {
+    console.error("HubSpot submission threw", error);
+    return "failed";
+  }
+}
+
+/**
+ * Fires when someone hands over their details at the start of a build, before
+ * they have configured anything.
+ *
+ * This is deliberately early. It catches the people who abandon at step five,
+ * which is most of them. The cost is that the pipeline fills with half-built
+ * vans, so the lead source below is what lets Jeremy tell a browser from a
+ * buyer rather than working them all the same.
+ */
+export async function submitBuildStartedLead(
+  customer: LeadCustomer,
+  vanLengthName?: string,
+): Promise<"sent" | "skipped" | "failed"> {
+  if (!PORTAL_ID || !STARTED_FORM_ID) return "skipped";
+  if (!customer.email) return "skipped";
+
+  return post(
+    STARTED_FORM_ID,
+    [
+      { name: "firstname", value: customer.firstName },
+      { name: "lastname", value: customer.lastName },
+      { name: "email", value: customer.email },
+      { name: "phone", value: customer.phone },
+      { name: "papago_lead_source", value: SOURCE_STARTED },
+      { name: "papago_van_length", value: vanLengthName ?? "" },
+    ],
+    { pageUri: BUILD_URL, pageName: "Van builder, details submitted" },
+  );
 }
 
 /**
@@ -49,6 +115,8 @@ export async function submitBuildSheetLead(
    * what the customer configured rather than reading it off a PDF. */
   const buildLink = `${BUILD_URL}/?b=${encodeBuild(build)}`;
 
+  const length = build.vanLengthId ? getVanLength(catalog, build.vanLengthId) : undefined;
+
   const fields = [
     { name: "firstname", value: customer.firstName },
     { name: "lastname", value: customer.lastName },
@@ -59,27 +127,12 @@ export async function submitBuildSheetLead(
     { name: "papago_build_total", value: String(price.total) },
     { name: "papago_option_count", value: String(build.selected.length) },
     { name: "papago_build_link", value: buildLink },
-  ].filter((f) => f.value !== "");
+    { name: "papago_van_length", value: length?.name ?? "" },
+    { name: "papago_lead_source", value: SOURCE_COMPLETED },
+  ];
 
-  try {
-    const res = await fetch(
-      `https://api.hsforms.com/submissions/v3/integration/submit/${PORTAL_ID}/${FORM_ID}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          fields,
-          context: { pageUri: buildLink, pageName: "Build Sheet request" },
-        }),
-      },
-    );
-    if (!res.ok) {
-      console.error("HubSpot submission failed", res.status, await res.text().catch(() => ""));
-      return "failed";
-    }
-    return "sent";
-  } catch (error) {
-    console.error("HubSpot submission threw", error);
-    return "failed";
-  }
+  return post(FORM_ID, fields, {
+    pageUri: buildLink,
+    pageName: "Van builder, Build Sheet requested",
+  });
 }

@@ -1,13 +1,6 @@
 "use client";
 
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import {
   getFloorPlan,
@@ -87,6 +80,9 @@ export default function Configurator({ catalog }: { catalog: Catalog }) {
   const [build, setBuild] = useState<BuildState>(() => emptyBuild(catalog));
   const [customer, setCustomer] = useState<Customer>(EMPTY_CUSTOMER);
   const [step, setStep] = useState(LENGTH_STEP);
+  /* One lead per visit. Stepping back to the details and forward again is
+   * navigation, not a second person, and HubSpot would happily log both. */
+  const leadSent = useRef(false);
 
   // Restore a shared build from the URL, and the customer from this session.
   // Customer details deliberately stay out of the URL so shared links carry no PII.
@@ -184,7 +180,26 @@ export default function Configurator({ catalog }: { catalog: Catalog }) {
                 : undefined
             }
             onChange={setCustomer}
-            onContinue={() => goTo(PLAN_STEP)}
+            onContinue={() => {
+              /* Deliberately not awaited. The buyer moves to the next screen
+               * immediately; whether the CRM answers is our problem, not
+               * theirs. keepalive so it survives the navigation. */
+              if (!leadSent.current && isValidCustomer(customer)) {
+                leadSent.current = true;
+                fetch("/api/lead", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  keepalive: true,
+                  body: JSON.stringify({
+                    ...customer,
+                    vanLength: build.vanLengthId
+                      ? getVanLength(catalog, build.vanLengthId)?.name
+                      : undefined,
+                  }),
+                }).catch(() => {});
+              }
+              goTo(PLAN_STEP);
+            }}
           />
         )}
 

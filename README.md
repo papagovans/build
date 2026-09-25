@@ -466,9 +466,34 @@ That keeps a private app token out of this repo, and it lets whoever owns the
 form change its fields, notifications and follow-up without a deploy.
 
 ```bash
-vercel env add HUBSPOT_PORTAL_ID --scope papago          # 43782575
+vercel env add HUBSPOT_PORTAL_ID --scope papago            # 43782575
+vercel env add HUBSPOT_BUILD_STARTED_FORM_ID --scope papago
 vercel env add HUBSPOT_BUILD_SHEET_FORM_ID --scope papago
 ```
+
+**Two submissions, two forms.** One fires when a buyer hands over their
+details at the start, before configuring anything; the other when they ask for
+the Build Sheet. HubSpot matches on email, so the second updates the same
+contact rather than creating a duplicate.
+
+| | `papago_lead_source` |
+|---|---|
+| Details submitted | `Van Builder Started` |
+| Build Sheet requested | `Van Builder Completed` |
+
+Started with no matching Completed is the signal worth chasing: someone who
+began a van and walked away. That distinction is the whole reason it is two
+forms rather than one submitted twice.
+
+The early capture is deliberate and it has a cost: the pipeline fills with
+half-built vans. The lead source is what lets a salesperson tell a browser
+from a buyer instead of working them all the same.
+
+**No PDF is attached.** The completed submission carries `papago_build_link`
+instead, which opens the live build in the configurator. Whoever picks up the
+phone can change it and re-price on the call; a PDF is a photograph of a
+decision. Attaching a real file would also need a private app token, which is
+exactly what submitting to a form avoids.
 
 Until both are set, `submitBuildSheetLead()` returns `"skipped"` and the Build
 Sheet works exactly as before. It never throws: a customer who asked for their

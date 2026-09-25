@@ -41,6 +41,21 @@ async function run() {
   globalThis.fetch = realFetch;
   assert.ok(out === "failed" || out === "skipped", `a dead network must not throw, got ${out}`);
 
+  // The early submission has the same contract: silent without config, never throws.
+  delete process.env.HUBSPOT_PORTAL_ID;
+  delete process.env.HUBSPOT_BUILD_STARTED_FORM_ID;
+  const early = await import("../lib/hubspot.js?early=" + Date.now());
+  assert.equal(
+    await early.submitBuildStartedLead(CUSTOMER, "The Sweet Spot"),
+    "skipped",
+    "with no started form configured it must skip",
+  );
+  assert.equal(
+    await early.submitBuildStartedLead({ ...CUSTOMER, email: "" }),
+    "skipped",
+    "no email means no lead",
+  );
+
   console.log("hubspot lead submission: ok");
 }
 
