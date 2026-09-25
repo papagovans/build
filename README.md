@@ -72,10 +72,10 @@ Not customer-facing yet.
   They are not licensed for public launch.** Replace with owned, licensed, or
   supplier-provided imagery before going customer-facing.
 - **The three van length renders come from Mercedes' own configurator**
-  (`assets.mbvans.com`), cropped to a shared frame. Same caveat: fine for a
-  mockup, not cleared for launch. Papago is a Sprinter upfitter, so the route
-  to clearing them is Mercedes' upfitter asset programme rather than a stock
-  licence. Codes are in the comment on `VAN_LENGTHS` in `lib/catalog.ts`.
+  (`assets.mbvans.com`), cropped to a shared frame. Ownership confirmed these
+  are cleared for use as a Mercedes-Benz reseller. Render codes are in the
+  comment on `VAN_LENGTHS` in `lib/catalog.ts` so the set can be rebuilt or
+  extended later.
 
 ---
 
@@ -87,9 +87,8 @@ Intro (name/email)
   → Floor Plan        5 layouts, filtered to the ones built on that chassis
   → Layout            gallery, 8 views of the chosen plan
   → Trim Package      3 tiers, each pre-fills every category
-  → 9 Categories      Electricity, Plumbing, Heating/Cooling, Kitchen,
-                      Finishes, Storage, Seating/Sleeping,
-                      Exterior/Off-Road, Miscellaneous
+  → 6 Categories      Electrical, Water System, Heating & Cooling,
+                      Interior, Exterior, Finishes
   → Build Sheet       itemized total
 ```
 
@@ -220,8 +219,19 @@ gives real foreign keys and an admin generated from the schema, and it runs
 inside this same Next app, so a schema change and an app change ship in one
 commit. The tradeoff accepted was adding a database.
 
-**Nine categories, not eight.** Papago's live site files winches, bumpers, and
-light bars under *Electricity*. Exterior / Off-Road was split out to fix that.
+**Six categories, shaped like systems.** There were nine, and they were shaped
+like places in the van: Kitchen, Storage, Seating, Miscellaneous. A buyer then
+has to guess which drawer a thing lives in, and the guesses were bad. A blackout
+blind was Miscellaneous. A roof fan was Heating/Cooling. Papago's live site
+still files winches and light bars under *Electricity*.
+
+The six are systems instead, which is how the shop quotes and how an owner
+thinks once they are living in it. Interior is the largest at 18 products,
+because it absorbed Kitchen, Storage, Seating and Miscellaneous. Split it again
+only if buyers say that step feels long, not because 18 looks like a big number.
+
+Finishes survives as a category because the four colour groups hang off it.
+Chassis is not one: van length is step one of the wizard, ahead of all of this.
 
 ---
 

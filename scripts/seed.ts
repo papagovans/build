@@ -208,6 +208,24 @@ async function main() {
   }
   console.log(`colour groups: ${COLOR_GROUPS.length}`);
 
+
+  /* Prune categories the catalog no longer defines.
+   *
+   * The nine original categories collapsed to six, and without this the six
+   * retired slugs linger in the admin as empty steps the shop cannot explain.
+   * Runs last, after every product has been reassigned, so nothing is ever
+   * pointing at a category while it is deleted. */
+  const wanted = new Set(CATEGORIES.map((c) => c.id));
+  const existing = await payload.find({ collection: "categories", limit: 200 });
+  let pruned = 0;
+  for (const doc of existing.docs) {
+    if (wanted.has(doc.slug ?? "")) continue;
+    await payload.delete({ collection: "categories", id: doc.id });
+    console.log(`  pruned retired category: ${doc.slug}`);
+    pruned++;
+  }
+  if (pruned) console.log(`categories pruned: ${pruned}`);
+
   console.log("seed complete");
   process.exit(0);
 }

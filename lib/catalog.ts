@@ -335,23 +335,56 @@ export const FLOOR_PLANS: FloorPlan[] = [
  * added because the live site files winches, bumpers, and light bars under
  * Electricity, which is a data-hygiene problem worth fixing at migration.
  */
-export const CATEGORIES: Category[] = [
-  { id: "electricity", name: "Electricity", blurb: "Power, solar, and charging" },
-  { id: "plumbing", name: "Plumbing", blurb: "Water, sinks, and showers" },
-  { id: "climate", name: "Heating / Cooling", blurb: "Comfortable in any season" },
-  { id: "kitchen", name: "Kitchen", blurb: "Cook real meals on the road" },
-  { id: "finishes", name: "Finishes", blurb: "Colors, materials, and trim" },
-  { id: "storage", name: "Storage", blurb: "A place for all your gear" },
-  { id: "sleeping", name: "Seating / Sleeping", blurb: "Where you rest and ride" },
-  { id: "exterior", name: "Exterior / Off-Road", blurb: "Built for the rough stuff" },
-  { id: "misc", name: "Miscellaneous", blurb: "The finishing touches" },
+export /*
+ * Six categories, down from nine.
+ *
+ * The old nine were shaped like places in the van (Kitchen, Storage, Seating,
+ * Miscellaneous) which meant a buyer had to guess which drawer a thing lived
+ * in: a blackout blind was Miscellaneous, a roof fan was Heating/Cooling, a
+ * light bar was Exterior. These six are shaped like systems instead, which is
+ * how the shop quotes and how an owner thinks once they are living in it.
+ *
+ * Finishes stays because the four colour groups hang off it. Chassis is not
+ * here: van length is step one of the wizard, before any of this.
+ */
+const CATEGORIES: Category[] = [
+  {
+    id: "electrical",
+    name: "Electrical",
+    blurb: "Solar, batteries, inverter and shore power. What keeps everything else running.",
+  },
+  {
+    id: "water",
+    name: "Water System",
+    blurb: "Fresh and grey tanks, the pump, hot water and where you shower.",
+  },
+  {
+    id: "climate",
+    name: "Heating & Cooling",
+    blurb: "Diesel heat, air conditioning, ventilation and insulation.",
+  },
+  {
+    id: "interior",
+    name: "Interior",
+    blurb: "The galley, the bed, storage, windows and everything you touch daily.",
+  },
+  {
+    id: "exterior",
+    name: "Exterior",
+    blurb: "Racks, awning, wheels, recovery gear and lighting.",
+  },
+  {
+    id: "finishes",
+    name: "Finishes",
+    blurb: "Cabinetry, flooring, walls and countertops. How the van reads inside.",
+  },
 ];
 
 export const OPTIONS: Option[] = [
   // ---------------------------------------------------------------- Electricity
   {
     id: "elec-solar-400",
-    categoryId: "electricity",
+    categoryId: "electrical",
     thumb: "/products/elec-solar-400.webp",
     name: "400W Solar System",
     description: "30A Victron MPPT Smart Solar Charger with Bluetooth",
@@ -360,7 +393,7 @@ export const OPTIONS: Option[] = [
   },
   {
     id: "elec-dcdc-50",
-    categoryId: "electricity",
+    categoryId: "electrical",
     thumb: "/products/elec-dcdc-50.webp",
     name: "50A Victron Orion XS DC-DC Charger",
     description: "Smart battery charger with Bluetooth",
@@ -369,7 +402,7 @@ export const OPTIONS: Option[] = [
   },
   {
     id: "elec-battery-920",
-    categoryId: "electricity",
+    categoryId: "electrical",
     thumb: "/products/elec-battery-920.webp",
     name: "920Ah Epoch V2-T Elite Lithium System",
     description: "Heated LiFePO4 with Bluetooth monitoring",
@@ -378,7 +411,7 @@ export const OPTIONS: Option[] = [
   },
   {
     id: "elec-inverter",
-    categoryId: "electricity",
+    categoryId: "electrical",
     thumb: "/products/elec-inverter.webp",
     name: "Victron MultiPlus-II 3000W Inverter Charger",
     description: "Pure sine wave, with GX Touch 70 flush monitor",
@@ -387,7 +420,7 @@ export const OPTIONS: Option[] = [
   },
   {
     id: "elec-shore",
-    categoryId: "electricity",
+    categoryId: "electrical",
     thumb: "/products/elec-shore.webp",
     name: "30A Shore Power Smart Hookup",
     description: "110v outlets with USB A and C throughout",
@@ -396,7 +429,7 @@ export const OPTIONS: Option[] = [
   },
   {
     id: "elec-solar-600",
-    categoryId: "electricity",
+    categoryId: "electrical",
     thumb: "/products/elec-solar-600.webp",
     name: "Upgrade to 600W Solar",
     description: "With 50A MPPT Smart Solar Charger",
@@ -406,7 +439,7 @@ export const OPTIONS: Option[] = [
   },
   {
     id: "elec-dcdc-100",
-    categoryId: "electricity",
+    categoryId: "electrical",
     thumb: "/products/elec-dcdc-100.webp",
     name: "Upgrade to 100A DC-DC Charging",
     description: "Recharge twice as fast while driving",
@@ -416,7 +449,7 @@ export const OPTIONS: Option[] = [
   },
   {
     id: "elec-battery-1380",
-    categoryId: "electricity",
+    categoryId: "electrical",
     thumb: "/products/elec-battery-1380.webp",
     name: "Upgrade to 1,380Ah Battery Capacity",
     description: "Half again the capacity for extended off-grid stays",
@@ -429,7 +462,7 @@ export const OPTIONS: Option[] = [
   // ------------------------------------------------------------------ Plumbing
   {
     id: "plumb-fresh-20",
-    categoryId: "plumbing",
+    categoryId: "water",
     thumb: "/products/plumb-fresh-20.webp",
     name: "20 Gallon Fresh Water System",
     description: "Insulated tank with electric pump",
@@ -438,7 +471,7 @@ export const OPTIONS: Option[] = [
   },
   {
     id: "plumb-sink",
-    categoryId: "plumbing",
+    categoryId: "water",
     thumb: "/products/plumb-sink.webp",
     name: "Undermount Stainless Sink",
     description: "Hot and cold water faucet",
@@ -447,7 +480,7 @@ export const OPTIONS: Option[] = [
   },
   {
     id: "plumb-fresh-33",
-    categoryId: "plumbing",
+    categoryId: "water",
     thumb: "/products/plumb-fresh-33.webp",
     name: "Upgrade to 33 Gallon Fresh Water",
     description: "Stay out longer between fills",
@@ -457,7 +490,7 @@ export const OPTIONS: Option[] = [
   },
   {
     id: "plumb-shower-indoor",
-    categoryId: "plumbing",
+    categoryId: "water",
     thumb: "/products/plumb-shower-indoor.webp",
     name: "Indoor Shower",
     description: "Tiled wet bath with teak floor insert",
@@ -468,7 +501,7 @@ export const OPTIONS: Option[] = [
   },
   {
     id: "plumb-shower-outdoor",
-    categoryId: "plumbing",
+    categoryId: "water",
     thumb: "/products/plumb-shower-outdoor.webp",
     name: "Exterior Shower",
     description: "Rear-mounted hot and cold rinse station",
@@ -478,7 +511,7 @@ export const OPTIONS: Option[] = [
   },
   {
     id: "plumb-water-heater",
-    categoryId: "plumbing",
+    categoryId: "water",
     thumb: "/products/plumb-water-heater.webp",
     name: "On-Demand Water Heater",
     description: "Endless hot water, propane-free",
@@ -537,7 +570,7 @@ export const OPTIONS: Option[] = [
   // ------------------------------------------------------------------- Kitchen
   {
     id: "kitchen-counter",
-    categoryId: "kitchen",
+    categoryId: "interior",
     thumb: "/products/kitchen-counter.webp",
     name: "Acacia Butcher Block Counter",
     description: "Sealed hardwood work surface",
@@ -546,7 +579,7 @@ export const OPTIONS: Option[] = [
   },
   {
     id: "kitchen-fridge-small",
-    categoryId: "kitchen",
+    categoryId: "interior",
     thumb: "/products/kitchen-fridge-small.webp",
     name: "Under-Counter Refrigerator",
     description: "3.2 cu ft compressor fridge",
@@ -555,7 +588,7 @@ export const OPTIONS: Option[] = [
   },
   {
     id: "kitchen-cooktop-single",
-    categoryId: "kitchen",
+    categoryId: "interior",
     thumb: "/products/kitchen-cooktop-single.webp",
     name: "Portable Single Induction Burner",
     description: "Stows away when not in use",
@@ -564,7 +597,7 @@ export const OPTIONS: Option[] = [
   },
   {
     id: "kitchen-fridge-tall",
-    categoryId: "kitchen",
+    categoryId: "interior",
     thumb: "/products/kitchen-fridge-tall.webp",
     name: "Upgrade to Full-Height Refrigerator",
     description: "5.7 cu ft with separate freezer",
@@ -575,7 +608,7 @@ export const OPTIONS: Option[] = [
   },
   {
     id: "kitchen-cooktop-double",
-    categoryId: "kitchen",
+    categoryId: "interior",
     thumb: "/products/kitchen-cooktop-double.webp",
     name: "Upgrade to Built-In Double Induction",
     description: "Flush-mounted two-burner cooktop",
@@ -585,7 +618,7 @@ export const OPTIONS: Option[] = [
   },
   {
     id: "kitchen-microwave",
-    categoryId: "kitchen",
+    categoryId: "interior",
     thumb: "/products/kitchen-microwave.webp",
     name: "Convection Microwave",
     description: "Recessed into the upper cabinetry",
@@ -644,7 +677,7 @@ export const OPTIONS: Option[] = [
   // ------------------------------------------------------------------- Storage
   {
     id: "storage-garage",
-    categoryId: "storage",
+    categoryId: "interior",
     thumb: "/products/storage-garage.webp",
     name: "Rear Garage Storage",
     description: "Gear bay under the bed platform",
@@ -653,7 +686,7 @@ export const OPTIONS: Option[] = [
   },
   {
     id: "storage-overhead",
-    categoryId: "storage",
+    categoryId: "interior",
     thumb: "/products/storage-overhead.webp",
     name: "Overhead Cabinets",
     description: "Latching doors rated for washboard roads",
@@ -662,7 +695,7 @@ export const OPTIONS: Option[] = [
   },
   {
     id: "storage-drawers",
-    categoryId: "storage",
+    categoryId: "interior",
     thumb: "/products/storage-drawers.webp",
     name: "Heavy-Duty Slide-Out Drawers",
     description: "Full-extension, 500lb rated",
@@ -671,7 +704,7 @@ export const OPTIONS: Option[] = [
   },
   {
     id: "storage-gear-wall",
-    categoryId: "storage",
+    categoryId: "interior",
     thumb: "/products/storage-gear-wall.webp",
     name: "Modular Gear Wall",
     description: "Track system for bikes, skis, and boards",
@@ -682,7 +715,7 @@ export const OPTIONS: Option[] = [
   // ------------------------------------------------------------------ Sleeping
   {
     id: "sleep-fixed-bed",
-    categoryId: "sleeping",
+    categoryId: "interior",
     thumb: "/products/sleep-fixed-bed.webp",
     name: "Fixed Rear Bed",
     description: "Permanent platform with memory foam mattress",
@@ -691,7 +724,7 @@ export const OPTIONS: Option[] = [
   },
   {
     id: "sleep-swivel",
-    categoryId: "sleeping",
+    categoryId: "interior",
     thumb: "/products/sleep-swivel.webp",
     name: "Swivel Cab Seats",
     description: "Both front seats rotate into the living space",
@@ -700,7 +733,7 @@ export const OPTIONS: Option[] = [
   },
   {
     id: "sleep-bench",
-    categoryId: "sleeping",
+    categoryId: "interior",
     thumb: "/products/sleep-bench.webp",
     name: "Convertible Dinette Bench",
     description: "Seats four, converts to a second bed",
@@ -710,7 +743,7 @@ export const OPTIONS: Option[] = [
   },
   {
     id: "sleep-pop-top",
-    categoryId: "sleeping",
+    categoryId: "interior",
     thumb: "/products/sleep-pop-top.webp",
     name: "Pop-Top Sleeping Loft",
     description: "Adds two berths and standing headroom",
@@ -789,7 +822,7 @@ export const OPTIONS: Option[] = [
   // ---------------------------------------------------------------------- Misc
   {
     id: "misc-windows",
-    categoryId: "misc",
+    categoryId: "interior",
     thumb: "/products/misc-windows.webp",
     name: "Solid Glass Rear Cargo Door Windows",
     description: "Factory-look glass in the rear doors",
@@ -798,7 +831,7 @@ export const OPTIONS: Option[] = [
   },
   {
     id: "misc-blackout",
-    categoryId: "misc",
+    categoryId: "interior",
     thumb: "/products/misc-blackout.webp",
     name: "Magnetic Blackout Window Covers",
     description: "Van Essential insulated package",
@@ -807,7 +840,7 @@ export const OPTIONS: Option[] = [
   },
   {
     id: "misc-screen",
-    categoryId: "misc",
+    categoryId: "interior",
     thumb: "/products/misc-screen.webp",
     name: "Slider Door Bug Screen",
     description: "Magnetic closure, full height",
@@ -816,7 +849,7 @@ export const OPTIONS: Option[] = [
   },
   {
     id: "misc-starlink",
-    categoryId: "misc",
+    categoryId: "interior",
     thumb: "/products/misc-starlink.webp",
     name: "Starlink Roof Mount and Wiring",
     description: "Dish not included",
