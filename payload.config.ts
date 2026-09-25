@@ -279,6 +279,16 @@ const VanLengths: CollectionConfig = {
       },
     },
     { name: "image", type: "upload", relationTo: "media" },
+    {
+      name: "overallInches",
+      type: "number",
+      required: true,
+      defaultValue: 233.5,
+      admin: {
+        description:
+          "Overall vehicle length in inches. Drives the to-scale comparison bar.",
+      },
+    },
     { name: "order", type: "number", required: true, defaultValue: 0 },
   ],
 };

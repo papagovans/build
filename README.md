@@ -71,6 +71,11 @@ Not customer-facing yet.
 - **Product photos are retailer/manufacturer images used as mockup placeholders.
   They are not licensed for public launch.** Replace with owned, licensed, or
   supplier-provided imagery before going customer-facing.
+- **The three van length renders come from Mercedes' own configurator**
+  (`assets.mbvans.com`), cropped to a shared frame. Same caveat: fine for a
+  mockup, not cleared for launch. Papago is a Sprinter upfitter, so the route
+  to clearing them is Mercedes' upfitter asset programme rather than a stock
+  licence. Codes are in the comment on `VAN_LENGTHS` in `lib/catalog.ts`.
 
 ---
 

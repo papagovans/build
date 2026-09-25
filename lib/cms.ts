@@ -60,6 +60,7 @@ export async function loadCatalog(): Promise<Catalog> {
       name: v.name,
       tagline: v.tagline,
       priceDelta: v.priceDelta,
+      overallInches: v.overallInches,
       image: typeof v.image === "object" && v.image ? (v.image.url ?? "") : "",
     })),
 

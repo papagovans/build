@@ -104,6 +104,7 @@ async function main() {
       name: v.name,
       tagline: v.tagline,
       priceDelta: v.priceDelta,
+      overallInches: v.overallInches,
       order: i,
       ...(image ? { image } : {}),
     });

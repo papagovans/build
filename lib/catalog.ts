@@ -62,6 +62,14 @@ export interface VanLength {
   tagline: string;
   priceDelta: number;
   image: string;
+  /**
+   * Overall vehicle length in inches, Mercedes published spec.
+   *
+   * This drives the to-scale bar under the van. A 3/4 render foreshortens the
+   * length axis, so a real 24% difference only shows as about 8% on screen;
+   * the bar states the difference honestly instead of relying on the eye.
+   */
+  overallInches: number;
 }
 
 export interface FloorPlan {
@@ -914,21 +922,24 @@ const VAN_LENGTHS: VanLength[] = [
     name: "Fits A Standard Garage",
     tagline: '144" wheelbase, for solo travelers and couples',
     priceDelta: 0,
-    image: "/floorplans/cutaway.webp",
+    image: "/vanlengths/sprinter-144.webp",
+    overallInches: 233.5,
   },
   {
     id: "sprinter-170",
     name: "The Sweet Spot",
     tagline: '170" wheelbase, room for a fixed bed and a full bathroom',
     priceDelta: 12000,
-    image: "/floorplans/cutaway.webp",
+    image: "/vanlengths/sprinter-170.webp",
+    overallInches: 274,
   },
   {
     id: "sprinter-170-ext",
     name: "Maximum Space",
     tagline: '170" extended, for families and full-time living',
     priceDelta: 20000,
-    image: "/floorplans/cutaway.webp",
+    image: "/vanlengths/sprinter-170-ext.webp",
+    overallInches: 290,
   },
 ];
 

@@ -152,6 +152,10 @@ export interface VanLength {
    */
   priceDelta: number;
   image?: (number | null) | Media;
+  /**
+   * Overall vehicle length in inches. Drives the to-scale comparison bar.
+   */
+  overallInches: number;
   order: number;
   updatedAt: string;
   createdAt: string;
@@ -495,6 +499,7 @@ export interface VanLengthsSelect<T extends boolean = true> {
   tagline?: T;
   priceDelta?: T;
   image?: T;
+  overallInches?: T;
   order?: T;
   updatedAt?: T;
   createdAt?: T;
