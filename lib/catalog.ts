@@ -32,6 +32,19 @@ export interface Option {
   conflictsWith?: string[];
   /** Floor plans this fits. Undefined = fits all. */
   availableFor?: string[];
+  /**
+   * Whether a buyer chooses this themselves. Undefined means yes.
+   *
+   * False hides the option from its category step while leaving it fully in
+   * the build: it still prices, still appears on the Build Sheet, and still
+   * shows in the trim package's what-is-included list. It is how a component
+   * nobody has an opinion about, a 50A versus a 100A DC-DC charger, stops
+   * being a question and becomes part of the package that owns it.
+   *
+   * It is not a soft delete. An unselectable option a package pre-selects is
+   * as real as any other; the buyer simply is not asked about it.
+   */
+  selectable?: boolean;
   /** Product thumbnail under /public/products. Placeholder imagery for mockup only. */
   thumb?: string;
 }
@@ -393,6 +406,7 @@ export const OPTIONS: Option[] = [
   },
   {
     id: "elec-dcdc-50",
+    selectable: false,
     categoryId: "electrical",
     thumb: "/products/elec-dcdc-50.webp",
     name: "50A Victron Orion XS DC-DC Charger",
@@ -402,6 +416,7 @@ export const OPTIONS: Option[] = [
   },
   {
     id: "elec-battery-920",
+    selectable: false,
     categoryId: "electrical",
     thumb: "/products/elec-battery-920.webp",
     name: "920Ah Epoch V2-T Elite Lithium System",
@@ -439,6 +454,7 @@ export const OPTIONS: Option[] = [
   },
   {
     id: "elec-dcdc-100",
+    selectable: false,
     categoryId: "electrical",
     thumb: "/products/elec-dcdc-100.webp",
     name: "Upgrade to 100A DC-DC Charging",
@@ -449,6 +465,7 @@ export const OPTIONS: Option[] = [
   },
   {
     id: "elec-battery-1380",
+    selectable: false,
     categoryId: "electrical",
     thumb: "/products/elec-battery-1380.webp",
     name: "Upgrade to 1,380Ah Battery Capacity",
@@ -929,6 +946,23 @@ export function optionsFor(
 ): Option[] {
   return catalog.options.filter(
     (o) => o.categoryId === categoryId && isAvailable(o, floorPlanId),
+  );
+}
+
+/**
+ * The options a buyer is actually asked about.
+ *
+ * optionsFor() still returns everything, because the Build Sheet, the pricing
+ * engine and the rules engine all need the full set. Only the wizard's
+ * category steps narrow to this one.
+ */
+export function selectableOptionsFor(
+  catalog: Catalog,
+  categoryId: string,
+  floorPlanId: string,
+): Option[] {
+  return optionsFor(catalog, categoryId, floorPlanId).filter(
+    (o) => o.selectable !== false,
   );
 }
 

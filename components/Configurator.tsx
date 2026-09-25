@@ -14,6 +14,7 @@ import {
   getOption,
   getPackages,
   optionsFor,
+  selectableOptionsFor,
   colorGroupsFor,
   type Catalog,
   type Category,
@@ -1023,7 +1024,7 @@ function StepPackage({
   return (
     <section>
       <StepHeading
-        eyebrow="Step 4"
+        eyebrow={plan?.name ?? "Your Build"}
         title="Choose Your Trim Package"
         blurb={`Every trim package below is pre-configured to fit the ${plan?.name}. You can change any individual option afterward.`}
       />
@@ -1047,16 +1048,36 @@ function StepPackage({
 
               <PackageIconRow defaults={pkg.defaults} />
 
+              {/* Package-only components lead the list. They are unselectable,
+                  so this card is the one place in the whole wizard a buyer
+                  ever sees them; letting the "+N more" swallow them would make
+                  a real part of the build invisible. */}
               <ul className="mt-5 space-y-1.5 text-sm flex-1 border-t border-black/5 pt-4">
                 {pkg.defaults.length === 0 && (
                   <li className="text-steel">The core build, nothing added.</li>
                 )}
-                {pkg.defaults.slice(0, 6).map((id) => (
-                  <li key={id} className="flex gap-2 text-charcoal">
-                    <span className="text-gold font-bold">✓</span>
-                    <span>{getOption(catalog, id)?.name}</span>
-                  </li>
-                ))}
+                {[...pkg.defaults]
+                  .sort((a, b) => {
+                    const rank = (id: string) =>
+                      getOption(catalog, id)?.selectable === false ? 0 : 1;
+                    return rank(a) - rank(b);
+                  })
+                  .slice(0, 6)
+                  .map((id) => {
+                    const option = getOption(catalog, id);
+                    const packageOnly = option?.selectable === false;
+                    return (
+                      <li key={id} className="flex gap-2 text-charcoal">
+                        <span className="text-gold font-bold">✓</span>
+                        <span>
+                          {option?.name}
+                          {packageOnly && (
+                            <span className="text-steel"> · in this package</span>
+                          )}
+                        </span>
+                      </li>
+                    );
+                  })}
                 {pkg.defaults.length > 6 && (
                   <li className="text-steel pl-5">
                     + {pkg.defaults.length - 6} more
@@ -1166,7 +1187,9 @@ function StepCategory({
   const groups = colorGroupsFor(catalog, category.id);
   const [expanded, setExpanded] = useState<Option | null>(null);
 
-  const options = optionsFor(catalog, category.id, floorPlanId);
+  /* Only what the buyer is asked about. Components marked unselectable still
+   * price and still reach the Build Sheet; they just are not a question. */
+  const options = selectableOptionsFor(catalog, category.id, floorPlanId);
   const included = options.filter((o) => o.type === "included");
   const upgrades = options.filter((o) => o.type === "upgrade");
   const addons = options.filter((o) => o.type === "addon");

@@ -144,6 +144,7 @@ async function main() {
   for (const o of OPTIONS) {
     const image = await upload(o.thumb, o.name);
     const doc = await upsert("products", o.id, {
+      selectable: o.selectable !== false,
       name: o.name,
       description: o.description,
       category: categoryIds.get(o.categoryId),

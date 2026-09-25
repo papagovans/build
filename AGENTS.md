@@ -61,20 +61,25 @@ app renders until you reseed.
    the Local API in `lib/cms.ts`. Payload defaults collections to
    authenticated-only, and that is intentional. `media` is the one exception,
    because browsers fetch those files directly.
-9. **Categories are systems, not places.** Electrical, Water System, Heating &
+9. **`selectable: false` hides a question, not a product.** Such an option is
+   still priced, still on the Build Sheet, and still listed on the trim package
+   that carries it. Never treat it as a soft delete or filter it out of
+   `optionsFor()`, pricing, or the rules engine. Only the wizard's category
+   steps narrow, via `selectableOptionsFor()`.
+10. **Categories are systems, not places.** Electrical, Water System, Heating &
    Cooling, Interior, Exterior, Finishes. The nine they replaced were named
    after places in the van and buyers could not guess where things lived.
-10. **Do not let the admin create products inside a trim package.** Products
+11. **Do not let the admin create products inside a trim package.** Products
    are one shared library that packages point at. The alternative is the same
    inverter typed in fifteen times, drifting apart on price.
-11. **`push` is dev only.** Drizzle syncs the schema straight to Neon, which
+12. **`push` is dev only.** Drizzle syncs the schema straight to Neon, which
     keeps schema changes free while the shape is moving. Generate migrations
     before the shop enters content worth keeping.
-12. **Back up before anything destructive.** `npm run backup` writes a
+13. **Back up before anything destructive.** `npm run backup` writes a
     gzipped snapshot of every table and only reads, so there is no excuse
     for skipping it before a migration, a reseed, or a restore. `npm run
     restore` replaces the whole database and asks first. See README.
-13. **Never deploy against an empty database.** Payload's create-first-user
+14. **Never deploy against an empty database.** Payload's create-first-user
     screen is open to whoever reaches it first until one account exists.
 
 ## Verifying your work

@@ -250,6 +250,19 @@ Categories       the nine wizard steps and their order
 Media            every uploaded image
 ```
 
+**Selectable** is the tickbox that decides whether a buyer is asked about a
+product at all. Untick it and the product vanishes from its category step while
+staying entirely real: it still prices, still reaches the Build Sheet, and still
+appears in the what-is-included list of any trim package carrying it.
+
+It exists because a buyer has no opinion about a 50A versus a 100A DC-DC
+charger, and being asked is worse than not being asked. Those belong to the trim
+package. Electrical went from three questions to one: the only thing left to
+decide there is 400W or 600W of solar.
+
+It is not a soft delete. An unticked product a package carries is as real as any
+other, worth $8,180 on the Summit build today.
+
 **Fit rules** are plain-English pickers on a product: requires these first,
 cannot be combined with, replaces this included item, only fits these floor
 plans. Payload refuses to save a contradiction: nothing may require, conflict

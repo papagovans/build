@@ -292,6 +292,10 @@ export interface Product {
    * Included: leave at 0. Upgrade: charge the DIFFERENCE over the item it replaces. Add-on: the full price.
    */
   price: number;
+  /**
+   * Untick to hide this from its category step. It still prices, still shows on the Build Sheet, and still appears in the what-is-included list of any trim package that carries it. For components a buyer has no opinion about, like a 50A versus a 100A charger.
+   */
+  selectable?: boolean | null;
   image?: (number | null) | Media;
   /**
    * Two upgrades replacing the same item are automatically mutually exclusive.
@@ -558,6 +562,7 @@ export interface ProductsSelect<T extends boolean = true> {
   category?: T;
   type?: T;
   price?: T;
+  selectable?: T;
   image?: T;
   replaces?: T;
   requires?: T;

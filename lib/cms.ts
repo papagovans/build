@@ -106,6 +106,9 @@ export async function loadCatalog(): Promise<Catalog> {
       requires: relSlugs(o.requires),
       conflictsWith: relSlugs(o.conflictsWith),
       availableFor: relSlugs(o.availableFor),
+      /* Payload stores a real boolean. The catalog treats undefined as
+       * selectable, so only an explicit false travels. */
+      selectable: o.selectable === false ? false : undefined,
       thumb: mediaUrl(o.image),
     })),
 

@@ -390,6 +390,15 @@ const Products: CollectionConfig = {
           "Included: leave at 0. Upgrade: charge the DIFFERENCE over the item it replaces. Add-on: the full price.",
       },
     },
+    {
+      name: "selectable",
+      type: "checkbox",
+      defaultValue: true,
+      admin: {
+        description:
+          "Untick to hide this from its category step. It still prices, still shows on the Build Sheet, and still appears in the what-is-included list of any trim package that carries it. For components a buyer has no opinion about, like a 50A versus a 100A charger.",
+      },
+    },
     { name: "image", type: "upload", relationTo: "media" },
     {
       type: "collapsible",

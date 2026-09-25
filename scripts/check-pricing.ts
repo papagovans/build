@@ -7,7 +7,7 @@
  * a link shared before lengths existed still prices exactly as it did.
  */
 import assert from "node:assert/strict";
-import { HARDCODED_CATALOG as C, getPackages } from "../lib/catalog.ts";
+import { HARDCODED_CATALOG as C, getOption, getPackages, optionsFor, selectableOptionsFor } from "../lib/catalog.ts";
 import { applyPackage, decodeBuild, encodeBuild, emptyBuild, priceBuild, setVanLength } from "../lib/pricing.ts";
 
 const PLAN = "el-capitan";
@@ -43,6 +43,30 @@ assert.equal(priceBuild(C, roundTrip).total, 260770 + 20000);
 const bogus = decodeBuild(C, [PLAN, "", "", "", "sprinter-900"].join("~"));
 assert.equal(bogus.vanLengthId, "sprinter-144", "an unknown length falls back to the shortest");
 
+// --- unselectable options -------------------------------------------------
+// The contract: hidden from the question, still real in the build.
+const hidden = C.options.filter((o) => o.selectable === false);
+assert.ok(hidden.length > 0, "expected at least one unselectable option to test");
+
+for (const o of hidden) {
+  const asked = selectableOptionsFor(C, o.categoryId, PLAN).some((x) => x.id === o.id);
+  const exists = optionsFor(C, o.categoryId, PLAN).some((x) => x.id === o.id);
+  assert.equal(asked, false, `${o.id} must not be offered as a choice`);
+  assert.equal(exists, true, `${o.id} must still exist for pricing and the Build Sheet`);
+}
+
+// An unselectable upgrade a package carries still costs what it costs.
+const carried = summit.defaults.map((id) => getOption(C, id)).filter(Boolean);
+const hiddenCarried = carried.filter((o) => o!.selectable === false && o!.price > 0);
+if (hiddenCarried.length) {
+  const withOut = { ...on144, selected: on144.selected.filter((id) => getOption(C, id)?.selectable !== false) };
+  const delta = priceBuild(C, on144).total - priceBuild(C, withOut).total;
+  const expected = hiddenCarried.reduce((sum, o) => sum + o!.price, 0);
+  assert.equal(delta, expected, "unselectable components must still price");
+  console.log(`unselectable but priced: ${hiddenCarried.length} components, $${expected.toLocaleString()}`);
+}
+
+console.log(`hidden from the wizard: ${hidden.map((o) => o.id).join(", ")}`);
 console.log("van length pricing: ok");
 console.log(`  144      $${priceBuild(C, on144).total.toLocaleString()}`);
 console.log(`  170      $${priceBuild(C, on170).total.toLocaleString()}`);
