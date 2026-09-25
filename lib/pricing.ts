@@ -4,6 +4,9 @@ import {
   getOption,
   getFloorPlan,
   getPackages,
+  getVanLength,
+  defaultVanLength,
+  planFitsLength,
   isAvailable,
   type Catalog,
   type Option,
@@ -17,6 +20,8 @@ export interface Customer {
 }
 
 export interface BuildState {
+  /** Step one. Null means the shortest van, which is what old links encode. */
+  vanLengthId: string | null;
   floorPlanId: string | null;
   packageId: string | null;
   /** Selected upgrade and add-on ids. Included items are implicit. */
@@ -32,6 +37,7 @@ export interface BuildState {
  */
 export function emptyBuild(catalog: Catalog): BuildState {
   return {
+    vanLengthId: null,
     floorPlanId: null,
     packageId: null,
     selected: [],
@@ -68,6 +74,8 @@ export function isValidCustomer(c: Customer): boolean {
 
 export interface PriceBreakdown {
   base: number;
+  /** What the chassis adds over the shortest van. Zero on a 144. */
+  lengthDelta: number;
   packageDelta: number;
   upgrades: { option: Option; price: number }[];
   addons: { option: Option; price: number }[];
@@ -78,6 +86,12 @@ export interface PriceBreakdown {
 export function priceBuild(catalog: Catalog, state: BuildState): PriceBreakdown {
   const plan = state.floorPlanId ? getFloorPlan(catalog, state.floorPlanId) : undefined;
   const base = plan?.basePrice ?? 0;
+
+  /* basePrice is the price on the shortest van, so the chassis is a delta on
+   * top of it rather than a second base price per combination. Three lengths
+   * times five plans would otherwise be fifteen numbers to keep in step. */
+  const length = state.vanLengthId ? getVanLength(catalog, state.vanLengthId) : undefined;
+  const lengthDelta = length?.priceDelta ?? 0;
 
   const pkg =
     state.floorPlanId && state.packageId
@@ -111,11 +125,12 @@ export function priceBuild(catalog: Catalog, state: BuildState): PriceBreakdown 
 
   return {
     base,
+    lengthDelta,
     packageDelta,
     upgrades,
     addons,
     colors,
-    total: base + packageDelta + extras,
+    total: base + lengthDelta + packageDelta + extras,
   };
 }
 
@@ -198,6 +213,7 @@ export function applyPackage(
 ): BuildState {
   const pkg = getPackages(catalog, floorPlanId).find((p) => p.id === packageId);
   return {
+    vanLengthId: state.vanLengthId,
     floorPlanId,
     packageId,
     // Filtered against the chosen plan, not taken as given. A trim package can
@@ -216,7 +232,36 @@ export function applyPackage(
 /** Changing the floor plan drops selections that no longer fit. */
 export function setFloorPlan(state: BuildState, floorPlanId: string): BuildState {
   if (state.floorPlanId === floorPlanId) return state;
-  return { floorPlanId, packageId: null, selected: [], colors: state.colors };
+  return {
+    vanLengthId: state.vanLengthId,
+    floorPlanId,
+    packageId: null,
+    selected: [],
+    colors: state.colors,
+  };
+}
+
+/**
+ * Changing the length drops the floor plan if that plan is not built on it.
+ * Same contract as setFloorPlan: never leave the build in a state the shop
+ * cannot actually build.
+ */
+export function setVanLength(
+  catalog: Catalog,
+  state: BuildState,
+  vanLengthId: string,
+): BuildState {
+  if (state.vanLengthId === vanLengthId) return state;
+  const keepsPlan =
+    state.floorPlanId && planFitsLength(catalog, state.floorPlanId, vanLengthId);
+  if (keepsPlan) return { ...state, vanLengthId };
+  return {
+    ...state,
+    vanLengthId,
+    floorPlanId: null,
+    packageId: null,
+    selected: [],
+  };
 }
 
 /** An included item is superseded when an upgrade replacing it is selected. */
@@ -245,17 +290,21 @@ export function encodeBuild(state: BuildState): string {
   const colors = Object.entries(state.colors ?? {})
     .map(([g, c]) => `${g}:${c}`)
     .join(",");
+  /* The length is appended last on purpose. Links shared before it existed
+   * have four fields, and a missing fifth decodes as the shortest van, which
+   * is what those builds were priced at. No old link changes price. */
   return [
     state.floorPlanId,
     state.packageId ?? "",
     state.selected.join("."),
     colors,
+    state.vanLengthId ?? "",
   ].join("~");
 }
 
 export function decodeBuild(catalog: Catalog, raw: string | null): BuildState {
   if (!raw) return emptyBuild(catalog);
-  const [floorPlanId, packageId, selectedRaw, colorsRaw] = raw.split("~");
+  const [floorPlanId, packageId, selectedRaw, colorsRaw, vanLengthRaw] = raw.split("~");
   if (!floorPlanId || !getFloorPlan(catalog, floorPlanId)) return emptyBuild(catalog);
 
   const selected = (selectedRaw ?? "")
@@ -274,5 +323,12 @@ export function decodeBuild(catalog: Catalog, raw: string | null): BuildState {
     }
   }
 
-  return { floorPlanId, packageId: packageId || null, selected, colors };
+  /* An unknown or absent length falls back to the shortest van rather than to
+   * null, so a hand-edited link cannot produce a build with no chassis. */
+  const vanLengthId =
+    vanLengthRaw && getVanLength(catalog, vanLengthRaw)
+      ? vanLengthRaw
+      : (defaultVanLength(catalog)?.id ?? null);
+
+  return { vanLengthId, floorPlanId, packageId: packageId || null, selected, colors };
 }

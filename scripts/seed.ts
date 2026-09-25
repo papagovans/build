@@ -22,7 +22,7 @@ loadEnvConfig(process.cwd());
 
 const { getPayload } = await import("payload");
 const { default: config } = await import("../payload.config.ts");
-const { CATEGORIES, COLOR_GROUPS, FLOOR_PLANS, OPTIONS, getPackages } =
+const { CATEGORIES, COLOR_GROUPS, FLOOR_PLANS, OPTIONS, HARDCODED_CATALOG, getPackages } =
   await import("../lib/catalog.ts");
 
 const publicDir = path.resolve(process.cwd(), "public");
@@ -58,7 +58,13 @@ async function main() {
 
   /** Create or update by slug. */
   async function upsert(
-    collection: "categories" | "floor-plans" | "products" | "trim-packages" | "color-groups",
+    collection:
+      | "categories"
+      | "van-lengths"
+      | "floor-plans"
+      | "products"
+      | "trim-packages"
+      | "color-groups",
     slug: string,
     data: Record<string, unknown>,
   ) {
@@ -89,6 +95,22 @@ async function main() {
   }
   console.log(`categories: ${categoryIds.size}`);
 
+  // --- Van lengths ----------------------------------------------------------
+  // Seeded before floor plans, because a plan can point at the lengths it fits.
+  const lengthIds = new Map<string, number | string>();
+  for (const [i, v] of HARDCODED_CATALOG.vanLengths.entries()) {
+    const image = await upload(v.image, v.name);
+    const doc = await upsert("van-lengths", v.id, {
+      name: v.name,
+      tagline: v.tagline,
+      priceDelta: v.priceDelta,
+      order: i,
+      ...(image ? { image } : {}),
+    });
+    lengthIds.set(v.id, doc.id);
+  }
+  console.log(`van lengths: ${lengthIds.size}`);
+
   // --- Floor plans ----------------------------------------------------------
   const planIds = new Map<string, number | string>();
   for (const [i, p] of FLOOR_PLANS.entries()) {
@@ -104,6 +126,11 @@ async function main() {
       order: i,
       gallery,
       specs: p.specs,
+      /* Empty means every length. The shop narrows it in the admin once it
+       * confirms which plans are actually built on a 144. */
+      availableLengths: (p.availableLengths ?? [])
+        .map((id) => lengthIds.get(id))
+        .filter(Boolean),
     });
     planIds.set(p.id, doc.id);
   }
@@ -148,7 +175,7 @@ async function main() {
   // later without a schema change.
   let packageCount = 0;
   for (const plan of FLOOR_PLANS) {
-    for (const [i, pkg] of getPackages(plan.id).entries()) {
+    for (const [i, pkg] of getPackages(HARDCODED_CATALOG, plan.id).entries()) {
       await upsert("trim-packages", pkg.id, {
         name: pkg.name,
         tagline: pkg.tagline,

@@ -235,6 +235,54 @@ const Categories: CollectionConfig = {
   ],
 };
 
+/*
+ * Step one of the wizard: the chassis.
+ *
+ * priceDelta is what this length adds over the shortest van, not a price of
+ * its own. The floor plan carries basePrice. Three lengths times five plans
+ * would otherwise be fifteen numbers to keep in step, and they would drift.
+ */
+const VanLengths: CollectionConfig = {
+  slug: "van-lengths",
+  labels: { singular: "Van Length", plural: "Van Lengths" },
+  admin: {
+    useAsTitle: "name",
+    defaultColumns: ["name", "tagline", "priceDelta", "order"],
+    group: "Catalog",
+  },
+  defaultSort: "order",
+  fields: [
+    {
+      name: "name",
+      type: "text",
+      required: true,
+      admin: {
+        description:
+          "What the length gets the buyer, not the spec. Nobody arrives knowing they want 170 inches.",
+      },
+    },
+    slugField("van-lengths"),
+    {
+      name: "tagline",
+      type: "text",
+      required: true,
+      admin: { description: 'The spec, e.g. 170" wheelbase, room for a fixed bed.' },
+    },
+    {
+      name: "priceDelta",
+      type: "number",
+      required: true,
+      defaultValue: 0,
+      admin: {
+        description:
+          "What this length ADDS over the shortest van. The shortest one is 0.",
+      },
+    },
+    { name: "image", type: "upload", relationTo: "media" },
+    { name: "order", type: "number", required: true, defaultValue: 0 },
+  ],
+};
+
 const FloorPlans: CollectionConfig = {
   slug: "floor-plans",
   labels: { singular: "Floor Plan", plural: "Floor Plans" },
@@ -258,6 +306,16 @@ const FloorPlans: CollectionConfig = {
       },
     },
     { name: "order", type: "number", required: true, defaultValue: 0 },
+    {
+      name: "availableLengths",
+      type: "relationship",
+      relationTo: "van-lengths",
+      hasMany: true,
+      admin: {
+        description:
+          "Which chassis this plan is built on. Leave empty for all of them.",
+      },
+    },
     {
       name: "gallery",
       type: "array",
@@ -525,6 +583,7 @@ export default buildConfig({
     },
   },
   collections: [
+    VanLengths,
     FloorPlans,
     TrimPackages,
     Products,

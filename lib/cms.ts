@@ -44,16 +44,25 @@ export async function loadCatalog(): Promise<Catalog> {
 
   // depth 1 populates the relationships we read slugs from. Floor plans need 2
   // so their gallery rows carry the uploaded image, not just its id.
-  const [categories, floorPlans, products, packages, colorGroups] =
+  const [categories, floorPlans, products, packages, colorGroups, vanLengths] =
     await Promise.all([
       payload.find({ collection: "categories", limit: 200, sort: "order" }),
       payload.find({ collection: "floor-plans", limit: 200, sort: "order", depth: 2 }),
       payload.find({ collection: "products", limit: 500, depth: 1 }),
       payload.find({ collection: "trim-packages", limit: 500, sort: "order", depth: 1 }),
       payload.find({ collection: "color-groups", limit: 200, sort: "order", depth: 1 }),
+      payload.find({ collection: "van-lengths", limit: 50, sort: "order", depth: 1 }),
     ]);
 
   return {
+    vanLengths: vanLengths.docs.map((v) => ({
+      id: v.slug ?? "",
+      name: v.name,
+      tagline: v.tagline,
+      priceDelta: v.priceDelta,
+      image: typeof v.image === "object" && v.image ? (v.image.url ?? "") : "",
+    })),
+
     categories: categories.docs.map((c) => ({
       id: c.slug ?? "",
       name: c.name,
@@ -73,6 +82,10 @@ export async function loadCatalog(): Promise<Catalog> {
         name: p.name,
         tagline: p.tagline,
         basePrice: p.basePrice,
+        /* Empty means every length, which lengthsFor() treats as no filter. */
+        availableLengths: (p.availableLengths ?? [])
+          .map((v) => (typeof v === "object" && v ? (v.slug ?? "") : ""))
+          .filter(Boolean),
         // The card thumbnail is the first gallery view, which the seed orders
         // so the cutaway leads.
         image: gallery[0]?.src ?? "",

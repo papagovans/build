@@ -67,6 +67,7 @@ export interface Config {
   };
   blocks: {};
   collections: {
+    'van-lengths': VanLength;
     'floor-plans': FloorPlan;
     'trim-packages': TrimPackage;
     products: Product;
@@ -81,6 +82,7 @@ export interface Config {
   };
   collectionsJoins: {};
   collectionsSelect: {
+    'van-lengths': VanLengthsSelect<false> | VanLengthsSelect<true>;
     'floor-plans': FloorPlansSelect<false> | FloorPlansSelect<true>;
     'trim-packages': TrimPackagesSelect<false> | TrimPackagesSelect<true>;
     products: ProductsSelect<false> | ProductsSelect<true>;
@@ -129,38 +131,28 @@ export interface UserAuthOperations {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "floor-plans".
+ * via the `definition` "van-lengths".
  */
-export interface FloorPlan {
+export interface VanLength {
   id: number;
+  /**
+   * What the length gets the buyer, not the spec. Nobody arrives knowing they want 170 inches.
+   */
   name: string;
   /**
    * Generated from the name when you first save. Permanent: shared build links encode it.
    */
   slug?: string | null;
+  /**
+   * The spec, e.g. 170" wheelbase, room for a fixed bed.
+   */
   tagline: string;
   /**
-   * Includes the Mercedes Sprinter itself. Every price surface in the app says so.
+   * What this length ADDS over the shortest van. The shortest one is 0.
    */
-  basePrice: number;
+  priceDelta: number;
+  image?: (number | null) | Media;
   order: number;
-  /**
-   * The layout gallery. First entry is the one shown on the floor plan card.
-   */
-  gallery?:
-    | {
-        label: string;
-        image: number | Media;
-        id?: string | null;
-      }[]
-    | null;
-  specs?:
-    | {
-        label: string;
-        value: string;
-        id?: string | null;
-      }[]
-    | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -204,6 +196,47 @@ export interface Media {
       filename?: string | null;
     };
   };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "floor-plans".
+ */
+export interface FloorPlan {
+  id: number;
+  name: string;
+  /**
+   * Generated from the name when you first save. Permanent: shared build links encode it.
+   */
+  slug?: string | null;
+  tagline: string;
+  /**
+   * Includes the Mercedes Sprinter itself. Every price surface in the app says so.
+   */
+  basePrice: number;
+  order: number;
+  /**
+   * Which chassis this plan is built on. Leave empty for all of them.
+   */
+  availableLengths?: (number | VanLength)[] | null;
+  /**
+   * The layout gallery. First entry is the one shown on the floor plan card.
+   */
+  gallery?:
+    | {
+        label: string;
+        image: number | Media;
+        id?: string | null;
+      }[]
+    | null;
+  specs?:
+    | {
+        label: string;
+        value: string;
+        id?: string | null;
+      }[]
+    | null;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * Essential, Adventure, Summit. A trim package pre-selects products from the shared library; it does not own them.
@@ -379,6 +412,10 @@ export interface PayloadLockedDocument {
   id: number;
   document?:
     | ({
+        relationTo: 'van-lengths';
+        value: number | VanLength;
+      } | null)
+    | ({
         relationTo: 'floor-plans';
         value: number | FloorPlan;
       } | null)
@@ -450,6 +487,20 @@ export interface PayloadMigration {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "van-lengths_select".
+ */
+export interface VanLengthsSelect<T extends boolean = true> {
+  name?: T;
+  slug?: T;
+  tagline?: T;
+  priceDelta?: T;
+  image?: T;
+  order?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "floor-plans_select".
  */
 export interface FloorPlansSelect<T extends boolean = true> {
@@ -458,6 +509,7 @@ export interface FloorPlansSelect<T extends boolean = true> {
   tagline?: T;
   basePrice?: T;
   order?: T;
+  availableLengths?: T;
   gallery?:
     | T
     | {

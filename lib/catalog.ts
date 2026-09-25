@@ -48,11 +48,34 @@ export interface GalleryImage {
   src: string;
 }
 
+/**
+ * A Sprinter wheelbase. Step one of the wizard.
+ *
+ * `basePrice` lives on the floor plan and is the price on the shortest van;
+ * a length carries only the delta from there. Keeping them separate means a
+ * plan can be repriced without touching the chassis, and the other way round.
+ */
+export interface VanLength {
+  id: string;
+  /** What a buyer gets, not the spec. The spec is the tagline. */
+  name: string;
+  tagline: string;
+  priceDelta: number;
+  image: string;
+}
+
 export interface FloorPlan {
   id: string;
   name: string;
   tagline: string;
   basePrice: number;
+  /**
+   * Lengths this plan is built on. Undefined means all of them, which is the
+   * safe default: a plan that quietly offers a length it cannot be built on is
+   * a worse failure than one that offers too many, and the shop corrects it in
+   * the admin.
+   */
+  availableLengths?: string[];
   /** Card thumbnail. The 3D cutaway reads better at small sizes than the top-down. */
   image: string;
   gallery: GalleryImage[];
@@ -175,10 +198,34 @@ export interface BuildPackage {
  */
 export interface Catalog {
   categories: Category[];
+  vanLengths: VanLength[];
   floorPlans: FloorPlan[];
   options: Option[];
   colorGroups: ColorGroup[];
   packages: BuildPackage[];
+}
+
+export function getVanLength(catalog: Catalog, id: string): VanLength | undefined {
+  return catalog.vanLengths.find((v) => v.id === id);
+}
+
+/** The shortest van, which is what an old `?b=` link with no length means. */
+export function defaultVanLength(catalog: Catalog): VanLength | undefined {
+  return catalog.vanLengths[0];
+}
+
+export function lengthsFor(catalog: Catalog, floorPlanId: string): VanLength[] {
+  const plan = getFloorPlan(catalog, floorPlanId);
+  if (!plan?.availableLengths?.length) return catalog.vanLengths;
+  return catalog.vanLengths.filter((v) => plan.availableLengths!.includes(v.id));
+}
+
+export function planFitsLength(
+  catalog: Catalog,
+  floorPlanId: string,
+  vanLengthId: string,
+): boolean {
+  return lengthsFor(catalog, floorPlanId).some((v) => v.id === vanLengthId);
 }
 
 export function colorGroupsFor(catalog: Catalog, categoryId: string): ColorGroup[] {
@@ -853,8 +900,41 @@ export function getFloorPlan(catalog: Catalog, id: string): FloorPlan | undefine
  * are expanded per floor plan, with each plan's defaults filtered down to
  * options that actually fit it.
  */
+/*
+ * Owner pricing, 2026-09-24: the 144 is the $180,000 base, the 170 adds
+ * $12,000 and the 170 EXT adds $20,000.
+ *
+ * Names lead with what the length gets you rather than the wheelbase, because
+ * nobody arrives at a van site knowing they want 170 inches. The spec is the
+ * tagline underneath.
+ */
+const VAN_LENGTHS: VanLength[] = [
+  {
+    id: "sprinter-144",
+    name: "Fits A Standard Garage",
+    tagline: '144" wheelbase, for solo travellers and couples',
+    priceDelta: 0,
+    image: "/floorplans/cutaway.webp",
+  },
+  {
+    id: "sprinter-170",
+    name: "The Sweet Spot",
+    tagline: '170" wheelbase, room for a fixed bed and a full bathroom',
+    priceDelta: 12000,
+    image: "/floorplans/cutaway.webp",
+  },
+  {
+    id: "sprinter-170-ext",
+    name: "Maximum Space",
+    tagline: '170" extended, for families and full-time living',
+    priceDelta: 20000,
+    image: "/floorplans/cutaway.webp",
+  },
+];
+
 export const HARDCODED_CATALOG: Catalog = {
   categories: CATEGORIES,
+  vanLengths: VAN_LENGTHS,
   floorPlans: FLOOR_PLANS,
   options: OPTIONS,
   colorGroups: COLOR_GROUPS,
