@@ -13,18 +13,50 @@
   --color-gold: #f4d969;
   --color-gold-deep: #efc945;
   --color-cream: #fcfaf3;
-  --color-offwhite: #f5f5f5;
+  /* Warm, not grey. The website moved to a cream page with warm borders when
+     the Hybrid direction was chosen; these follow it so the two read as one
+     product rather than two that share a logo. */
+  --color-offwhite: #f2ede1;
+  --color-paper: #fcfaf3;
+  --color-line: #e6e0d2;
 
-  --font-sans: var(--font-prompt), ui-sans-serif, system-ui, sans-serif;
+  /* Inter for running text, Prompt kept for headings. Prompt is a display face
+     and reads tight in paragraphs; Inter was drawn for them. Same split the
+     website uses. */
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-prompt), ui-sans-serif, system-ui, sans-serif;
 }
 
 html {
   scroll-behavior: smooth;
+  background: var(--color-paper);
 }
 
 body {
-  background: var(--color-offwhite);
+  /* Transparent, not cream: the topographic wash below is painted behind the
+     body box, so a solid body background would hide it. The colour lives on
+     html. */
+  background: transparent;
   color: var(--color-charcoal);
+  -webkit-font-smoothing: antialiased;
+}
+
+/*
+ * Topographic contour wash behind the whole app, the same one the website
+ * carries. Near-white hairlines at about three percent contrast, so it reads
+ * as texture rather than pattern.
+ *
+ * position: fixed rather than background-attachment: fixed, which iOS Safari
+ * has never handled well. Sections that set their own background sit on top.
+ */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: url("/topo.webp") repeat;
+  background-size: 1920px auto;
+  pointer-events: none;
 }
 
 @keyframes fadeIn {
@@ -36,8 +68,9 @@ body {
   }
 }
 
-/* Headlines are uppercase across Papago's brand. */
+/* Headlines are uppercase across Papago's brand, and set in Prompt. */
 .brand-heading {
+  font-family: var(--font-display);
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.01em;

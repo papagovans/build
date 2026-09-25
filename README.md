@@ -394,17 +394,28 @@ sequence is walked forward afterwards or the next admin save collides.
 
 ## Conventions
 
-**Brand tokens** live in `app/globals.css`, sampled from papagovans.com's live
-stylesheet so this reads as the same product:
+**Brand tokens** live in `app/globals.css` and follow the rebuilt website's
+Hybrid direction, so the two read as one product rather than two that share a
+logo:
 
-| Token | Hex |
-|---|---|
-| navy | `#303C47` |
-| gold | `#F4D969` |
-| steel | `#53687B` |
-| cream | `#FCFAF3` |
+| Token | Hex | |
+|---|---|---|
+| paper | `#FCFAF3` | the page |
+| offwhite | `#F2EDE1` | surfaces |
+| line | `#E6E0D2` | borders, warm not grey |
+| navy | `#303C47` | headings, primary |
+| gold | `#F4D969` | selection, primary action |
+| steel | `#53687B` | secondary text |
 
-Font is **Prompt**. Headlines are uppercase via `.brand-heading`.
+**Inter for running text, Prompt for headings.** Prompt is a display face and
+reads tight in paragraphs; Inter was drawn for them. Headlines are uppercase
+via `.brand-heading`, which also applies Prompt.
+
+`public/topo.webp` is the topographic contour wash, the same asset the website
+carries, painted on `body::before` at about three percent contrast so it reads
+as texture rather than pattern. It is `position: fixed` rather than
+`background-attachment: fixed`, which iOS Safari has never handled well, and
+`body` is transparent so the wash is not hidden behind it.
 
 **Wizard steps** are constants at the top of `components/Configurator.tsx`.
 
