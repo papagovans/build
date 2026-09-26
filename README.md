@@ -88,9 +88,14 @@ and they come out right. It also lays a teal bedspread over any mattress
 whose material is named "Bedding". The lighting is `public/models/studio.hdr`, drawn by
 `scripts/studio-light.py`.
 
-It also closes the cutaway with a Sprinter interior: an arched headliner from
-the rear doors to the windscreen header, and the sliding-door side wall with a
-tinted window band. The van is drawn with no roof and that side cut away so it
+It also closes the cutaway with a Sprinter interior: an arched headliner that
+holds full height to the front seats and then falls away over the cab to the
+windscreen header, and the sliding-door side wall with a tinted window band.
+The cab drop is a smoothstep, because the real roof leaves the box level,
+curves down, and meets the header almost flat again; a straight ramp creases
+at both ends. It lands at 1.40 m above the finished floor, the Sprinter's own
+header height, since the model carries no cab shell to align to: no pillars,
+no windscreen frame, only the seats. The van is drawn with no roof and that side cut away so it
 reads from outside, which is right until somebody walks inside and sees page
 background where the roof should be.
 

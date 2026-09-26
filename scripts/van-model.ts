@@ -188,7 +188,9 @@ function shell() {
   const B = {
     xRear: 0.06,   // inside face of the rear doors
     xCab: 4.36,    // where the cab begins; the side wall stops here
+    xDrop: 4.42,   // the roof holds full height to here, then falls over the cab
     xFront: 5.02,  // the windscreen header; only the ceiling runs this far
+    yHeader: 1.52, // underside of the header, 1.40m above the finished floor
     yFloor: 0.12,  // finished floor, same number the walk-through stands on
     yRoof: 2.02,   // underside of the high roof at the crown
     zDoor: -0.32,  // the cut-away sliding door side
@@ -248,21 +250,47 @@ function shell() {
 
   /* Ceiling, in strips across the van so the arc reads as a curve rather
    * than a fold. Wound so the normal points down into the cabin. */
+  /* Height of the ceiling at a point. Behind xDrop it is the arch; forward of
+   * it the roof falls away over the cab the way a high-roof Sprinter's does,
+   * from the full box height down to the windscreen header.
+   *
+   * Smoothstep rather than a straight ramp: the real roof leaves the box
+   * level, then curves down and meets the header almost flat again, and a
+   * straight slope puts a visible crease at both ends instead.
+   *
+   * The model has no cab shell at all, no pillars, no windscreen frame, only
+   * the seats, so there is nothing here to align to. The header height is the
+   * Sprinter's, 1.40m above the finished floor. */
+  const ceilY = (x: number, z: number) => {
+    const top = roofY(z);
+    if (x <= B.xDrop) return top;
+    const t = Math.min(1, (x - B.xDrop) / (B.xFront - B.xDrop));
+    return top - (top - B.yHeader) * (t * t * (3 - 2 * t));
+  };
+
+  /* Stations along the van. One span holds the whole flat run, then the cab
+   * is cut finely enough that the curve reads as a curve. */
+  const CAB_STEPS = 8;
+  const stations = [B.xRear];
+  for (let i = 0; i <= CAB_STEPS; i++) {
+    stations.push(B.xDrop + (i / CAB_STEPS) * (B.xFront - B.xDrop));
+  }
+
   const STRIPS = 14;
   for (let i = 0; i < STRIPS; i++) {
     const z0 = B.zFar + (i / STRIPS) * (B.zDoor - B.zFar);
     const z1 = B.zFar + ((i + 1) / STRIPS) * (B.zDoor - B.zFar);
-    const y0 = roofY(z0), y1 = roofY(z1);
     /* A recessed strip either side of the crown, where the model already
      * runs its LED coves, so the ceiling is not one flat sheet of cream. */
     const mid = Math.abs(i - (STRIPS - 1) / 2);
     const mat = mid > 2.2 && mid < 3.6 ? trim : liner;
-    /* Runs to the windscreen header, not to the cab bulkhead. The model has
-     * no cab roof either, so stopping at xCab left a hole straight overhead
-     * the moment anyone inside turned to face the front seats. */
-    add(mat, [
-      [B.xRear, y0, z0], [B.xFront, y0, z0], [B.xFront, y1, z1], [B.xRear, y1, z1],
-    ]);
+    for (let j = 0; j < stations.length - 1; j++) {
+      const xa = stations[j], xb = stations[j + 1];
+      add(mat, [
+        [xa, ceilY(xa, z0), z0], [xb, ceilY(xb, z0), z0],
+        [xb, ceilY(xb, z1), z1], [xa, ceilY(xa, z1), z1],
+      ]);
+    }
   }
 
   /* The sliding-door side. Three bands: panel below the window line, the
