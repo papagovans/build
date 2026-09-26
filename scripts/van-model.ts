@@ -242,6 +242,11 @@ function shell() {
   const wall = matte("Shell wall panel", [0.86, 0.84, 0.79]).setEmissiveFactor([0.12, 0.117, 0.108]);
   const glass = matte("Shell window", [0.06, 0.07, 0.08], 0.22);
   const trim = matte("Shell trim", [0.26, 0.27, 0.28]).setEmissiveFactor([0.03, 0.03, 0.032]);
+  /* The fan lid and the vent dome are translucent and have the sky behind
+   * them, so from inside they are the brightest thing in the van. Emissive
+   * carries that: the studio light is above the roof and never reaches them. */
+  const dome = matte("Shell vent dome", [0.96, 0.96, 0.94], 0.6).setEmissiveFactor([0.62, 0.63, 0.6]);
+  const blade = matte("Shell fan blade", [0.20, 0.21, 0.22]).setEmissiveFactor([0.02, 0.02, 0.02]);
 
   const node = doc.createNode("Van shell");
   const add = (mat: Material, quad: number[][]) => node.addChild(
@@ -292,6 +297,59 @@ function shell() {
       ]);
     }
   }
+
+  /* Roof units, over the two places a van actually vents: the fan above the
+   * galley, where cooking has to go somewhere, and a second opening above the
+   * bed for cross-flow on a hot night. Both sit on the crown, clear of the
+   * roof rails the model already draws at z -0.83 and -1.76.
+   *
+   * Drawn flush rather than cut into the headliner. The ceiling is a solid
+   * single-sided sheet, so a real opening would mean cutting a hole through
+   * the strips; a lid drawn just below the liner with its frame below that
+   * reads the same from the only place anyone sees it, which is underneath.
+   */
+  const unit = (cx: number, cz: number, fan: boolean) => {
+    const y = ceilY(cx, cz);
+    const OUT = 0.18, IN = 0.152;              // a 14 inch roof opening
+    /* Listed counter-clockwise seen from above, which is the same sense as
+     * the ceiling strips and so faces down into the cabin. */
+    const quad = (mat: Material, dy: number, x0: number, x1: number, z0: number, z1: number) =>
+      add(mat, [
+        [cx + x0, y - dy, cz + z0], [cx + x1, y - dy, cz + z0],
+        [cx + x1, y - dy, cz + z1], [cx + x0, y - dy, cz + z1],
+      ]);
+    const flat = (mat: Material, h: number, dy: number) => quad(mat, dy, -h, h, -h, h);
+
+    /* The frame is a ring of four strips, not a square behind the lid. Drawn
+     * as a square it covered the lid completely, because the lower of two
+     * stacked panels is the one you see from underneath, and the fan came out
+     * as a dark patch. The ring leaves the middle open, so the lid can sit
+     * recessed above it the way a real one does. */
+    quad(trim, 0.004, -OUT, OUT, -OUT, -IN);
+    quad(trim, 0.004, -OUT, OUT, IN, OUT);
+    quad(trim, 0.004, -OUT, -IN, -IN, IN);
+    quad(trim, 0.004, IN, OUT, -IN, IN);
+    flat(dome, IN, 0.002);
+
+    if (!fan) return;
+    /* Eight narrow blades, hung below the lid so the unit reads as a fan and
+     * not a second skylight. Four wide ones met in the middle and came out as
+     * a crosshair; a real MaxxFan has ten, and eight is enough to read as a
+     * disc at the size anyone will ever see this. */
+    const BLADES = 8;
+    for (let b = 0; b < BLADES; b++) {
+      const a = (b * 2 * Math.PI) / BLADES;
+      const rot = (u: number, v: number) => [
+        cx + u * Math.cos(a) - v * Math.sin(a),
+        y - 0.032,
+        cz + u * Math.sin(a) + v * Math.cos(a),
+      ];
+      add(blade, [rot(0.030, -0.018), rot(0.140, -0.044), rot(0.140, 0.004), rot(0.030, 0.014)]);
+    }
+    flat(blade, 0.024, 0.036);   // hub
+  };
+  unit(3.05, -1.30, true);   // MaxxAir over the galley
+  unit(1.15, -1.30, false);  // second opening over the bed
 
   /* The sliding-door side. Three bands: panel below the window line, the
    * glazing, and a return up to the roof shoulder. The glass is dark rather

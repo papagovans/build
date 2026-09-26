@@ -95,7 +95,14 @@ The cab drop is a smoothstep, because the real roof leaves the box level,
 curves down, and meets the header almost flat again; a straight ramp creases
 at both ends. It lands at 1.40 m above the finished floor, the Sprinter's own
 header height, since the model carries no cab shell to align to: no pillars,
-no windscreen frame, only the seats. The van is drawn with no roof and that side cut away so it
+no windscreen frame, only the seats.
+
+Two roof units hang off the headliner: the fan over the galley and a second
+opening over the bed, on the crown and clear of the roof rails the model draws
+at z -0.83 and -1.76. They are drawn flush rather than cut through the liner,
+which is a sheet, and the frame is a ring rather than a square: drawn as a
+square it sat under the lid and hid it, because the lower of two stacked
+single-sided panels is the one you see from below. The van is drawn with no roof and that side cut away so it
 reads from outside, which is right until somebody walks inside and sees page
 background where the roof should be.
 
