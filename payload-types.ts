@@ -74,6 +74,7 @@ export interface Config {
     categories: Category;
     'color-groups': ColorGroup;
     media: Media;
+    models: Model;
     users: User;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
@@ -89,6 +90,7 @@ export interface Config {
     categories: CategoriesSelect<false> | CategoriesSelect<true>;
     'color-groups': ColorGroupsSelect<false> | ColorGroupsSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
+    models: ModelsSelect<false> | ModelsSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
@@ -219,6 +221,10 @@ export interface FloorPlan {
   basePrice: number;
   order: number;
   /**
+   * The .glb the floor plan card and the Layout step show. Make it with npm run van-model. Leave empty to show the shared model.
+   */
+  model?: (number | null) | Model;
+  /**
    * Which chassis this floor plan is built on. Leave empty for all of them.
    */
   availableLengths?: (number | VanLength)[] | null;
@@ -241,6 +247,29 @@ export interface FloorPlan {
     | null;
   updatedAt: string;
   createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "models".
+ */
+export interface Model {
+  id: number;
+  /**
+   * Which SketchUp build this came from, e.g. Build 2.
+   */
+  note?: string | null;
+  _objectKey?: string | null;
+  updatedAt: string;
+  createdAt: string;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  focalX?: number | null;
+  focalY?: number | null;
 }
 /**
  * Essential, Adventure, Summit. A trim package pre-selects products from the shared library; it does not own them.
@@ -448,6 +477,10 @@ export interface PayloadLockedDocument {
         value: number | Media;
       } | null)
     | ({
+        relationTo: 'models';
+        value: number | Model;
+      } | null)
+    | ({
         relationTo: 'users';
         value: number | User;
       } | null);
@@ -518,6 +551,7 @@ export interface FloorPlansSelect<T extends boolean = true> {
   tagline?: T;
   basePrice?: T;
   order?: T;
+  model?: T;
   availableLengths?: T;
   gallery?:
     | T
@@ -648,6 +682,25 @@ export interface MediaSelect<T extends boolean = true> {
               filename?: T;
             };
       };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "models_select".
+ */
+export interface ModelsSelect<T extends boolean = true> {
+  note?: T;
+  _objectKey?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  url?: T;
+  thumbnailURL?: T;
+  filename?: T;
+  mimeType?: T;
+  filesize?: T;
+  width?: T;
+  height?: T;
+  focalX?: T;
+  focalY?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

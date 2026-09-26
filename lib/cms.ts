@@ -92,6 +92,7 @@ export async function loadCatalog(): Promise<Catalog> {
         image: gallery[0]?.src ?? "",
         gallery,
         specs: (p.specs ?? []).map((s) => ({ label: s.label, value: s.value })),
+        model: mediaUrl(p.model),
       };
     }),
 

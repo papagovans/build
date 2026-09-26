@@ -101,6 +101,8 @@ export interface FloorPlan {
   image: string;
   gallery: GalleryImage[];
   specs: { label: string; value: string }[];
+  /** The plan's own .glb, uploaded in the admin. Undefined shows the shared one. */
+  model?: string;
 }
 
 /**

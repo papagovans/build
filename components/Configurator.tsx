@@ -73,9 +73,8 @@ const BUILD_KEY = "pv_build";
  * the rebuilt site the day that launches, without a code change. */
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://papagovans.com";
 
-/* ponytail: every floor plan card shows Build 1 until Builds 2 to 4 are
- * exported. When they are, give FloorPlan a model upload in Payload and read
- * it here instead of one shared file. */
+/* Each floor plan's own model is uploaded in the admin. This shared one is
+ * the fallback for a plan that has none yet. */
 const FLOOR_PLAN_MODEL = "/models/floor-plan.glb";
 
 /* A procedural studio light map: one key light from the side, a softer fill,
@@ -83,22 +82,49 @@ const FLOOR_PLAN_MODEL = "/models/floor-plan.glb";
  * direction, which is what made the model look flat and washed out. */
 const STUDIO_LIGHT = "/models/studio.hdr";
 
-/* Walking the aisle in first person. Metres, in the model's own coordinates:
- * the floor is at 0.12, the aisle runs from the bed edge (x 1.64) to behind
- * the cab seats, between the fridge face and the kitchen counter.
- * ponytail: hand-measured on Build 1. Each plan needs its own aisle once
- * Builds 2 to 4 have models. */
+/* Walking the aisle in first person. Where a person can stand is mapped by
+ * `npm run van-model` and stored inside each model, so it follows the model:
+ * upload a different floor plan in the admin and the walk-through follows. */
 const WALK = {
-  eye: 1.62,
-  x: [1.85, 4.25] as const,
-  z: [-1.45, -1.1] as const,
-  start: { x: 4.2, z: -1.28, theta: 90 },
   /* Degrees from straight up; 90 is level. A little below level is how
    * people look round a room, and it keeps counters and floor in frame. */
   gaze: 78,
   step: 0.1,
   turnDeg: 5,
 };
+
+/* The walk map as the model carries it: a grid of 5 cm cells over the floor,
+ * one bit each, set where a person can stand. Metres, model coordinates. */
+type WalkMap = {
+  x0: number; z0: number; cell: number; cols: number; rows: number;
+  eye: number; start: [number, number]; heading: number;
+  open: (x: number, z: number) => boolean;
+};
+
+/* Reads the map out of the .glb's JSON chunk. The browser already fetched the
+ * file for the viewer, so this is normally a cache hit. Null means the model
+ * predates the map, and the Walk inside button stays hidden. */
+async function loadWalkMap(url: string): Promise<WalkMap | null> {
+  try {
+    const buf = await (await fetch(url)).arrayBuffer();
+    const view = new DataView(buf);
+    const json = new TextDecoder().decode(new Uint8Array(buf, 20, view.getUint32(12, true)));
+    const w = JSON.parse(json).scenes?.[0]?.extras?.papagoWalk;
+    if (!w) return null;
+    const bits = Uint8Array.from(atob(w.cells), (c) => c.charCodeAt(0));
+    return {
+      ...w,
+      open: (x: number, z: number) => {
+        const q = Math.floor((x - w.x0) / w.cell), r = Math.floor((z - w.z0) / w.cell);
+        if (q < 0 || r < 0 || q >= w.cols || r >= w.rows) return false;
+        const k = r * w.cols + q;
+        return Boolean((bits[k >> 3] >> (k & 7)) & 1);
+      },
+    };
+  } catch {
+    return null;
+  }
+}
 
 /* The slice of model-viewer's element API the walk mode drives. */
 type ModelViewerElement = HTMLElement & {
@@ -108,8 +134,6 @@ type ModelViewerElement = HTMLElement & {
   getCameraTarget(): { x: number; y: number; z: number };
 };
 
-const clamp = (v: number, [lo, hi]: readonly [number, number]) =>
-  Math.min(hi, Math.max(lo, v));
 
 /* Google's viewer ships as a web component. Loaded from the CDN rather than
  * npm so three.js stays out of the wizard bundle for the steps without it. */
@@ -919,7 +943,7 @@ function StepFloorPlan({
                   button is invalid and every drag would also fire a click. */}
               <div className="relative aspect-[2/1] bg-offwhite">
                 <model-viewer
-                  src={FLOOR_PLAN_MODEL}
+                  src={plan.model ?? FLOOR_PLAN_MODEL}
                   alt={`${plan.name} 3D layout`}
                   camera-orbit="35deg 65deg 70%"
                   max-camera-orbit="auto 88deg auto"
@@ -1021,26 +1045,38 @@ function StepGallery({
    * the viewer glides toward each new pose, so reading it mid-glide loses
    * part of every step when a key is held. Radians. */
   const pose = useRef({ x: 0, z: 0, heading: 0, phi: Math.PI / 2 });
+  const model = plan.model ?? FLOOR_PLAN_MODEL;
+  const [map, setMap] = useState<WalkMap | null>(null);
+  useEffect(() => {
+    let live = true;
+    loadWalkMap(model).then((m) => { if (live) setMap(m); });
+    return () => { live = false; };
+  }, [model]);
 
   /* The camera sits a centimetre behind its target, so orbiting the target
    * is turning your head, and moving the target is walking. */
   const place = useCallback(() => {
     const el = viewer.current;
-    if (!el) return;
+    if (!el || !map) return;
     const { x, z, heading, phi } = pose.current;
-    el.cameraTarget = `${x}m ${WALK.eye}m ${z}m`;
+    el.cameraTarget = `${x}m ${map.eye}m ${z}m`;
     el.cameraOrbit = `${heading}rad ${phi}rad 0.01m`;
-  }, []);
+  }, [map]);
 
   const walk = useCallback((forward: number, turn: number) => {
     const p = pose.current;
+    if (!map) return;
     p.heading += (turn * WALK.turnDeg * Math.PI) / 180;
     // The camera looks from its orbit position toward the target, so
     // "forward" points away from where the orbit angle puts the camera.
-    p.x = clamp(p.x - Math.sin(p.heading) * forward * WALK.step, WALK.x);
-    p.z = clamp(p.z - Math.cos(p.heading) * forward * WALK.step, WALK.z);
+    const dx = -Math.sin(p.heading) * forward * WALK.step;
+    const dz = -Math.cos(p.heading) * forward * WALK.step;
+    // Blocked head-on, slide along whatever is in the way rather than stop dead.
+    if (map.open(p.x + dx, p.z + dz)) { p.x += dx; p.z += dz; }
+    else if (map.open(p.x + dx, p.z)) p.x += dx;
+    else if (map.open(p.x, p.z + dz)) p.z += dz;
     place();
-  }, [place]);
+  }, [place, map]);
 
   /* Dragging to look around changes the heading; pick it up so the next
    * step goes where the buyer is now facing. */
@@ -1058,8 +1094,9 @@ function StepGallery({
   }, [walking]);
 
   const enterWalk = () => {
-    const { x, z, theta } = WALK.start;
-    pose.current = { x, z, heading: (theta * Math.PI) / 180, phi: (WALK.gaze * Math.PI) / 180 };
+    if (!map) return;
+    const [x, z] = map.start;
+    pose.current = { x, z, heading: (map.heading * Math.PI) / 180, phi: (WALK.gaze * Math.PI) / 180 };
     setWalking(true);
   };
   // After the render that loosens the orbit limits, or the viewer clamps
@@ -1112,7 +1149,7 @@ function StepGallery({
       <div className="relative aspect-[2/1] bg-offwhite rounded-lg overflow-hidden">
         <model-viewer
           ref={viewer}
-          src={FLOOR_PLAN_MODEL}
+          src={model}
           alt={`${plan.name} 3D layout`}
           camera-orbit="35deg 65deg 70%"
           /* Walking: head turns all the way round and tilts up and down, the
@@ -1137,13 +1174,13 @@ function StepGallery({
             "Drag to rotate · Scroll to zoom"
           )}
         </span>
-        <button
+        {map && <button
           type="button"
           onClick={walking ? exitWalk : enterWalk}
           className="absolute right-4 top-4 px-4 py-2 rounded-full bg-gold text-navy text-xs font-bold uppercase tracking-widest shadow hover:bg-gold-deep transition-colors"
         >
           {walking ? "Exit walk-through" : "Walk inside"}
-        </button>
+        </button>}
         {walking && <WalkPad onStep={walk} />}
       </div>
 

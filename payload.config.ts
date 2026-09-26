@@ -219,6 +219,29 @@ const Media: CollectionConfig = {
   ],
 };
 
+/**
+ * 3D models for the floor plans: the .glb files `npm run van-model` writes.
+ * Public read for the same reason as media: the browser fetches them
+ * directly. Kept apart from media so image resizing never touches them.
+ */
+const Models: CollectionConfig = {
+  slug: "models",
+  labels: { singular: "3D Model", plural: "3D Models" },
+  admin: { group: "Admin" },
+  access: { read: () => true },
+  upload: {
+    // Browsers report .glb as either; Payload sniffs the file too.
+    mimeTypes: ["model/gltf-binary", "application/octet-stream"],
+  },
+  fields: [
+    {
+      name: "note",
+      type: "text",
+      admin: { description: "Which SketchUp build this came from, e.g. Build 2." },
+    },
+  ],
+};
+
 const Categories: CollectionConfig = {
   slug: "categories",
   admin: {
@@ -316,6 +339,16 @@ const FloorPlans: CollectionConfig = {
       },
     },
     { name: "order", type: "number", required: true, defaultValue: 0 },
+    {
+      name: "model",
+      type: "upload",
+      relationTo: "models",
+      label: "3D model",
+      admin: {
+        description:
+          "The .glb the floor plan card and the Layout step show. Make it with npm run van-model. Leave empty to show the shared model.",
+      },
+    },
     {
       name: "availableLengths",
       type: "relationship",
@@ -629,6 +662,7 @@ export default buildConfig({
     Categories,
     ColorGroups,
     Media,
+    Models,
     Users,
   ],
   // No rich text field in this schema, so no editor is configured. The lexical
@@ -645,7 +679,7 @@ export default buildConfig({
     // Vercel's filesystem is read-only, so uploads cannot live on disk.
     vercelBlobStorage({
       enabled: Boolean(process.env.BLOB_READ_WRITE_TOKEN),
-      collections: { media: true },
+      collections: { media: true, models: true },
       token: process.env.BLOB_READ_WRITE_TOKEN ?? "",
     }),
   ],

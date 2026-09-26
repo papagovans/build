@@ -95,6 +95,7 @@ for (const [tex, sat] of textures) {
 }
 
 await dressBed();
+mapWalkableFloor();
 shell();
 
 const graded = process.env.GRADED_OUT ?? join(mkdtempSync(join(tmpdir(), "van-model-")), "graded.glb");
@@ -372,6 +373,154 @@ function shell() {
    */
 
   doc.getRoot().listScenes()[0].addChild(node);
+}
+
+/**
+ * Maps where a person can stand, for the configurator's walk-through, and
+ * stores it inside the model so it travels with the file: swap the model in
+ * the admin and the walk-through follows the new layout with no re-measuring.
+ *
+ * On a 5 cm grid: a cell is walkable if the floor is under it and nothing
+ * stands in it between knee and head height, then the map shrinks by a
+ * shoulder's width so the camera never grazes a cabinet. The largest
+ * connected patch is the aisle; the walk starts at its cab end.
+ *
+ * Stored on the scene as extras.papagoWalk, read back by the storefront.
+ */
+function mapWalkableFloor() {
+  const CELL = 0.05, BODY = 0.18, KNEE = 0.25, HEAD = 1.8, EYE = 1.5;
+  const tris: number[][][] = [];
+  for (const node of doc.getRoot().listNodes()) {
+    const mesh = node.getMesh();
+    if (!mesh) continue;
+    const m = node.getWorldMatrix();
+    const world = (v: number[]) => [
+      m[0] * v[0] + m[4] * v[1] + m[8] * v[2] + m[12],
+      m[1] * v[0] + m[5] * v[1] + m[9] * v[2] + m[13],
+      m[2] * v[0] + m[6] * v[1] + m[10] * v[2] + m[14],
+    ];
+    for (const prim of mesh.listPrimitives()) {
+      if (prim.getMode() !== 4) continue; // triangles only
+      const pos = prim.getAttribute("POSITION");
+      if (!pos) continue;
+      const idx = prim.getIndices();
+      const n = idx ? idx.getCount() : pos.getCount();
+      const at = (i: number) => world(pos.getElement(idx ? idx.getScalar(i) : i, [0, 0, 0]));
+      for (let i = 0; i + 2 < n; i += 3) tris.push([at(i), at(i + 1), at(i + 2)]);
+    }
+  }
+
+  // The floor is the highest level carrying at least half as much
+  // upward-facing area as the biggest one: the finished floor, not the
+  // subfloor it sits on or the lower cab floor.
+  const area = new Map<number, number>();
+  const up = (t: number[][]) => {
+    const [a, b, c] = t;
+    const u = [b[0] - a[0], b[1] - a[1], b[2] - a[2]], v = [c[0] - a[0], c[1] - a[1], c[2] - a[2]];
+    const nx = u[1] * v[2] - u[2] * v[1], ny = u[2] * v[0] - u[0] * v[2], nz = u[0] * v[1] - u[1] * v[0];
+    const len = Math.hypot(nx, ny, nz);
+    return len ? { ny: Math.abs(ny) / len, area: len / 2 } : { ny: 0, area: 0 };
+  };
+  for (const t of tris) {
+    const { ny, area: a } = up(t);
+    const y = Math.max(t[0][1], t[1][1], t[2][1]);
+    if (ny > 0.95 && y < 0.35) area.set(Math.round(y * 100), (area.get(Math.round(y * 100)) ?? 0) + a);
+  }
+  if (!area.size) return console.log("no floor found, walk-through off for this model");
+  const biggest = Math.max(...area.values());
+  const floorY = Math.max(...[...area].filter(([, a]) => a >= biggest / 2).map(([y]) => y)) / 100;
+
+  const { min, max } = getBounds(doc.getRoot().listScenes()[0]);
+  const cols = Math.ceil((max[0] - min[0]) / CELL), rows = Math.ceil((max[2] - min[2]) / CELL);
+  const floor = new Uint8Array(cols * rows), blocked = new Uint8Array(cols * rows);
+  const cellOf = (x: number, z: number) => [Math.floor((x - min[0]) / CELL), Math.floor((z - min[2]) / CELL)];
+
+  // Marks cells whose centre lies under a triangle. Walls project to a line
+  // with no area, so those mark every cell their footprint touches.
+  const paint = (t: number[][], grid: Uint8Array) => {
+    const xs = t.map((p) => p[0]), zs = t.map((p) => p[2]);
+    const [c0, r0] = cellOf(Math.min(...xs), Math.min(...zs));
+    const [c1, r1] = cellOf(Math.max(...xs), Math.max(...zs));
+    const [a, b, c] = t;
+    const d = (b[0] - a[0]) * (c[2] - a[2]) - (c[0] - a[0]) * (b[2] - a[2]);
+    for (let r = Math.max(0, r0); r <= Math.min(rows - 1, r1); r++)
+      for (let q = Math.max(0, c0); q <= Math.min(cols - 1, c1); q++) {
+        if (Math.abs(d) > 1e-6) {
+          const x = min[0] + (q + 0.5) * CELL, z = min[2] + (r + 0.5) * CELL;
+          const w1 = ((b[0] - x) * (c[2] - z) - (c[0] - x) * (b[2] - z)) / d;
+          const w2 = ((c[0] - x) * (a[2] - z) - (a[0] - x) * (c[2] - z)) / d;
+          if (w1 < 0 || w2 < 0 || w1 + w2 > 1) continue;
+        }
+        grid[r * cols + q] = 1;
+      }
+  };
+  for (const t of tris) {
+    const ys = t.map((p) => p[1]);
+    const lo = Math.min(...ys), hi = Math.max(...ys);
+    if (hi < floorY + 0.03 && lo > floorY - 0.03 && up(t).ny > 0.95) paint(t, floor);
+    else if (hi > floorY + KNEE && lo < floorY + HEAD) paint(t, blocked);
+  }
+
+  // Keep a shoulder's width from anything that is not open floor.
+  const reach = Math.ceil(BODY / CELL);
+  const open = (q: number, r: number) =>
+    q >= 0 && r >= 0 && q < cols && r < rows && floor[r * cols + q] && !blocked[r * cols + q];
+  const walk = new Uint8Array(cols * rows);
+  for (let r = 0; r < rows; r++)
+    for (let q = 0; q < cols; q++) {
+      let ok = open(q, r);
+      for (let dr = -reach; ok && dr <= reach; dr++)
+        for (let dq = -reach; ok && dq <= reach; dq++)
+          if (dq * dq + dr * dr <= reach * reach && !open(q + dq, r + dr)) ok = false;
+      walk[r * cols + q] = ok ? 1 : 0;
+    }
+
+  // The largest connected patch is the aisle; stray pockets are dropped.
+  const label = new Int32Array(cols * rows).fill(-1);
+  let best: number[] = [];
+  for (let s = 0; s < walk.length; s++) {
+    if (!walk[s] || label[s] >= 0) continue;
+    const patch = [s];
+    label[s] = s;
+    for (let i = 0; i < patch.length; i++) {
+      const q = patch[i] % cols, r = Math.floor(patch[i] / cols);
+      for (const [nq, nr] of [[q + 1, r], [q - 1, r], [q, r + 1], [q, r - 1]]) {
+        const k = nr * cols + nq;
+        if (nq >= 0 && nr >= 0 && nq < cols && nr < rows && walk[k] && label[k] < 0) {
+          label[k] = s;
+          patch.push(k);
+        }
+      }
+    }
+    if (patch.length > best.length) best = patch;
+  }
+  if (best.length < 20) return console.log("no aisle found, walk-through off for this model");
+
+  const bits = new Uint8Array(Math.ceil((cols * rows) / 8));
+  for (const k of best) bits[k >> 3] |= 1 << (k & 7);
+  // Start on the aisle's spine, the longest straight run of floor front to
+  // back, 40 cm in from its cab end and facing the rear. Starting anywhere
+  // else can land in the pocket by the sliding door, where the first step
+  // forward meets a cabinet.
+  const inPatch = new Uint8Array(cols * rows);
+  for (const k of best) inPatch[k] = 1;
+  let startRow = 0, runEnd = 0, runLen = 0;
+  for (let r = 0; r < rows; r++)
+    for (let q = 0, len = 0; q < cols; q++) {
+      len = inPatch[r * cols + q] ? len + 1 : 0;
+      if (len > runLen) [runLen, startRow, runEnd] = [len, r, q];
+    }
+  const startCol = runEnd - Math.min(8, runLen - 1);
+  doc.getRoot().listScenes()[0].setExtras({
+    papagoWalk: {
+      x0: min[0], z0: min[2], cell: CELL, cols, rows,
+      eye: floorY + EYE,
+      start: [min[0] + (startCol + 0.5) * CELL, min[2] + (startRow + 0.5) * CELL],
+      heading: 90, // degrees; 90 faces the rear doors
+      cells: Buffer.from(bits).toString("base64"),
+    },
+  });
+  console.log(`walk map: floor at ${floorY} m, ${(best.length * CELL * CELL).toFixed(1)} m² of aisle`);
 }
 
 /* An axis-aligned box as one primitive, 24 vertices so each face has its own

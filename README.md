@@ -66,10 +66,10 @@ Not customer-facing yet.
   it got there from `scripts/seed.ts`, so it is the same placeholder content.
   Only the Electricity options are verbatim from Papago's dev site. Everything
   else needs real spec sheets, entered through `/admin`.
-- **All 5 floor plans share one 3D model**, Build 1 from SketchUp, in
-  `public/models/floor-plan.glb`. Fine for testing the flow, will confuse a
-  real buyer comparing El Capitan against Rainier. Builds 2 to 4 exist as
-  `.skp` in Dropbox and need exporting to `.glb`.
+- **Rainier has no 3D model of its own.** El Capitan, Zion, Olympus and
+  Mammoth carry SketchUp Builds 1 to 4, assigned in that order as a
+  placeholder; reassign them in `/admin` when the real mapping is known.
+  Rainier falls back to the shared `public/models/floor-plan.glb` (Build 1).
 
 ### Making a 3D model
 
@@ -77,8 +77,20 @@ Export from SketchUp as `.glb` (the SimLab exporter), delete any placeholder
 boxes first, then:
 
 ```bash
-npm run van-model -- "<export>.glb" public/models/floor-plan.glb
+npm run van-model -- "<export>.glb" build.glb
 ```
+
+Then in `/admin`, open the floor plan and upload `build.glb` as its **3D
+model**. The floor plan card and the Layout step pick it up immediately. A
+plan with no model shows the shared `public/models/floor-plan.glb`.
+
+The script also maps where a person can stand, for the Layout step's walk
+through, and stores that map inside the file: the floor minus anything
+standing on it between knee and head height, kept a shoulder's width from
+cabinets. The walk starts on the aisle's longest straight run, 40 cm back
+from the cab. Because the map travels in the model, swapping the model in the
+admin swaps the walk-through with it; nothing is measured by hand. A model
+made before the map existed simply shows no Walk inside button.
 
 The raw export renders flat and washed out. The script fixes the exporter's
 colour-space mistake, gives each material a real finish from its name (wood
@@ -194,9 +206,12 @@ later with no schema change.
 **Base price is $180,000 for all five plans on a 144, and includes the van.**
 The chassis adds a delta on top: the 170 adds $12,000 and the 170 EXT adds
 $20,000. `basePrice` stays on the floor plan so three lengths times five plans
-is eight numbers to maintain rather than fifteen that drift apart. This
-differs from the public marketing site, which quotes $53k–$127k *excluding*
-the van. Every price surface in the app must say "van included."
+is eight numbers to maintain rather than fifteen that drift apart. The rebuilt marketing site agrees:
+the owner confirmed on 2026-09-25 that $180,000 including the van is correct,
+and stage.papagovans.com now quotes that on every surface, including the five
+floor plan pages that used to carry $48,695 to $127,395 excluding it. Only the
+old WordPress site still publishes the old set. Every price surface in this app
+must say "van included."
 
 ### Compatibility rules
 
@@ -304,13 +319,14 @@ Staff sign in at **`/admin`** and work down one level at a time. Nothing here
 needs code.
 
 ```
-Floor Plans      name, tagline, base price, gallery views, spec table
+Floor Plans      name, tagline, base price, 3D model, gallery views, spec table
   └ Trim Packages    price delta, and which products it pre-selects
 Products         the shared library: title, description, photo, price,
                  category, and the fit rules
 Colour Groups    swatch sets, each choice a name, hex and price
 Categories       the nine wizard steps and their order
 Media            every uploaded image
+3D Models        the .glb files the floor plans show
 ```
 
 **Selectable** is the tickbox that decides whether a buyer is asked about a
