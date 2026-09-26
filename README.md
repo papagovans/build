@@ -574,17 +574,21 @@ details at the start, before configuring anything; the other when they ask for
 the Build Sheet. HubSpot matches on email, so the second updates the same
 contact rather than creating a duplicate.
 
-| | `papago_lead_source` |
+| | HubSpot form |
 |---|---|
 | Details submitted | `Van Builder Started` |
 | Build Sheet requested | `Van Builder Completed` |
+
+There is no lead source field. The form a contact arrived through already says
+which it was, and the portal's own `lead_source` holds Meta campaign names on
+thousands of contacts, so this app must never write it.
 
 Started with no matching Completed is the signal worth chasing: someone who
 began a van and walked away. That distinction is the whole reason it is two
 forms rather than one submitted twice.
 
 The early capture is deliberate and it has a cost: the pipeline fills with
-half-built vans. The lead source is what lets a salesperson tell a browser
+half-built vans. The form they arrived through is what lets a salesperson tell a browser
 from a buyer instead of working them all the same.
 
 **No PDF is attached.** The completed submission carries `papago_build_link`
@@ -600,9 +604,10 @@ Build Sheet gets it whether or not HubSpot is reachable.
 Alongside the contact fields it sends the floor plan, the trim package, the
 total, the option count, and **a link back to the exact build**, so whoever
 picks up the phone can open what the customer configured rather than reading
-it off a PDF. Create those as properties on the HubSpot form:
-`papago_floor_plan`, `papago_trim_package`, `papago_build_total`,
-`papago_option_count`, `papago_build_link`.
+it off a PDF. Those are contact properties in a "Van Builder" group, with these exact
+internal names, or HubSpot drops them silently: `papago_van_length`,
+`papago_floor_plan`, `papago_trim_package`, `papago_build_total` (number),
+`papago_option_count` (number), `papago_build_link`.
 
 ```bash
 npx tsx scripts/check-hubspot.ts    # asserts it skips cleanly and never throws

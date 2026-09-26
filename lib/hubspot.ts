@@ -21,9 +21,9 @@ const PORTAL_ID = process.env.HUBSPOT_PORTAL_ID;
 const STARTED_FORM_ID = process.env.HUBSPOT_BUILD_STARTED_FORM_ID;
 const FORM_ID = process.env.HUBSPOT_BUILD_SHEET_FORM_ID;
 
-/** Written to papago_lead_source so both submissions are attributable. */
-const SOURCE_STARTED = "Van Builder Started";
-const SOURCE_COMPLETED = "Van Builder Completed";
+/* No lead source field: HubSpot already records which form a contact came
+ * through, and the portal's own lead_source holds Meta campaign names that
+ * this must never overwrite. */
 const BUILD_URL = process.env.NEXT_PUBLIC_BUILD_URL ?? "https://build.papagovans.com";
 
 export interface LeadCustomer {
@@ -67,7 +67,7 @@ async function post(
  *
  * This is deliberately early. It catches the people who abandon at step five,
  * which is most of them. The cost is that the pipeline fills with half-built
- * vans, so the lead source below is what lets Jeremy tell a browser from a
+ * vans, so the form it arrives through is what lets Jeremy tell a browser from a
  * buyer rather than working them all the same.
  */
 export async function submitBuildStartedLead(
@@ -84,7 +84,6 @@ export async function submitBuildStartedLead(
       { name: "lastname", value: customer.lastName },
       { name: "email", value: customer.email },
       { name: "phone", value: customer.phone },
-      { name: "papago_lead_source", value: SOURCE_STARTED },
       { name: "papago_van_length", value: vanLengthName ?? "" },
     ],
     { pageUri: BUILD_URL, pageName: "Van builder, details submitted" },
@@ -128,7 +127,6 @@ export async function submitBuildSheetLead(
     { name: "papago_option_count", value: String(build.selected.length) },
     { name: "papago_build_link", value: buildLink },
     { name: "papago_van_length", value: length?.name ?? "" },
-    { name: "papago_lead_source", value: SOURCE_COMPLETED },
   ];
 
   return post(FORM_ID, fields, {
