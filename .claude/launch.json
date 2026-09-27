@@ -37,6 +37,19 @@
       ],
       "port": 3000,
       "autoPort": true
+    },
+    {
+      "name": "papago-ads",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "astro",
+        "preview",
+        "--root",
+        "/Users/jerry/projects/papagovans-web",
+        "--port",
+        "4410"
+      ],
+      "port": 4410
     }
   ]
 }
