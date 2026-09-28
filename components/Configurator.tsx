@@ -433,11 +433,11 @@ function Header() {
             className="h-12 w-auto transition-opacity hover:opacity-80"
           />
         </a>
-        <a href="tel:+14807248372" className="text-right leading-tight">
+        <a href="tel:+14807617175" className="text-right leading-tight">
           <span className="block text-[11px] font-bold uppercase tracking-widest text-gold">
             Got Questions?
           </span>
-          <span className="block text-lg font-bold text-white">(480) 724-8372</span>
+          <span className="block text-lg font-bold text-white">(480) 761-7175</span>
         </a>
       </div>
     </header>
@@ -1796,7 +1796,7 @@ function StepSummary({
           </button>
           {pdfState === "error" && (
             <p className="mt-3 text-sm text-red-700">
-              That did not download. Try once more, or call (480) 724-8372.
+              That did not download. Try once more, or call (480) 761-7175.
             </p>
           )}
         </div>
