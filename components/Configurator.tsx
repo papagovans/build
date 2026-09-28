@@ -174,12 +174,14 @@ export default function Configurator({ catalog }: { catalog: Catalog }) {
   // Customer details deliberately stay out of the URL so shared links carry no PII.
   useEffect(() => {
     let savedBuild: string | null = null;
+    let known = EMPTY_CUSTOMER;
     try {
       savedBuild = localStorage.getItem(BUILD_KEY);
       const saved = localStorage.getItem(CUSTOMER_KEY);
       // Merged onto the empty customer so a session saved before a field
       // existed restores as "" rather than undefined.
-      if (saved) setCustomer({ ...EMPTY_CUSTOMER, ...JSON.parse(saved) });
+      if (saved) known = { ...EMPTY_CUSTOMER, ...JSON.parse(saved) };
+      setCustomer(known);
     } catch {
       // Private mode or blocked storage. Non-fatal.
     }
@@ -187,9 +189,14 @@ export default function Configurator({ catalog }: { catalog: Catalog }) {
       catalog,
       new URLSearchParams(window.location.search).get("b") ?? savedBuild,
     );
-    if (restored.floorPlanId) {
+    /* A returning buyer always reopens on the floor plans, with everything
+       they picked still in place, rather than deep in the options where they
+       left off. Floor plans are the decision the rest hangs on, and the one
+       worth seeing again. Someone we have no details for gets the details
+       form first, the same gate the Van Length step applies. */
+    if (restored.floorPlanId || restored.vanLengthId) {
       setBuild(restored);
-      setStep(restored.packageId ? OPTIONS_STEP : GALLERY_STEP);
+      setStep(isValidCustomer(known) ? PLAN_STEP : INTRO_STEP);
     }
   }, [catalog]);
 
