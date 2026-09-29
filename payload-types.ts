@@ -288,7 +288,7 @@ export interface Model {
   focalY?: number | null;
 }
 /**
- * Essential, Adventure, Summit. A trim package pre-selects products from the shared library; it does not own them.
+ * Not used in Phase 1: every floor plan ships the same included list. Kept for when trim packages return; a trim package pre-selects products, it does not own them.
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "trim-packages".
@@ -318,7 +318,7 @@ export interface TrimPackage {
   createdAt: string;
 }
 /**
- * One shared library. A product is entered once here and picked by as many trim packages as need it, so a price change lands everywhere at once.
+ * Everything in the build, one row each, shown on What's Included and the Build Sheet. A system (Solar & Power System, Galley Kitchen) is a product too; set Part of on an item to put it inside a system's drawer. Edits show on the builder straight away.
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "products".
@@ -396,7 +396,7 @@ export interface Category {
   createdAt: string;
 }
 /**
- * Pick-exactly-one swatch sets. Every choice is $0 today; the price field exists so a premium finish can charge later without a rebuild.
+ * Not shown in Phase 1 (no colour step). Pick-exactly-one swatch sets for when finishes return; every choice is $0 today.
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "color-groups".

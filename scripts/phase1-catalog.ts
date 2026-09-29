@@ -66,7 +66,7 @@ const ITEMS: Item[] = [
   { slug: "inc-dcdc", cat: "electrical", name: "50A DC-DC Battery Charger", mfr: "Victron Energy", model: "Orion XS 50A", img: "elec-dcdc-50.webp",
     what: "Charges the house batteries from the van's alternator while you drive, at up to 50 amps.",
     why: "A few hours on the road refills the batteries even on a cloudy day, without draining the van's own starting battery." },
-  { slug: "inc-battery", cat: "electrical", name: "920Ah Lithium Iron Phosphate Battery", mfr: "Epoch Batteries", model: "V2-T Elite", // the old photo was a Victron battery; needs an Epoch one
+  { slug: "inc-battery", cat: "electrical", name: "920Ah Lithium Iron Phosphate Battery", mfr: "Epoch Batteries", model: "V2-T Elite 12V 460Ah (x2)", // the old photo was a Victron battery; needs an Epoch one
     what: "920 amp-hours of lithium iron phosphate battery storage, the house power for everything in the van.",
     why: "Enough stored power to run the fridge, lights, fans, cooktop and laptops for days, in a stable battery chemistry that lasts thousands of charges." },
   { slug: "inc-inverter", cat: "electrical", name: "3000W Inverter/Charger", mfr: "Victron Energy", model: "MultiPlus-II 3000", // the old photo was the older MultiPlus; needs a MultiPlus-II
@@ -144,7 +144,7 @@ const ITEMS: Item[] = [
   { slug: "inc-microwave", cat: "interior", name: "700W Microwave",
     what: "A 700-watt microwave in black, with its own outlet in the overhead cabinet.",
     why: "Reheat dinner or a coffee in a minute, powered by the inverter." },
-  { slug: "inc-fridge", cat: "interior", name: "Refrigerator with Freezer", mfr: "Isotherm", model: "Freeline 140",
+  { slug: "inc-fridge", cat: "interior", name: "Refrigerator with Freezer", mfr: "Isotherm", model: "Freeline Slim 140",
     what: "A 12-volt refrigerator with a freezer section.",
     why: "Keeps food cold for the whole trip on little battery power, so there is no ice to buy every day." },
   // INTERIOR: finishes
@@ -209,7 +209,7 @@ const ITEMS: Item[] = [
     why: "It wakes you if there is smoke, or if a heater or engine problem puts carbon monoxide in the cabin." },
 
   // EXTERIOR
-  { slug: "inc-roof-rack", cat: "exterior", name: "Safari Roof Rack with Deck and Ladder", mfr: "FVCO",
+  { slug: "inc-roof-rack", cat: "exterior", name: "Safari Roof Rack with Deck and Ladder", mfr: "FVCO", model: "Safari Roof Rack",
     what: "A roof rack with a roof-top deck and a side ladder.",
     why: "Carry boards, boxes or chairs up top, and climb up for the view or to clean the solar panels." },
   { slug: "inc-light-bar", cat: "exterior", name: "Roof Rack Light Bar", mfr: "KC HiLiTES",
@@ -236,7 +236,7 @@ const ITEMS: Item[] = [
   { slug: "inc-tire-carrier", cat: "exterior", name: "Spare Tire Carrier", mfr: "Lost Saguaro",
     what: "A spare tire carrier on the rear of the van.",
     why: "The full-size spare rides where you can reach it, not under the van." },
-  { slug: "inc-bike-carrier", cat: "exterior", name: "Bike Carrier", mfr: "Owl Vans", model: "B2",
+  { slug: "inc-bike-carrier", cat: "exterior", name: "Bike Carrier", mfr: "Owl Vans", model: "B2 (B2-VS-2535)",
     what: "A rear carrier with horizontal bike bars. Bike trays are not included.",
     why: "Bikes ride on the outside, not on your bed." },
   { slug: "inc-rear-box", cat: "exterior", name: "Rear Storage Box", mfr: "Owl Vans", model: "Monster Box",

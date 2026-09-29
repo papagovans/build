@@ -268,10 +268,10 @@ const Categories: CollectionConfig = {
  */
 const VanLengths: CollectionConfig = {
   slug: "van-lengths",
-  labels: { singular: "Van Length", plural: "Van Lengths" },
+  labels: { singular: "Van", plural: "Vans" },
   admin: {
     useAsTitle: "name",
-    defaultColumns: ["name", "tagline", "priceDelta", "order"],
+    defaultColumns: ["name", "make", "wheelbase", "vanPrice", "priceDelta", "order"],
     group: "Catalog",
   },
   defaultSort: "order",
@@ -443,10 +443,11 @@ const Products: CollectionConfig = {
   slug: "products",
   admin: {
     useAsTitle: "name",
-    defaultColumns: ["name", "category", "type", "price"],
+    defaultColumns: ["name", "category", "partOf", "manufacturer", "modelNumber", "image"],
     group: "Catalog",
+    listSearchableFields: ["name", "manufacturer", "modelNumber"],
     description:
-      "One shared library. A product is entered once here and picked by as many trim packages as need it, so a price change lands everywhere at once.",
+      "Everything in the build, one row each, shown on What's Included and the Build Sheet. A system (Solar & Power System, Galley Kitchen) is a product too; set Part of on an item to put it inside a system's drawer. Edits show on the builder straight away.",
   },
   fields: [
     { name: "name", type: "text", required: true },
@@ -630,7 +631,7 @@ const TrimPackages: CollectionConfig = {
     defaultColumns: ["name", "priceDelta", "floorPlan", "order"],
     group: "Catalog",
     description:
-      "Essential, Adventure, Summit. A trim package pre-selects products from the shared library; it does not own them.",
+      "Not used in Phase 1: every floor plan ships the same included list. Kept for when trim packages return; a trim package pre-selects products, it does not own them.",
   },
   defaultSort: "order",
   fields: [
@@ -689,7 +690,7 @@ const ColorGroups: CollectionConfig = {
     defaultColumns: ["name", "category", "order"],
     group: "Catalog",
     description:
-      "Pick-exactly-one swatch sets. Every choice is $0 today; the price field exists so a premium finish can charge later without a rebuild.",
+      "Not shown in Phase 1 (no colour step). Pick-exactly-one swatch sets for when finishes return; every choice is $0 today.",
   },
   defaultSort: "order",
   fields: [

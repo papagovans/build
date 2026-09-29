@@ -1774,36 +1774,6 @@ function StepSummary({
           {VAN_NOTE} Final pricing is confirmed after a build consultation.
         </p>
 
-        <details className="mt-6 rounded-lg border border-black/10 p-4">
-          <summary className="cursor-pointer text-sm font-bold text-navy">
-            Everything included ({included.length} items)
-          </summary>
-          <div className="mt-3 grid gap-x-8 sm:grid-cols-2">
-            {catalog.categories.map((c) => {
-              const items = topLevel(included).filter((o) => o.categoryId === c.id);
-              if (items.length === 0) return null;
-              return (
-                <div key={c.id} className="mt-3">
-                  <h4 className="text-xs font-bold uppercase tracking-widest text-steel mb-1">{c.name}</h4>
-                  <ul className="text-sm text-charcoal space-y-0.5">
-                    {items.map((o) => {
-                      const sub = partsOf(included, o.id);
-                      return (
-                        <li key={o.id}>
-                          {o.name}
-                          {sub.length > 0 && (
-                            <ul className="ml-4 text-xs text-steel">{sub.map((p) => <li key={p.id}>{p.name}</li>)}</ul>
-                          )}
-                        </li>
-                      );
-                    })}
-                  </ul>
-                </div>
-              );
-            })}
-          </div>
-        </details>
-
         <div className="mt-8 p-6 rounded-lg bg-cream text-center">
           <p className="brand-heading text-lg">Download Your Build Sheet</p>
           <p className="mt-1 text-sm text-steel">
@@ -1825,6 +1795,51 @@ function StepSummary({
             </p>
           )}
         </div>
+        {/* Everything the price buys, by category, each system with its parts
+            under it: buyers should see exactly what they are paying for. */}
+        <div className="mt-8">
+          <h3 className="brand-heading text-xl">What&rsquo;s Included</h3>
+          <p className="mt-1 text-sm text-steel">
+            Every item below comes in the price, {included.filter((o) => partsOf(included, o.id).length === 0).length} parts in all.
+          </p>
+          {catalog.categories.map((c) => {
+            const items = topLevel(included).filter((o) => o.categoryId === c.id);
+            if (items.length === 0) return null;
+            return (
+              <div key={c.id} className="mt-6">
+                <h4 className="text-xs font-bold uppercase tracking-widest text-navy border-b border-black/10 pb-1.5">{c.name}</h4>
+                <ul className="mt-2 divide-y divide-black/5">
+                  {items.map((o) => {
+                    const sub = partsOf(included, o.id);
+                    const brand = (x: Option) => [x.manufacturer, x.model].filter(Boolean).join(" ");
+                    return (
+                      <li key={o.id} className="py-2">
+                        <div className="flex justify-between gap-4 text-sm">
+                          <span className="font-semibold text-charcoal">
+                            {o.name}
+                            {brand(o) && <span className="font-normal text-steel"> &middot; {brand(o)}</span>}
+                          </span>
+                          <span className="text-xs text-steel shrink-0">Included</span>
+                        </div>
+                        {sub.length > 0 && (
+                          <ul className="mt-1.5 ml-4 grid gap-x-8 gap-y-1 sm:grid-cols-2 text-[13px] text-steel">
+                            {sub.map((p) => (
+                              <li key={p.id} className="list-disc">
+                                <span className="text-charcoal">{p.name}</span>
+                                {brand(p) && <span> &middot; {brand(p)}</span>}
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            );
+          })}
+        </div>
+
       </div>
     </section>
   );

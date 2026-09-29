@@ -25,6 +25,8 @@ import {
   optionsFor,
   vanLabel,
   VAN_NOTE,
+  topLevel,
+  partsOf,
   type Catalog,
 } from "./catalog";
 import {
@@ -150,9 +152,7 @@ function linesFor(
   // on its own when its system is in the build.
   const inCat = optionsFor(catalog, categoryId, planId);
   const ids = new Set(inCat.map((o) => o.id));
-  const ordered = inCat
-    .filter((o) => !o.partOf || !ids.has(o.partOf))
-    .flatMap((o) => [o, ...inCat.filter((x) => x.partOf === o.id)]);
+  const ordered = topLevel(inCat).flatMap((o) => [o, ...partsOf(inCat, o.id)]);
   for (const option of ordered) {
     const picked = build.selected.includes(option.id);
     if (option.type === "included") {

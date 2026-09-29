@@ -350,15 +350,31 @@ Staff sign in at **`/admin`** and work down one level at a time. Nothing here
 needs code.
 
 ```
-Floor Plans      name, tagline, base price, 3D model, gallery views, spec table
-  └ Trim Packages    price delta, and which products it pre-selects
-Products         the shared library: title, description, photo, price,
-                 category, and the fit rules
-Colour Groups    swatch sets, each choice a name, hex and price
-Categories       the nine wizard steps and their order
+Vans             make, wheelbase, van price, what a long van adds to the
+                 conversion, picture, order
+Floor Plans      name, tagline, conversion price, 3D model, gallery views,
+                 spec lines (sleeps, shower, bed)
+Products         every included item: name, category, photo, manufacturer,
+                 model, What it is, Why you need it, van sizes, Part of
+Categories       the five systems sections of What's Included, and their order
 Media            every uploaded image
 3D Models        the .glb files the floor plans show
+Trim Packages    not used in Phase 1
+Colour Groups    not used in Phase 1
 ```
+
+**Common jobs, Phase 1:**
+
+- **Change a price.** The van: Vans → the van → Van price. The conversion:
+  Floor Plans → Base price (short van); Vans → Price delta for what a long van
+  adds.
+- **Add or fix an item.** Products → Create new, or open one. Fill in the
+  photo, manufacturer, model and the two drawer paragraphs. Leave Van sizes
+  empty unless it only comes on the short or the long van.
+- **Put an item in a system,** or move it: set **Part of** to the system.
+  Clear it to make the item its own card. A system is just a product that
+  others point at; create a new one the same way.
+- Everything shows on build.papagovans.com the moment it is saved.
 
 **Selectable** is the tickbox that decides whether a buyer is asked about a
 product at all. Untick it and the product vanishes from its category step while
