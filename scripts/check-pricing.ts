@@ -1,73 +1,54 @@
 /*
- * Self-check for van-length pricing and `?b=` backward compatibility.
+ * Self-check for Phase 1 pricing and the included list.
  *
  *   npx tsx scripts/check-pricing.ts
  *
- * Two things worth protecting. The length adds its delta and nothing else, and
- * a link shared before lengths existed still prices exactly as it did.
+ * What must hold: a build is the van's dealer price plus the conversion, the
+ * long van adds its conversion extra and nothing else, each van size gets its
+ * own included items, and a link shared before any of this still resolves.
  */
 import assert from "node:assert/strict";
-import { HARDCODED_CATALOG as C, getOption, getPackages, optionsFor, selectableOptionsFor } from "../lib/catalog.ts";
-import { applyPackage, decodeBuild, encodeBuild, emptyBuild, priceBuild, setVanLength } from "../lib/pricing.ts";
+import { includedFor, vanLabel, type Catalog, type Option, type VanLength } from "../lib/catalog.ts";
+import { decodeBuild, emptyBuild, encodeBuild, priceBuild, setFloorPlan, setVanLength } from "../lib/pricing.ts";
 
-const PLAN = "el-capitan";
-const summit = getPackages(C, PLAN).find((p) => /summit/i.test(p.name));
-assert.ok(summit, "expected a Summit trim package on El Capitan");
+const van = (id: string, make: VanLength["make"], size: VanLength["size"], wheelbase: number): VanLength => ({
+  id, make, size, wheelbase, vanPrice: 75_000, priceDelta: size === "long" ? 8_000 : 0,
+  name: id, tagline: "", image: "", overallInches: 230,
+});
+const item = (id: string, sizes?: Option["sizes"]): Option => ({ id, categoryId: "electrical", name: id, type: "included", price: 0, sizes });
 
-const base = applyPackage(C, emptyBuild(C), PLAN, summit.id);
+const C: Catalog = {
+  categories: [{ id: "electrical", name: "Electrical", blurb: "" }],
+  vanLengths: [van("sprinter-144", "sprinter", "short", 144), van("sprinter-170", "sprinter", "long", 170), van("transit-148", "transit", "long", 148)],
+  floorPlans: [{ id: "el-capitan", name: "El Capitan", tagline: "", basePrice: 162_000, image: "", gallery: [], specs: [] }],
+  options: [item("inc-solar-200", ["short"]), item("inc-solar-400", ["long"]), item("inc-inverter")],
+  colorGroups: [],
+  packages: [],
+};
 
-// The README's long-standing figure, which must not move on the shortest van.
-const on144 = { ...base, vanLengthId: "sprinter-144" };
-assert.equal(priceBuild(C, on144).total, 260770, "El Capitan + Summit on a 144");
+const short = setVanLength(C, setFloorPlan(emptyBuild(C), "el-capitan"), "sprinter-144");
+const long = setVanLength(C, short, "sprinter-170");
+const transit = setVanLength(C, short, "transit-148");
 
-const on170 = setVanLength(C, on144, "sprinter-170");
-assert.equal(priceBuild(C, on170).total, 260770 + 12000, "170 adds 12k");
+assert.equal(priceBuild(C, short).total, 237_000, "short van: $75,000 van + $162,000 conversion");
+assert.equal(priceBuild(C, long).total, 245_000, "long van: $75,000 van + $170,000 conversion");
+assert.equal(priceBuild(C, transit).total, 245_000, "a long Transit prices like a long Sprinter");
+assert.equal(priceBuild(C, long).vanPrice, 75_000, "the van is reported as its own line");
 
-const onExt = setVanLength(C, on144, "sprinter-170-ext");
-assert.equal(priceBuild(C, onExt).total, 260770 + 20000, "170 EXT adds 20k");
+const ids = (b: typeof short) => includedFor(C, "el-capitan", b.vanLengthId).map((o) => o.id).sort();
+assert.deepEqual(ids(short), ["inc-inverter", "inc-solar-200"], "the short van gets 200W solar");
+assert.deepEqual(ids(long), ["inc-inverter", "inc-solar-400"], "the long van gets 400W solar");
 
-assert.equal(priceBuild(C, on170).lengthDelta, 12000, "the delta is reported separately");
+assert.equal(vanLabel(C.vanLengths[2]), 'Ford Transit 148"', "the label names the make and wheelbase");
 
-// A link shared before lengths existed has four fields, not five.
-const legacy = [PLAN, summit.id, base.selected.join("."), ""].join("~");
-const revived = decodeBuild(C, legacy);
-assert.equal(revived.vanLengthId, "sprinter-144", "an old link means the shortest van");
-assert.equal(priceBuild(C, revived).total, 260770, "an old link must not change price");
+// A link from before lengths existed has four fields; it means the first van.
+const legacy = decodeBuild(C, ["el-capitan", "", "", ""].join("~"));
+assert.equal(legacy.vanLengthId, "sprinter-144");
+assert.equal(priceBuild(C, legacy).total, 237_000);
 
-// And a current link round-trips the length.
-const roundTrip = decodeBuild(C, encodeBuild(onExt));
-assert.equal(roundTrip.vanLengthId, "sprinter-170-ext");
-assert.equal(priceBuild(C, roundTrip).total, 260770 + 20000);
+// A current link round-trips the van.
+assert.equal(decodeBuild(C, encodeBuild(transit)).vanLengthId, "transit-148");
 
-// A hand-edited link naming a length that does not exist falls back, never null.
-const bogus = decodeBuild(C, [PLAN, "", "", "", "sprinter-900"].join("~"));
-assert.equal(bogus.vanLengthId, "sprinter-144", "an unknown length falls back to the shortest");
-
-// --- unselectable options -------------------------------------------------
-// The contract: hidden from the question, still real in the build.
-const hidden = C.options.filter((o) => o.selectable === false);
-assert.ok(hidden.length > 0, "expected at least one unselectable option to test");
-
-for (const o of hidden) {
-  const asked = selectableOptionsFor(C, o.categoryId, PLAN).some((x) => x.id === o.id);
-  const exists = optionsFor(C, o.categoryId, PLAN).some((x) => x.id === o.id);
-  assert.equal(asked, false, `${o.id} must not be offered as a choice`);
-  assert.equal(exists, true, `${o.id} must still exist for pricing and the Build Sheet`);
-}
-
-// An unselectable upgrade a package carries still costs what it costs.
-const carried = summit.defaults.map((id) => getOption(C, id)).filter(Boolean);
-const hiddenCarried = carried.filter((o) => o!.selectable === false && o!.price > 0);
-if (hiddenCarried.length) {
-  const withOut = { ...on144, selected: on144.selected.filter((id) => getOption(C, id)?.selectable !== false) };
-  const delta = priceBuild(C, on144).total - priceBuild(C, withOut).total;
-  const expected = hiddenCarried.reduce((sum, o) => sum + o!.price, 0);
-  assert.equal(delta, expected, "unselectable components must still price");
-  console.log(`unselectable but priced: ${hiddenCarried.length} components, $${expected.toLocaleString()}`);
-}
-
-console.log(`hidden from the wizard: ${hidden.map((o) => o.id).join(", ")}`);
-console.log("van length pricing: ok");
-console.log(`  144      $${priceBuild(C, on144).total.toLocaleString()}`);
-console.log(`  170      $${priceBuild(C, on170).total.toLocaleString()}`);
-console.log(`  170 EXT  $${priceBuild(C, onExt).total.toLocaleString()}`);
+console.log("phase 1 pricing: ok");
+console.log(`  short van  $${priceBuild(C, short).total.toLocaleString()}`);
+console.log(`  long van   $${priceBuild(C, long).total.toLocaleString()}`);

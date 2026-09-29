@@ -259,11 +259,12 @@ const Categories: CollectionConfig = {
 };
 
 /*
- * Step one of the wizard: the chassis.
+ * Step one of the wizard: the van, one row per make and wheelbase.
  *
- * priceDelta is what this length adds over the shortest van, not a price of
- * its own. The floor plan carries basePrice. Three lengths times five plans
- * would otherwise be fifteen numbers to keep in step, and they would drift.
+ * vanPrice is the van itself, which buyers buy from the dealer; it shows as its
+ * own line. priceDelta is what the longer van adds to the conversion. The
+ * floor plan carries the conversion price on a short van, so plans times vans
+ * stays a handful of numbers instead of a grid that drifts.
  */
 const VanLengths: CollectionConfig = {
   slug: "van-lengths",
@@ -286,6 +287,49 @@ const VanLengths: CollectionConfig = {
     },
     slugField("van-lengths"),
     {
+      name: "make",
+      type: "select",
+      required: true,
+      defaultValue: "sprinter",
+      options: [
+        { label: "Mercedes-Benz Sprinter", value: "sprinter" },
+        { label: "Ford Transit", value: "transit" },
+        { label: "Ram ProMaster", value: "promaster" },
+      ],
+      admin: { description: "The wizard groups the vans under each make." },
+    },
+    {
+      name: "size",
+      type: "select",
+      required: true,
+      defaultValue: "short",
+      options: [
+        { label: "Short", value: "short" },
+        { label: "Long", value: "long" },
+      ],
+      admin: {
+        description:
+          "Which included list applies. The long van gets more solar and more overhead storage; products say which size they belong to.",
+      },
+    },
+    {
+      name: "wheelbase",
+      type: "number",
+      required: true,
+      defaultValue: 144,
+      admin: { description: "Inches, as the maker quotes it: 144, 170, 130, 148, 136, 159." },
+    },
+    {
+      name: "vanPrice",
+      type: "number",
+      required: true,
+      defaultValue: 75000,
+      admin: {
+        description:
+          "What the van itself costs from the dealer. Shown as its own line on the Build Sheet; the floor plan is the conversion.",
+      },
+    },
+    {
       name: "tagline",
       type: "text",
       required: true,
@@ -298,7 +342,7 @@ const VanLengths: CollectionConfig = {
       defaultValue: 0,
       admin: {
         description:
-          "What this length ADDS over the shortest van. The shortest one is 0.",
+          "What this van ADDS to the conversion over a short van. Short vans are 0.",
       },
     },
     { name: "image", type: "upload", relationTo: "media" },
@@ -335,7 +379,7 @@ const FloorPlans: CollectionConfig = {
       required: true,
       admin: {
         description:
-          "Includes the Mercedes Sprinter itself. Every price surface in the app says so.",
+          "The conversion on a short van. The van itself is priced on the van length, so it is not in here.",
       },
     },
     { name: "order", type: "number", required: true, defaultValue: 0 },
@@ -413,6 +457,44 @@ const Products: CollectionConfig = {
       type: "relationship",
       relationTo: "categories",
       required: true,
+    },
+    {
+      type: "row",
+      fields: [
+        { name: "manufacturer", type: "text", admin: { width: "50%" } },
+        {
+          name: "modelNumber",
+          label: "Model",
+          type: "text",
+          admin: { width: "50%", description: "Leave blank rather than guess. A wrong model number is worse than none." },
+        },
+      ],
+    },
+    {
+      name: "whatItIs",
+      label: "What it is",
+      type: "textarea",
+      admin: { description: "Shown in the side drawer. Plain words, one or two sentences." },
+    },
+    {
+      name: "whyYouNeedIt",
+      label: "Why you need it",
+      type: "textarea",
+      admin: { description: "Shown in the side drawer, under What it is. What it does for the owner on the road." },
+    },
+    {
+      name: "sizes",
+      label: "Van sizes",
+      type: "select",
+      hasMany: true,
+      options: [
+        { label: "Short van", value: "short" },
+        { label: "Long van", value: "long" },
+      ],
+      admin: {
+        description:
+          "Leave empty if it comes on every van. Tick one when the short and long vans get different versions, like 200W and 400W solar.",
+      },
     },
     {
       name: "type",

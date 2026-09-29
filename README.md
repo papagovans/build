@@ -62,14 +62,22 @@ Not customer-facing yet.
 
 ### Known placeholders
 
-- **Catalog data** is representative, not real. It lives in Postgres now, but
-  it got there from `scripts/seed.ts`, so it is the same placeholder content.
-  Only the Electricity options are verbatim from Papago's dev site. Everything
-  else needs real spec sheets, entered through `/admin`.
-- **Rainier has no 3D model of its own.** El Capitan, Zion, Olympus and
-  Mammoth carry SketchUp Builds 1 to 4, assigned in that order as a
-  placeholder; reassign them in `/admin` when the real mapping is known.
-  Rainier falls back to the shared `public/models/floor-plan.glb` (Build 1).
+- **The included list is real; its gaps are marked.** Phase 1 (owner,
+  2026-09-28) loaded the El Capitan 170 + 144 pricing sheet through
+  `scripts/phase1-catalog.ts`. Brands and models come from that sheet or
+  Papago's own site. Where neither names one (solar panels, awning, water
+  heater, microwave and others) the field is blank for the shop to fill in
+  `/admin`. Do not guess model numbers. About twenty items have no photo yet.
+- **`npm run seed` is now legacy.** It still loads the old placeholder catalog
+  (five plans, three trim tiers, 49 products) and would put it back. Use
+  `scripts/phase1-catalog.ts` instead.
+- **Four floor plans:** El Capitan, Zion, Olympus and McKinley (renamed from
+  Mammoth; its slug is still `mammoth` so saved links keep working). Rainier
+  was deleted as a duplicate. They carry SketchUp Builds 1 to 4 in that order;
+  El Capitan is confirmed as Build 1.
+- **Only the Sprinter has van renders.** The Transit and ProMaster cards show
+  their name until renders are sourced; Ford's and RAM's own configurator
+  images need the owner's OK first, as Mercedes' did.
 
 ### Making a 3D model
 
@@ -155,21 +163,20 @@ Two things follow from that and are easy to undo by accident:
 ## How the product works
 
 ```
-Intro (name/email)
-  → Van Length        144, 170, 170 EXT
-  → Floor Plan        5 layouts, filtered to the ones built on that chassis
+Phase 1 (owner, 2026-09-28), streamlined:
+  → Your Van          Sprinter 144/170, Transit 130/148, ProMaster 136/159
+  → Your Info         name, email, phone
+  → Floor Plan        4 layouts
   → Layout            one large 3D model of the chosen plan, drag to rotate
-  → Trim Package      3 tiers, each pre-fills every category
-  → Colors            the four swatch groups, plus finish upgrades
-  → Options           every remaining category on ONE page with a jump nav:
-                      Electrical, Water System, Heating & Cooling,
-                      Interior, Exterior
-  → Build Sheet       itemized total
+  → What's Included   every included item by system; a card opens the drawer
+                      with brand, model, What it is, Why you need it
+  → Build Sheet       van line + conversion line, itemized PDF
 ```
 
-Trim packages **pre-fill** every category, so the category steps are refinement
-rather than data entry. A buyer can jump to the Build Sheet at any point after
-picking a trim package.
+No extended bodies on any make, and each maker's real wheelbase. Trim packages,
+colours and upgrades are off for now: the admin still has the colour groups,
+`StepPackage`, `StepColors` and `StepOptions` are kept unused in the wizard,
+and the pricing engine below still supports all of it for when they return.
 
 **The customer-facing term is "trim package," never "package" alone.** Plain
 "package" reads as a bolt-on bundle in this industry, and the catalog already
@@ -189,11 +196,12 @@ engine — do not flatten it into a generic list.
 | `addon` | Purely additive | the **full** amount |
 
 ```
-total = floorPlan.basePrice          the price on the shortest van
-      + vanLength.priceDelta        0 on a 144, +12k on a 170, +20k on a 170 EXT
-      + package.priceDelta
-      + Σ(selected upgrade deltas)
-      + Σ(selected addon prices)
+total = vanLength.vanPrice          the van, $75,000 on every row (dealer price)
+      + floorPlan.basePrice          the conversion on a short van, $162,000
+      + vanLength.priceDelta        0 on a short van, +$8,000 on a long one
+      + package.priceDelta           (none in Phase 1)
+      + Σ(selected upgrade deltas)   (none in Phase 1)
+      + Σ(selected addon prices)     (none in Phase 1)
 ```
 
 A fourth thing, **colour choices**, lives alongside the options. The Finishes
@@ -203,15 +211,19 @@ every choice keeps a `price` field that already flows through `priceBuild()`,
 the Build Sheet, and the `?b=` URL, so a premium finish can carry an upcharge
 later with no schema change.
 
-**Base price is $180,000 for all five plans on a 144, and includes the van.**
-The chassis adds a delta on top: the 170 adds $12,000 and the 170 EXT adds
-$20,000. `basePrice` stays on the floor plan so three lengths times five plans
-is eight numbers to maintain rather than fifteen that drift apart. The rebuilt marketing site agrees:
-the owner confirmed on 2026-09-25 that $180,000 including the van is correct,
-and stage.papagovans.com now quotes that on every surface, including the five
-floor plan pages that used to carry $48,695 to $127,395 excluding it. Only the
-old WordPress site still publishes the old set. Every price surface in this app
-must say "van included."
+**Phase 1 pricing (owner, 2026-09-28): the van plus the conversion.** Buyers
+buy the van from a dealer, so the van is its own line at a typical dealer price
+of $75,000, the same for every make and length. The conversion is the pricing
+sheet's: $162,000 on a short van, $170,000 on a long one, the same on all four
+floor plans. So a build is $237,000 short or $245,000 long.
+
+This replaced the earlier "$180,000, van included" base. **The marketing site
+still quotes $180,000 including the van** on stage.papagovans.com; that is the
+owner's call to bring into line, not this app's.
+
+Included items can be limited to one van size (`sizes` on a product): the long
+van gets 400W solar, hydronic hot water and five overhead cabinets; the short
+one 200W solar, a 4-gallon electric water heater and three.
 
 ### Compatibility rules
 

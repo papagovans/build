@@ -10,7 +10,7 @@
  * exist this is a no-op, so the Build Sheet keeps working before the form does.
  */
 import type { Catalog } from "./catalog";
-import { getFloorPlan, getPackages, getVanLength } from "./catalog";
+import { getFloorPlan, getPackages, getVanLength, vanLabel } from "./catalog";
 import type { BuildState } from "./pricing";
 import { priceBuild, encodeBuild } from "./pricing";
 
@@ -126,7 +126,7 @@ export async function submitBuildSheetLead(
     { name: "papago_build_total", value: String(price.total) },
     { name: "papago_option_count", value: String(build.selected.length) },
     { name: "papago_build_link", value: buildLink },
-    { name: "papago_van_length", value: length?.name ?? "" },
+    { name: "papago_van_length", value: length ? vanLabel(length) : "" },
   ];
 
   return post(FORM_ID, fields, {

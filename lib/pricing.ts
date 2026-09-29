@@ -73,6 +73,9 @@ export function isValidCustomer(c: Customer): boolean {
 }
 
 export interface PriceBreakdown {
+  /** The van itself, from the dealer. Its own line on the Build Sheet. */
+  vanPrice: number;
+  /** The conversion on a short van. */
   base: number;
   /** What the chassis adds over the shortest van. Zero on a 144. */
   lengthDelta: number;
@@ -92,6 +95,7 @@ export function priceBuild(catalog: Catalog, state: BuildState): PriceBreakdown 
    * times five plans would otherwise be fifteen numbers to keep in step. */
   const length = state.vanLengthId ? getVanLength(catalog, state.vanLengthId) : undefined;
   const lengthDelta = length?.priceDelta ?? 0;
+  const vanPrice = length?.vanPrice ?? 0;
 
   const pkg =
     state.floorPlanId && state.packageId
@@ -124,13 +128,14 @@ export function priceBuild(catalog: Catalog, state: BuildState): PriceBreakdown 
   );
 
   return {
+    vanPrice,
     base,
     lengthDelta,
     packageDelta,
     upgrades,
     addons,
     colors,
-    total: base + lengthDelta + packageDelta + extras,
+    total: vanPrice + base + lengthDelta + packageDelta + extras,
   };
 }
 

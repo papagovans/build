@@ -47,7 +47,30 @@ export interface Option {
   selectable?: boolean;
   /** Product thumbnail under /public/products. Placeholder imagery for mockup only. */
   thumb?: string;
+  /** Brand and model, shown in the drawer. Blank when the shop has not confirmed one. */
+  manufacturer?: string;
+  model?: string;
+  /** The drawer's two short paragraphs. */
+  whatItIs?: string;
+  whyYouNeedIt?: string;
+  /** Van sizes this comes on. Undefined = every van. */
+  sizes?: VanSize[];
 }
+
+export type VanMake = "sprinter" | "transit" | "promaster";
+export type VanSize = "short" | "long";
+
+/** In the order the wizard shows them. */
+export const VAN_MAKES: { id: VanMake; name: string }[] = [
+  { id: "sprinter", name: "Mercedes-Benz Sprinter" },
+  { id: "transit", name: "Ford Transit" },
+  { id: "promaster", name: "Ram ProMaster" },
+];
+
+export const makeName = (make: VanMake) => VAN_MAKES.find((m) => m.id === make)?.name ?? make;
+
+/** "Ford Transit 148"", the label a salesperson and the Build Sheet use. */
+export const vanLabel = (v: Pick<VanLength, "make" | "wheelbase">) => `${makeName(v.make)} ${v.wheelbase}"`;
 
 export interface Category {
   id: string;
@@ -62,14 +85,21 @@ export interface GalleryImage {
 }
 
 /**
- * A Sprinter wheelbase. Step one of the wizard.
+ * One van: a make and a wheelbase. Step one of the wizard.
  *
- * `basePrice` lives on the floor plan and is the price on the shortest van;
- * a length carries only the delta from there. Keeping them separate means a
- * plan can be repriced without touching the chassis, and the other way round.
+ * `basePrice` lives on the floor plan and is the conversion on a short van;
+ * a van carries its own dealer price and what it adds to the conversion.
+ * Keeping them separate means a plan can be repriced without touching the
+ * vans, and the other way round.
  */
 export interface VanLength {
   id: string;
+  make: VanMake;
+  size: VanSize;
+  /** Inches, as the maker quotes it. */
+  wheelbase: number;
+  /** The van itself, bought from the dealer. */
+  vanPrice: number;
   /** What a buyer gets, not the spec. The spec is the tagline. */
   name: string;
   tagline: string;
@@ -968,6 +998,21 @@ export function selectableOptionsFor(
   );
 }
 
+/**
+ * Everything that ships with a plan on a given van: the included items that
+ * fit the plan and come on that van's size. Phase 1 has no upgrades, so this
+ * is the whole build.
+ */
+export function includedFor(catalog: Catalog, floorPlanId: string, vanLengthId: string | null): Option[] {
+  const size = vanLengthId ? getVanLength(catalog, vanLengthId)?.size : undefined;
+  return catalog.options.filter(
+    (o) =>
+      o.type === "included" &&
+      isAvailable(o, floorPlanId) &&
+      (!o.sizes?.length || !size || o.sizes.includes(size)),
+  );
+}
+
 export function getFloorPlan(catalog: Catalog, id: string): FloorPlan | undefined {
   return catalog.floorPlans.find((p) => p.id === id);
 }
@@ -988,6 +1033,10 @@ export function getFloorPlan(catalog: Catalog, id: string): FloorPlan | undefine
 const VAN_LENGTHS: VanLength[] = [
   {
     id: "sprinter-144",
+    make: "sprinter",
+    size: "short",
+    wheelbase: 144,
+    vanPrice: 75000,
     name: "Fits A Standard Garage",
     tagline: '144" wheelbase, for solo travelers and couples',
     priceDelta: 0,
@@ -996,6 +1045,10 @@ const VAN_LENGTHS: VanLength[] = [
   },
   {
     id: "sprinter-170",
+    make: "sprinter",
+    size: "long",
+    wheelbase: 170,
+    vanPrice: 75000,
     name: "The Sweet Spot",
     tagline: '170" wheelbase, room for a fixed bed and a full bathroom',
     priceDelta: 12000,
@@ -1004,6 +1057,10 @@ const VAN_LENGTHS: VanLength[] = [
   },
   {
     id: "sprinter-170-ext",
+    make: "sprinter",
+    size: "long",
+    wheelbase: 170,
+    vanPrice: 75000,
     name: "Maximum Space",
     tagline: '170" extended, for families and full-time living',
     priceDelta: 20000,

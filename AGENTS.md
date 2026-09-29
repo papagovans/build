@@ -30,8 +30,9 @@ audience language between them.
 **This is a mockup for the company's owners**, not a customer-facing launch.
 Optimize for "can they visualize it," not for production hardening.
 
-**Pricing includes the van** ($180,000 base, all five plans). The public
-marketing site says the opposite. Trust this repo.
+**Pricing is the van plus the conversion** (Phase 1, owner 2026-09-28): the van
+is its own $75,000 line, the conversion $162,000 short or $170,000 long. The
+marketing site still says $180,000 van included; that is the owner's to change.
 
 **The catalog lives in Postgres now**, edited through the Payload admin at
 `/admin`. `lib/catalog.ts` still holds the same data as `HARDCODED_CATALOG`,
@@ -92,13 +93,14 @@ npm run build                  # typecheck + build must pass
 npm run dev                    # then click the real flow
 ```
 
-Worth exercising after any change to pricing or rules. All four were last
-confirmed against the database, not the hardcoded file:
+Worth exercising after any change to pricing or rules:
 
-- pick El Capitan + Summit → total should be **$260,770**
-- Exterior → check the winch → bumper auto-adds, total jumps the full $5,350
-- uncheck the bumper → the winch drops too
+- `npx tsx scripts/check-pricing.ts` passes (short van $237,000, long $245,000)
+- pick any plan on a Transit 148 → the What's Included step shows 400W solar and
+  five overhead cabinets, and the Build Sheet shows the van as its own line
 - a shared `?b=` URL reloads into the same build
+- when upgrades return: a winch that requires the bumper pulls it in, and
+  dropping the bumper drops the winch
 
 After any change to the CMS wiring, also check:
 

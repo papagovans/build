@@ -21,7 +21,9 @@ import {
   getColorChoice,
   getFloorPlan,
   getPackages,
+  getVanLength,
   optionsFor,
+  vanLabel,
   type Catalog,
 } from "./catalog";
 import {
@@ -142,11 +144,15 @@ function linesFor(
   const planId = build.floorPlanId!;
   const lines: Line[] = [];
 
+  const size = build.vanLengthId ? getVanLength(catalog, build.vanLengthId)?.size : undefined;
   for (const option of optionsFor(catalog, categoryId, planId)) {
     const picked = build.selected.includes(option.id);
     if (option.type === "included") {
-      if (!isSuperseded(catalog, option.id, build.selected)) {
-        lines.push({ name: option.name, note: option.description, price: null });
+      // Only what comes on this van's size: 200W solar on a short van, 400W on a long one.
+      const fits = !option.sizes?.length || !size || option.sizes.includes(size);
+      if (fits && !isSuperseded(catalog, option.id, build.selected)) {
+        const brand = [option.manufacturer, option.model].filter(Boolean).join(" ");
+        lines.push({ name: option.name, note: brand || option.description, price: null });
       }
     } else if (picked) {
       lines.push({
@@ -190,8 +196,9 @@ function BuildSheet({
     (p) => p.id === build.packageId,
   );
   const breakdown = priceBuild(catalog, build);
+  const van = build.vanLengthId ? getVanLength(catalog, build.vanLengthId) : undefined;
   const optionsTotal =
-    breakdown.total - breakdown.base - breakdown.packageDelta;
+    breakdown.total - breakdown.vanPrice - breakdown.base - breakdown.lengthDelta - breakdown.packageDelta;
 
   const name = [customer.firstName, customer.lastName]
     .map((v) => v.trim())
@@ -241,6 +248,7 @@ function BuildSheet({
             <View>
               <Text style={s.planName}>{plan.name.toUpperCase()}</Text>
               <Text style={s.planTag}>{plan.tagline}</Text>
+              {van ? <Text style={[s.planTag, { marginTop: 6 }]}>On a {vanLabel(van)}</Text> : null}
               {pkg ? (
                 <Text style={[s.planTag, { marginTop: 6 }]}>
                   {pkg.name} trim package: {pkg.tagline}
@@ -249,7 +257,7 @@ function BuildSheet({
             </View>
             <View>
               <Text style={s.planPrice}>{formatPrice(breakdown.total)}</Text>
-              <Text style={s.planPriceNote}>estimated, van included</Text>
+              <Text style={s.planPriceNote}>estimated, van and conversion</Text>
             </View>
           </View>
 
@@ -280,8 +288,12 @@ function BuildSheet({
 
           <View style={s.totals} wrap={false}>
             <View style={s.totalRow}>
-              <Text>{plan.name} base, Mercedes Sprinter van included</Text>
-              <Text>{formatPrice(breakdown.base)}</Text>
+              <Text>{van ? vanLabel(van) : "Van"}, typical dealer price</Text>
+              <Text>{formatPrice(breakdown.vanPrice)}</Text>
+            </View>
+            <View style={s.totalRow}>
+              <Text>{plan.name} conversion</Text>
+              <Text>{formatPrice(breakdown.base + breakdown.lengthDelta)}</Text>
             </View>
             {pkg && breakdown.packageDelta > 0 ? (
               <View style={s.totalRow}>
@@ -289,19 +301,20 @@ function BuildSheet({
                 <Text>{formatPrice(breakdown.packageDelta)}</Text>
               </View>
             ) : null}
-            <View style={s.totalRow}>
-              <Text>Upgrades and add-ons</Text>
-              <Text>{formatPrice(optionsTotal)}</Text>
-            </View>
+            {optionsTotal > 0 ? (
+              <View style={s.totalRow}>
+                <Text>Upgrades and add-ons</Text>
+                <Text>{formatPrice(optionsTotal)}</Text>
+              </View>
+            ) : null}
             <View style={s.grand}>
               <Text style={s.grandLabel}>ESTIMATED BUILD TOTAL</Text>
               <Text style={s.grandValue}>{formatPrice(breakdown.total)}</Text>
             </View>
             <Text style={s.vanNote}>
-              Van included. This estimate covers the Mercedes-Benz Sprinter
-              chassis and the full conversion. Final pricing is confirmed after
-              a build consultation. Prices and availability are subject to
-              change.
+              The van is shown at a typical dealer price; you buy it from the
+              dealer and we build it. Final pricing is confirmed after a build
+              consultation. Prices and availability are subject to change.
             </Text>
           </View>
 

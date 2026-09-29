@@ -16,10 +16,11 @@ import config from "@payload-config";
 
 import type {
   Catalog,
-  ColorGroup,
   FloorPlan,
   Option,
   OptionType,
+  VanMake,
+  VanSize,
 } from "./catalog";
 
 /** A relationship comes back as an id when shallow, or the doc when populated. */
@@ -44,19 +45,22 @@ export async function loadCatalog(): Promise<Catalog> {
 
   // depth 1 populates the relationships we read slugs from. Floor plans need 2
   // so their gallery rows carry the uploaded image, not just its id.
-  const [categories, floorPlans, products, packages, colorGroups, vanLengths] =
+  const [categories, floorPlans, products, packages, vanLengths] =
     await Promise.all([
       payload.find({ collection: "categories", limit: 200, sort: "order" }),
       payload.find({ collection: "floor-plans", limit: 200, sort: "order", depth: 2 }),
-      payload.find({ collection: "products", limit: 500, depth: 1 }),
+      payload.find({ collection: "products", limit: 500, depth: 1, sort: "createdAt" }), // entry order: the pricing sheet's order
       payload.find({ collection: "trim-packages", limit: 500, sort: "order", depth: 1 }),
-      payload.find({ collection: "color-groups", limit: 200, sort: "order", depth: 1 }),
       payload.find({ collection: "van-lengths", limit: 50, sort: "order", depth: 1 }),
     ]);
 
   return {
     vanLengths: vanLengths.docs.map((v) => ({
       id: v.slug ?? "",
+      make: v.make as VanMake,
+      size: v.size as VanSize,
+      wheelbase: v.wheelbase,
+      vanPrice: v.vanPrice,
       name: v.name,
       tagline: v.tagline,
       priceDelta: v.priceDelta,
@@ -111,6 +115,11 @@ export async function loadCatalog(): Promise<Catalog> {
        * selectable, so only an explicit false travels. */
       selectable: o.selectable === false ? false : undefined,
       thumb: mediaUrl(o.image),
+      manufacturer: o.manufacturer || undefined,
+      model: o.modelNumber || undefined,
+      whatItIs: o.whatItIs || undefined,
+      whyYouNeedIt: o.whyYouNeedIt || undefined,
+      sizes: o.sizes?.length ? (o.sizes as VanSize[]) : undefined,
     })),
 
     packages: packages.docs.map((p) => ({
@@ -122,18 +131,9 @@ export async function loadCatalog(): Promise<Catalog> {
       defaults: relSlugs(p.defaults),
     })),
 
-    colorGroups: colorGroups.docs.map((g): ColorGroup => ({
-      id: g.slug ?? "",
-      categoryId: relSlug(g.category) ?? "",
-      name: g.name,
-      blurb: g.blurb,
-      choices: (g.choices ?? []).map((c) => ({
-        id: c.slug,
-        name: c.name,
-        hex: c.hex,
-        hex2: c.hex2 ?? undefined,
-        price: c.price,
-      })),
-    })),
+    /* Phase 1 of the streamlined builder has no colour step (owner, 2026-09-28).
+       The groups stay in the admin untouched; loading none keeps them off the
+       Build Sheet and out of the price until the step comes back. */
+    colorGroups: [],
   };
 }

@@ -18,6 +18,10 @@ import {
   type ColorGroup,
   type FloorPlan,
   type Option,
+  type VanLength,
+  VAN_MAKES,
+  includedFor,
+  vanLabel,
 } from "@/lib/catalog";
 import {
   EMPTY_CUSTOMER,
@@ -54,10 +58,11 @@ const LENGTH_STEP = 0;
 const INTRO_STEP = 1;
 const PLAN_STEP = 2;
 const GALLERY_STEP = 3;
-const PACKAGE_STEP = 4;
-const COLOR_STEP = 5;
-const OPTIONS_STEP = 6;
-const SUMMARY_STEP = 7;
+/* Phase 1 of the streamlined builder (owner, 2026-09-28): one included list,
+ * no trim tiers, colours or upgrades. StepPackage, StepColors and StepOptions
+ * below are kept, unused, for when upgrades come back. */
+const INCLUDED_STEP = 4;
+const SUMMARY_STEP = 5;
 
 /* The category that owns the colour swatches. It gets its own step; every
  * other category is a section on the single Options page. */
@@ -228,15 +233,14 @@ export default function Configurator({ catalog }: { catalog: Catalog }) {
     ? getFloorPlan(catalog, build.floorPlanId)
     : undefined;
   const breakdown = useMemo(() => priceBuild(catalog, build), [catalog, build]);
+  const van = build.vanLengthId ? getVanLength(catalog, build.vanLengthId) : undefined;
 
   const canAdvance =
     step === LENGTH_STEP
       ? Boolean(build.vanLengthId)
       : step === INTRO_STEP
         ? isValidCustomer(customer)
-        : step <= GALLERY_STEP
-          ? Boolean(build.floorPlanId)
-          : Boolean(build.packageId);
+        : Boolean(build.floorPlanId);
 
   /** Last name drives the personalized headlines, with a neutral fallback. */
   const surname = customer.lastName.trim();
@@ -259,14 +263,13 @@ export default function Configurator({ catalog }: { catalog: Catalog }) {
           above it waits until there is a van to name. */}
       <div className="sticky top-0 z-30 shadow-sm">
         {step > LENGTH_STEP && (
-          <VanContextBar planName={plan?.name} surname={surname} />
+          <VanContextBar planName={plan?.name} surname={surname} van={van} />
         )}
         <Stepper
           step={step}
           onJump={goTo}
           hasDetails={isValidCustomer(customer)}
           hasPlan={Boolean(build.floorPlanId)}
-          hasPackage={Boolean(build.packageId)}
         />
       </div>
 
@@ -274,11 +277,7 @@ export default function Configurator({ catalog }: { catalog: Catalog }) {
         {step === INTRO_STEP && (
           <StepIntro
             customer={customer}
-            vanLengthName={
-              build.vanLengthId
-                ? getVanLength(catalog, build.vanLengthId)?.name
-                : undefined
-            }
+            vanLengthName={van ? vanLabel(van) : undefined}
             onChange={setCustomer}
             onContinue={() => {
               /* Deliberately not awaited. The buyer moves to the next screen
@@ -292,9 +291,7 @@ export default function Configurator({ catalog }: { catalog: Catalog }) {
                   keepalive: true,
                   body: JSON.stringify({
                     ...customer,
-                    vanLength: build.vanLengthId
-                      ? getVanLength(catalog, build.vanLengthId)?.name
-                      : undefined,
+                    vanLength: van ? vanLabel(van) : undefined,
                   }),
                 }).catch(() => {});
               }
@@ -326,38 +323,11 @@ export default function Configurator({ catalog }: { catalog: Catalog }) {
         )}
 
         {step === GALLERY_STEP && plan && (
-          <StepGallery plan={plan} onContinue={() => goTo(PACKAGE_STEP)} />
+          <StepGallery plan={plan} onContinue={() => goTo(INCLUDED_STEP)} />
         )}
 
-        {step === PACKAGE_STEP && build.floorPlanId && (
-          <StepPackage
-            floorPlanId={build.floorPlanId}
-            selectedId={build.packageId}
-            onSelect={(pkgId) => {
-              setBuild((b) => applyPackage(catalog, b, build.floorPlanId!, pkgId));
-              goTo(COLOR_STEP);
-            }}
-          />
-        )}
-
-        {step === COLOR_STEP && build.floorPlanId && (
-          <StepColors
-            floorPlanId={build.floorPlanId}
-            selected={build.selected}
-            colors={build.colors}
-            onToggle={(id) => setBuild((b) => toggleOption(catalog, b, id))}
-            onColor={(groupId, choiceId) =>
-              setBuild((b) => setColor(b, groupId, choiceId))
-            }
-          />
-        )}
-
-        {step === OPTIONS_STEP && build.floorPlanId && (
-          <StepOptions
-            floorPlanId={build.floorPlanId}
-            selected={build.selected}
-            onToggle={(id) => setBuild((b) => toggleOption(catalog, b, id))}
-          />
+        {step === INCLUDED_STEP && build.floorPlanId && (
+          <StepIncluded floorPlanId={build.floorPlanId} vanLengthId={build.vanLengthId} />
         )}
 
         {step === SUMMARY_STEP && plan && (
@@ -384,13 +354,11 @@ export default function Configurator({ catalog }: { catalog: Catalog }) {
                 disabled={!canAdvance}
                 className="px-8 py-3 rounded bg-navy text-white text-sm font-bold uppercase tracking-wide hover:bg-navy-deep transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
               >
-                {step === PACKAGE_STEP
-                  ? "Next: Colors"
-                  : step === COLOR_STEP
-                    ? "Next: Options"
-                    : step === OPTIONS_STEP
-                      ? "Next: Build Sheet"
-                      : "Next"}{" "}
+                {step === GALLERY_STEP
+                  ? "Next: What\u2019s Included"
+                  : step === INCLUDED_STEP
+                    ? "Next: Build Sheet"
+                    : "Next"}{" "}
                 →
               </button>
             )}
@@ -402,7 +370,7 @@ export default function Configurator({ catalog }: { catalog: Catalog }) {
         breakdown={breakdown}
         planName={plan?.name}
         onGetBuildSheet={() => goTo(SUMMARY_STEP)}
-        canFinish={Boolean(build.packageId)}
+        canFinish={Boolean(build.floorPlanId)}
         atSummary={step === SUMMARY_STEP}
       />
     </div>
@@ -451,9 +419,9 @@ function Header() {
  */
 const BUILD_FACTS: { value: string; label: string; detail: string }[] = [
   {
-    value: "Van Included",
-    label: "Mercedes-Benz Sprinter",
-    detail: "Every price covers the chassis and the full conversion",
+    value: "Three Vans",
+    label: "Sprinter, Transit, ProMaster",
+    detail: "Priced with the van at a typical dealer price",
   },
   {
     value: "RVIA Certified",
@@ -481,8 +449,9 @@ function Hero() {
             Build Your Van
           </h1>
           <p className="mt-3 text-white/75">
-            Three van lengths, five floor plans and three trim packages, then
-            customize from there. Your estimated total updates as you go.
+            Three vans, two lengths each, and four floor plans, with everything
+            that comes in the build listed item by item. Your estimated total
+            updates as you go.
           </p>
         </div>
 
@@ -511,14 +480,16 @@ function Hero() {
 
 /**
  * Persistent context strip. Keeps three facts on screen at all times: whose
- * build this is, that it is a Mercedes Sprinter, and which layout it is on.
+ * build this is, which van it is on, and which layout.
  */
 function VanContextBar({
   planName,
   surname,
+  van,
 }: {
   planName?: string;
   surname: string;
+  van?: VanLength;
 }) {
   return (
     <div className="bg-cream border-b border-black/10">
@@ -535,17 +506,20 @@ function VanContextBar({
             Twice the old render. The box holds the lower two thirds and the
             image, bottom-anchored, spills its top third onto the shelf.
           */}
-          <div className="relative w-[132px] sm:w-[168px] h-[59px] sm:h-[75px] shrink-0">
-            <Image
-              src="/sprinter.webp"
-              alt="Mercedes-Benz Sprinter"
-              width={168}
-              height={112}
-              sizes="168px"
-              className="absolute bottom-0 left-0 w-full h-auto"
-              priority
-            />
-          </div>
+          {/* Only the Sprinter has a render yet; the others show their name alone. */}
+          {(!van || van.make === "sprinter") && (
+            <div className="relative w-[132px] sm:w-[168px] h-[59px] sm:h-[75px] shrink-0">
+              <Image
+                src="/sprinter.webp"
+                alt="Mercedes-Benz Sprinter"
+                width={168}
+                height={112}
+                sizes="168px"
+                className="absolute bottom-0 left-0 w-full h-auto"
+                priority
+              />
+            </div>
+          )}
           <div className="min-w-0">
             <p className="brand-heading text-lg sm:text-2xl leading-tight truncate">
               {surname ? `${surname} Build` : "Your Build"}
@@ -554,7 +528,7 @@ function VanContextBar({
               Building on
             </p>
             <p className="text-sm sm:text-base font-bold text-navy leading-tight truncate">
-              Mercedes-Benz Sprinter
+              {van ? vanLabel(van) : "Mercedes-Benz Sprinter"}
             </p>
           </div>
         </div>
@@ -678,23 +652,19 @@ function Stepper({
   onJump,
   hasDetails,
   hasPlan,
-  hasPackage,
 }: {
   step: number;
   onJump: (n: number) => void;
   hasDetails: boolean;
   hasPlan: boolean;
-  hasPackage: boolean;
 }) {
   const catalog = useCatalog();
   const labels = [
-    "Van Length",
+    "Your Van",
     "Your Info",
     "Floor Plan",
     "Layout",
-    "Trim Package",
-    "Colors",
-    "Options",
+    "What\u2019s Included",
     "Build Sheet",
   ];
 
@@ -705,8 +675,7 @@ function Stepper({
    * cheerleading at step 2 is a lie about how far along you are. */
   const total = labels.length;
   const nudge: Record<number, string> = {
-    [COLOR_STEP]: "almost there",
-    [OPTIONS_STEP]: "just one more!",
+    [INCLUDED_STEP]: "almost there",
     [SUMMARY_STEP]: "that\u2019s the whole van",
   };
 
@@ -730,13 +699,7 @@ function Stepper({
           {labels.map((label, i) => {
             const isCurrent = i === step;
             const reachable =
-              i <= INTRO_STEP
-                ? true
-                : i === PLAN_STEP
-                  ? hasDetails
-                  : i <= PACKAGE_STEP
-                    ? hasPlan
-                    : hasPackage;
+              i <= INTRO_STEP ? true : i === PLAN_STEP ? hasDetails : hasPlan;
             return (
               <li key={label} className="shrink-0">
                 <button
@@ -763,19 +726,12 @@ function Stepper({
 }
 
 /**
- * Step one after the intro: which Sprinter.
+ * Step one: which van. Three makes, two wheelbases each (owner, 2026-09-28:
+ * no extended bodies, and each maker's real wheelbase rather than a Sprinter
+ * number on a Ford).
  *
- * Cards lead with what the length gets you and carry the wheelbase underneath,
- * because nobody arrives at a van site having already decided they want 170
- * inches. The price shown is what the chassis adds, not a total, since no floor
- * plan has been chosen yet and a total here would be a number we cannot stand
- * behind.
- */
-/*
- * Choosing sets the van; Continue advances. Those are deliberately separate.
- * If a card advanced on click, a buyer could never click between the three to
- * watch the van grow, which is the entire reason there is one large render
- * instead of three small ones.
+ * Choosing sets the van; Continue advances. Those are deliberately separate,
+ * so a buyer can click between vans and watch the render change.
  */
 function StepVanLength({
   selectedId,
@@ -789,104 +745,71 @@ function StepVanLength({
   onContinue: () => void;
 }) {
   const catalog = useCatalog();
-  const active = selectedId ?? catalog.vanLengths[0]?.id ?? null;
+  const active = getVanLength(catalog, selectedId ?? "") ?? catalog.vanLengths[0];
 
   return (
     <section>
       <StepHeading
         eyebrow={possessive}
         title="Choose Your Van"
-        blurb="Every build starts with a high-roof Mercedes-Benz Sprinter. The only question here is how long it is."
+        blurb="We build on the Mercedes-Benz Sprinter, Ford Transit and Ram ProMaster. Pick the van, then how long it is."
       />
 
-      {/*
-        All three renders come from the same Mercedes camera and are cropped to
-        one shared frame, so the nose and the ground line sit in the same place
-        in every file. Stacking them and cross-fading is what makes switching
-        read as the same van growing backwards rather than as three unrelated
-        photographs. A grid of three side-by-side cards cannot do that: each van
-        fills its own card and they all look the same size.
-      */}
-      {/* Capped rather than full-bleed. The Mercedes render is 903px of real
-          pixels and no more exists, so stretching the stage past that only
-          spreads the same detail thinner and reads as soft. */}
+      {/* One stage, the chosen van's render. Makes without renders yet show
+          their name instead of borrowing another maker's van. */}
       <div className="relative w-full max-w-[720px] mx-auto aspect-[903/576] bg-offwhite rounded-lg overflow-hidden">
-        {catalog.vanLengths.map((length) => (
+        {catalog.vanLengths.filter((v) => v.image).map((v) => (
           <Image
-            key={length.id}
-            src={length.image}
-            alt={`Mercedes-Benz Sprinter, ${length.tagline}`}
+            key={v.id}
+            src={v.image}
+            alt={vanLabel(v)}
             fill
-            priority={length.id === active}
+            priority={v.id === active?.id}
             sizes="(max-width: 1024px) 100vw, 900px"
             /* Inline rather than a Tailwind opacity utility: next/image writes
              * its own style attribute for `fill`, and that inline style wins
              * over the class, so the wrong van stayed visible. */
-            style={{ opacity: length.id === active ? 1 : 0 }}
+            style={{ opacity: v.id === active?.id ? 1 : 0 }}
             className="object-contain transition-opacity duration-500"
           />
         ))}
+        {active && !active.image && (
+          <div className="absolute inset-0 grid place-items-center text-center px-6">
+            <p className="brand-heading text-2xl sm:text-3xl text-navy">{vanLabel(active)}</p>
+          </div>
+        )}
       </div>
 
-      {/*
-        Mercedes' own configurator colours the added body section to show what
-        a longer wheelbase buys. Same idea, done as a to-scale bar rather than
-        by tinting the render: the navy is the shortest van every build starts
-        from, and the gold is the extra length this chassis adds. It is drawn
-        from real published inches, so the proportions are the vehicles'
-        proportions and not an illustrator's guess.
-      */}
-      <div className="mt-6 space-y-2">
-        {catalog.vanLengths.map((length) => {
-          const base = catalog.vanLengths[0]?.overallInches ?? length.overallInches;
-          const longest = Math.max(...catalog.vanLengths.map((v) => v.overallInches));
-          const basePct = (base / longest) * 100;
-          const extraPct = ((length.overallInches - base) / longest) * 100;
-          const isActive = length.id === active;
+      <div className="mt-8 space-y-6">
+        {VAN_MAKES.map((make) => {
+          const vans = catalog.vanLengths.filter((v) => v.make === make.id);
+          if (vans.length === 0) return null;
           return (
-            <div key={length.id} className={`flex items-center gap-3 transition-opacity ${isActive ? "opacity-100" : "opacity-45"}`}>
-              <span className="w-24 shrink-0 text-xs font-bold uppercase tracking-wide text-steel">
-                {length.tagline.split(",")[0]}
-              </span>
-              <div className="flex-1 flex h-5 rounded-sm overflow-hidden bg-offwhite" aria-hidden="true">
-                <div className="bg-navy" style={{ width: `${basePct}%` }} />
-                <div className="bg-gold" style={{ width: `${extraPct}%` }} />
+            <div key={make.id}>
+              <h3 className="text-xs font-bold uppercase tracking-widest text-steel mb-2">{make.name}</h3>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {vans.map((v) => {
+                  const isSelected = v.id === selectedId;
+                  return (
+                    <button
+                      key={v.id}
+                      onClick={() => onChoose(v.id)}
+                      aria-pressed={isSelected}
+                      className={`text-left bg-white rounded-lg p-5 border-2 transition-all hover:shadow-lg ${
+                        isSelected ? "border-gold shadow-lg" : "border-black/10 hover:border-sky/40"
+                      }`}
+                    >
+                      <p className="text-2xl font-extrabold text-navy leading-none">
+                        {v.wheelbase}&quot;
+                        <span className="ml-2 text-xs font-bold uppercase tracking-widest text-steel">wheelbase</span>
+                      </p>
+                      <h4 className="brand-heading text-lg mt-2">{v.name}</h4>
+                      <p className="mt-1 text-sm text-steel">{v.tagline}</p>
+                    </button>
+                  );
+                })}
               </div>
-              <span className="w-28 shrink-0 text-xs text-steel text-right tabular-nums">
-                {length.overallInches}&quot; overall
-                {extraPct > 0 && (
-                  <strong className="block text-navy">
-                    +{Math.round(length.overallInches - base)}&quot; longer
-                  </strong>
-                )}
-              </span>
             </div>
-          );
-        })}
-      </div>
-
-      <div className="grid gap-4 sm:grid-cols-3 mt-8">
-        {catalog.vanLengths.map((length) => {
-          const isSelected = length.id === active;
-          return (
-            <button
-              key={length.id}
-              onClick={() => onChoose(length.id)}
-              aria-pressed={isSelected}
-              className={`text-left bg-white rounded-lg p-5 border-2 transition-all hover:shadow-lg ${
-                isSelected
-                  ? "border-gold shadow-lg"
-                  : "border-black/10 hover:border-sky/40"
-              }`}
-            >
-              <h3 className="brand-heading text-lg">{length.name}</h3>
-              <p className="mt-1 text-sm text-steel min-h-10">{length.tagline}</p>
-              <p className="mt-3 text-sm font-bold text-navy">
-                {length.priceDelta === 0
-                  ? "Included in the base price"
-                  : `${formatPrice(length.priceDelta)} more van`}
-              </p>
-            </button>
           );
         })}
       </div>
@@ -922,16 +845,17 @@ function StepFloorPlan({
   const plans = vanLengthId
     ? catalog.floorPlans.filter((p) => planFitsLength(catalog, p.id, vanLengthId))
     : catalog.floorPlans;
-  const lengthDelta = vanLengthId
-    ? (getVanLength(catalog, vanLengthId)?.priceDelta ?? 0)
-    : 0;
+  const chosenVan = vanLengthId ? getVanLength(catalog, vanLengthId) : undefined;
+  /* The conversion on this van plus the van itself, so the card matches the
+     total the buyer sees from here on. */
+  const lengthDelta = (chosenVan?.priceDelta ?? 0) + (chosenVan?.vanPrice ?? 0);
   return (
     <section>
       <Script type="module" src={MODEL_VIEWER_SRC} strategy="afterInteractive" />
       <StepHeading
         eyebrow={possessive}
         title="Choose Your Floor Plan"
-        blurb="Every plan is built to order on a Mercedes Sprinter, and every price includes the van. Pick the layout that fits how you travel."
+        blurb="Four layouts, each built to order on the van you picked. Prices include the van at a typical dealer price. Pick the layout that fits how you travel."
       />
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {plans.map((plan) => {
@@ -986,13 +910,10 @@ function StepFloorPlan({
                     </span>
                   ))}
                 </div>
-                {/* basePrice is the price on the shortest van, so the chosen
-                    chassis has to be added back or this card undercuts the
-                    total the buyer sees on the next screen. */}
                 <p className="mt-4 text-sm font-bold text-navy">
-                  Starts at {formatPrice(plan.basePrice + lengthDelta)}
+                  {formatPrice(plan.basePrice + lengthDelta)}
                 </p>
-                <p className="text-xs text-steel">Van included</p>
+                <p className="text-xs text-steel">Van and conversion</p>
               </button>
             </div>
           );
@@ -1669,6 +1590,70 @@ function StepOptions({
   );
 }
 
+/**
+ * Everything that ships in the build, grouped by system, one card each. Phase
+ * 1 has no upgrades, so this is the whole van: a card opens the drawer with
+ * the brand, model, what it is and why it is there.
+ */
+function StepIncluded({
+  floorPlanId,
+  vanLengthId,
+}: {
+  floorPlanId: string;
+  vanLengthId: string | null;
+}) {
+  const catalog = useCatalog();
+  const [expanded, setExpanded] = useState<Option | null>(null);
+  const items = includedFor(catalog, floorPlanId, vanLengthId);
+  const sections = catalog.categories
+    .map((c) => ({ category: c, items: items.filter((o) => o.categoryId === c.id) }))
+    .filter((x) => x.items.length > 0);
+
+  return (
+    <section>
+      <StepHeading
+        eyebrow="Included in the price"
+        title="What’s In Your Van"
+        blurb={`${items.length} items come in every build, on every floor plan. Tap one to see the brand, the model and why it is there.`}
+      />
+
+      <nav
+        aria-label="Systems"
+        className="sticky top-[104px] z-20 -mx-4 sm:-mx-6 px-4 sm:px-6 py-2 bg-white/95 backdrop-blur border-b border-black/10"
+      >
+        <ul className="flex gap-1 overflow-x-auto text-xs">
+          {sections.map(({ category }) => (
+            <li key={category.id} className="shrink-0">
+              <a
+                href={`#${category.id}`}
+                className="block px-3 py-1.5 rounded-full whitespace-nowrap font-semibold uppercase tracking-wide text-steel hover:bg-offwhite"
+              >
+                {category.name}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </nav>
+
+      {sections.map(({ category, items }) => (
+        <section key={category.id} id={category.id} className="scroll-mt-28 pt-10">
+          <div className="border-b border-black/10 pb-3 mb-6">
+            <h2 className="brand-heading text-2xl">{category.name}</h2>
+            <p className="mt-1 text-sm text-steel">{category.blurb}</p>
+          </div>
+          <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+            {items.map((o) => (
+              <OptionCard key={o.id} option={o} state="included" selected={[]} onToggle={() => {}} onExpand={setExpanded} />
+            ))}
+          </div>
+        </section>
+      ))}
+
+      {expanded && <Lightbox option={expanded} onClose={() => setExpanded(null)} />}
+    </section>
+  );
+}
+
 function StepSummary({
   build,
   breakdown,
@@ -1684,9 +1669,8 @@ function StepSummary({
 }) {
   const catalog = useCatalog();
   const plan = getFloorPlan(catalog, build.floorPlanId!);
-  const pkg = getPackages(catalog, build.floorPlanId!).find(
-    (p) => p.id === build.packageId,
-  );
+  const van = build.vanLengthId ? getVanLength(catalog, build.vanLengthId) : undefined;
+  const included = includedFor(catalog, build.floorPlanId!, build.vanLengthId);
   const [pdfState, setPdfState] = useState<"idle" | "working" | "error">("idle");
 
   async function downloadBuildSheet() {
@@ -1720,24 +1704,19 @@ function StepSummary({
       <StepHeading
         eyebrow={firstName ? `Almost done, ${firstName}` : "Almost done"}
         title={`${possessive} Sheet`}
-        blurb="Review your configuration below. Every price includes the Mercedes Sprinter van itself."
+        blurb="Review your van below. The total is the van at a typical dealer price plus the full conversion."
       />
 
       <div className="bg-white rounded-lg p-6 sm:p-8">
         <div className="flex flex-wrap items-baseline justify-between gap-2 pb-4 border-b border-black/10">
           <div>
             <h3 className="brand-heading text-2xl">{plan?.name}</h3>
-            <p className="text-sm text-steel">{pkg?.name} trim package</p>
+            <p className="text-sm text-steel">{van ? vanLabel(van) : ""}</p>
           </div>
-          <p className="text-sm text-steel">Base {formatPrice(breakdown.base)}</p>
         </div>
 
-        {breakdown.packageDelta > 0 && (
-          <LineItem
-            label={`${pkg?.name} trim package`}
-            price={breakdown.packageDelta}
-          />
-        )}
+        <LineItem label={van ? `${vanLabel(van)} (typical dealer price)` : "Van"} price={breakdown.vanPrice} />
+        <LineItem label={`${plan?.name} conversion`} price={breakdown.base + breakdown.lengthDelta} />
 
         {breakdown.upgrades.length > 0 && (
           <SummaryGroup title="Upgrades">
@@ -1774,10 +1753,30 @@ function StepSummary({
           </span>
         </div>
         <p className="mt-2 text-xs text-steel">
-          <strong className="text-charcoal">Van included.</strong> This estimate
-          covers the Mercedes Sprinter and the full conversion. Final pricing is
-          confirmed after a build consultation.
+          <strong className="text-charcoal">Van and conversion.</strong> The van
+          is shown at a typical dealer price; you buy it from the dealer and we
+          build it. Final pricing is confirmed after a build consultation.
         </p>
+
+        <details className="mt-6 rounded-lg border border-black/10 p-4">
+          <summary className="cursor-pointer text-sm font-bold text-navy">
+            Everything included ({included.length} items)
+          </summary>
+          <div className="mt-3 grid gap-x-8 sm:grid-cols-2">
+            {catalog.categories.map((c) => {
+              const items = included.filter((o) => o.categoryId === c.id);
+              if (items.length === 0) return null;
+              return (
+                <div key={c.id} className="mt-3">
+                  <h4 className="text-xs font-bold uppercase tracking-widest text-steel mb-1">{c.name}</h4>
+                  <ul className="text-sm text-charcoal space-y-0.5">
+                    {items.map((o) => <li key={o.id}>{o.name}</li>)}
+                  </ul>
+                </div>
+              );
+            })}
+          </div>
+        </details>
 
         <div className="mt-8 p-6 rounded-lg bg-cream text-center">
           <p className="brand-heading text-lg">Download Your Build Sheet</p>
@@ -1949,7 +1948,7 @@ function OptionCard({
           regardless of how long the names above them run. */}
       <div className="mt-auto pt-3 flex items-center justify-between gap-2">
         <span className="text-[13px] font-bold text-navy">
-          {state === "choosable" && option.price > 0 ? formatPrice(option.price) : "$0"}
+          {state === "choosable" ? (option.price > 0 ? formatPrice(option.price) : "$0") : ""}
         </span>
 
         {state === "choosable" ? (
@@ -2034,7 +2033,37 @@ function Lightbox({
 
           <h2 className="brand-heading text-2xl mt-5">{option.name}</h2>
 
-          {option.description && (
+          {(option.manufacturer || option.model) && (
+            <dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
+              {option.manufacturer && (
+                <>
+                  <dt className="font-bold uppercase tracking-wide text-[11px] text-steel pt-0.5">Manufacturer</dt>
+                  <dd className="text-charcoal">{option.manufacturer}</dd>
+                </>
+              )}
+              {option.model && (
+                <>
+                  <dt className="font-bold uppercase tracking-wide text-[11px] text-steel pt-0.5">Model</dt>
+                  <dd className="text-charcoal">{option.model}</dd>
+                </>
+              )}
+            </dl>
+          )}
+
+          {option.whatItIs && (
+            <div className="mt-5">
+              <h3 className="text-xs font-bold uppercase tracking-widest text-navy">What it is</h3>
+              <p className="mt-1 text-[15px] leading-relaxed text-steel">{option.whatItIs}</p>
+            </div>
+          )}
+          {option.whyYouNeedIt && (
+            <div className="mt-4">
+              <h3 className="text-xs font-bold uppercase tracking-widest text-navy">Why you need it</h3>
+              <p className="mt-1 text-[15px] leading-relaxed text-steel">{option.whyYouNeedIt}</p>
+            </div>
+          )}
+
+          {!option.whatItIs && option.description && (
             <p className="mt-3 text-[15px] leading-relaxed text-steel">
               {option.description}
             </p>
@@ -2107,7 +2136,7 @@ function SummaryBar({
           <p className="text-2xl font-extrabold leading-tight">
             {formatPrice(breakdown.total)}
             <span className="ml-2 text-[11px] font-semibold uppercase tracking-widest text-gold align-middle">
-              Van included
+              Van + conversion
             </span>
           </p>
         </div>

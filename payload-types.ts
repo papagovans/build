@@ -146,11 +146,27 @@ export interface VanLength {
    */
   slug?: string | null;
   /**
+   * The wizard groups the vans under each make.
+   */
+  make: 'sprinter' | 'transit' | 'promaster';
+  /**
+   * Which included list applies. The long van gets more solar and more overhead storage; products say which size they belong to.
+   */
+  size: 'short' | 'long';
+  /**
+   * Inches, as the maker quotes it: 144, 170, 130, 148, 136, 159.
+   */
+  wheelbase: number;
+  /**
+   * What the van itself costs from the dealer. Shown as its own line on the Build Sheet; the floor plan is the conversion.
+   */
+  vanPrice: number;
+  /**
    * The spec, e.g. 170" wheelbase, room for a fixed bed.
    */
   tagline: string;
   /**
-   * What this length ADDS over the shortest van. The shortest one is 0.
+   * What this van ADDS to the conversion over a short van. Short vans are 0.
    */
   priceDelta: number;
   image?: (number | null) | Media;
@@ -216,7 +232,7 @@ export interface FloorPlan {
   slug?: string | null;
   tagline: string;
   /**
-   * Includes the Mercedes Sprinter itself. Every price surface in the app says so.
+   * The conversion on a short van. The van itself is priced on the van length, so it is not in here.
    */
   basePrice: number;
   order: number;
@@ -316,6 +332,23 @@ export interface Product {
   slug?: string | null;
   description?: string | null;
   category: number | Category;
+  manufacturer?: string | null;
+  /**
+   * Leave blank rather than guess. A wrong model number is worse than none.
+   */
+  modelNumber?: string | null;
+  /**
+   * Shown in the side drawer. Plain words, one or two sentences.
+   */
+  whatItIs?: string | null;
+  /**
+   * Shown in the side drawer, under What it is. What it does for the owner on the road.
+   */
+  whyYouNeedIt?: string | null;
+  /**
+   * Leave empty if it comes on every van. Tick one when the short and long vans get different versions, like 200W and 400W solar.
+   */
+  sizes?: ('short' | 'long')[] | null;
   type: 'included' | 'upgrade' | 'addon';
   /**
    * Included: leave at 0. Upgrade: charge the DIFFERENCE over the item it replaces. Add-on: the full price.
@@ -533,6 +566,10 @@ export interface PayloadMigration {
 export interface VanLengthsSelect<T extends boolean = true> {
   name?: T;
   slug?: T;
+  make?: T;
+  size?: T;
+  wheelbase?: T;
+  vanPrice?: T;
   tagline?: T;
   priceDelta?: T;
   image?: T;
@@ -594,6 +631,11 @@ export interface ProductsSelect<T extends boolean = true> {
   slug?: T;
   description?: T;
   category?: T;
+  manufacturer?: T;
+  modelNumber?: T;
+  whatItIs?: T;
+  whyYouNeedIt?: T;
+  sizes?: T;
   type?: T;
   price?: T;
   selectable?: T;
