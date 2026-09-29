@@ -514,20 +514,19 @@ function VanContextBar({
             Twice the old render. The box holds the lower two thirds and the
             image, bottom-anchored, spills its top third onto the shelf.
           */}
-          {/* The Sprinter keeps its own side-on render; the others use their van picture. */}
-          {(!van || van.make === "sprinter" || van.image) && (
-            <div className="relative w-[132px] sm:w-[168px] h-[59px] sm:h-[75px] shrink-0">
-              <Image
-                src={!van || van.make === "sprinter" ? "/sprinter.webp" : van.image}
-                alt={van ? vanLabel(van) : "Mercedes-Benz Sprinter"}
-                width={168}
-                height={112}
-                sizes="168px"
-                className="absolute bottom-0 left-0 w-full h-auto"
-                priority
-              />
-            </div>
-          )}
+          {/* The exact van the buyer picked, the same render as the van step. */}
+          <div className="relative w-[132px] sm:w-[168px] h-[59px] sm:h-[75px] shrink-0">
+            <Image
+              key={van?.id ?? "default"}
+              src={van?.image || "/sprinter.webp"}
+              alt={van ? vanLabel(van) : "Mercedes-Benz Sprinter"}
+              width={168}
+              height={107}
+              sizes="168px"
+              className="absolute bottom-0 left-0 w-full h-auto"
+              priority
+            />
+          </div>
           <div className="min-w-0">
             <p className="brand-heading text-lg sm:text-2xl leading-tight truncate">
               {surname ? `${surname} Build` : "Your Build"}
