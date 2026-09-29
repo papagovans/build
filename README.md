@@ -179,7 +179,7 @@ Two things follow from that and are easy to undo by accident:
 
 ```
 Phase 1 (owner, 2026-09-28), streamlined:
-  → Your Van          Sprinter 144/170, Transit 130/148, ProMaster 136/159
+  → Your Van          Sprinter 144/170, Transit 148, ProMaster 136/159, all high roof
   → Your Info         name, email, phone
   → Floor Plan        4 layouts
   → Layout            one large 3D model of the chosen plan, drag to rotate
@@ -188,7 +188,9 @@ Phase 1 (owner, 2026-09-28), streamlined:
   → Build Sheet       van line + conversion line, itemized PDF
 ```
 
-No extended bodies on any make, and each maker's real wheelbase. Trim packages,
+No extended bodies on any make, each maker's real wheelbase, and high roof only.
+The Transit comes in one length: Ford builds its 130" wheelbase only as a low
+roof, so the owner dropped it (2026-09-29). Trim packages,
 colours and upgrades are off for now: the admin still has the colour groups,
 `StepPackage`, `StepColors` and `StepOptions` are kept unused in the wizard,
 and the pricing engine below still supports all of it for when they return.
@@ -211,7 +213,7 @@ engine — do not flatten it into a generic list.
 | `addon` | Purely additive | the **full** amount |
 
 ```
-total = vanLength.vanPrice          the van, $75,000 on every row (dealer price)
+total = vanLength.vanPrice          the van: Sprinter $75,000, Transit $57,000, ProMaster $56,000
       + floorPlan.basePrice          the conversion on a short van, $162,000
       + vanLength.priceDelta        0 on a short van, +$8,000 on a long one
       + package.priceDelta           (none in Phase 1)
@@ -228,9 +230,11 @@ later with no schema change.
 
 **Phase 1 pricing (owner, 2026-09-28): the van plus the conversion.** Buyers
 buy the van from a dealer, so the van is its own line at a typical dealer price
-of $75,000, the same for every make and length. The conversion is the pricing
+of $75,000 for the Sprinter, $57,000 for the Transit and $56,000 for the
+ProMaster (owner, 2026-09-29), the same for both lengths of a make. The conversion is the pricing
 sheet's: $162,000 on a short van, $170,000 on a long one, the same on all four
-floor plans. So a build is $237,000 short or $245,000 long.
+floor plans. So a Sprinter is $237,000 short or $245,000 long, a Transit 148
+$227,000, and a ProMaster $218,000 short or $226,000 long.
 
 This replaced the earlier "$180,000, van included" base. **The marketing site
 still quotes $180,000 including the van** on stage.papagovans.com; that is the

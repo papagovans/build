@@ -457,7 +457,7 @@ function Hero() {
             Build Your Van
           </h1>
           <p className="mt-3 text-white/75">
-            Three vans, two lengths each, and four floor plans, with everything
+            Three high-roof vans and four floor plans, with everything
             that comes in the build listed item by item. Your estimated total
             updates as you go.
           </p>

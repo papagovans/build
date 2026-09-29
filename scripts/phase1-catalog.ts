@@ -28,13 +28,15 @@ const { default: config } = await import("../payload.config.ts");
 const payload = await getPayload({ config });
 
 const VAN_PRICE = 75_000;
+/* Per make, where the owner has set one (2026-09-29: Transit $57,000,
+   ProMaster $56,000). The Sprinter stays on the $75,000 average. */
+const VAN_PRICES: Record<string, number> = { transit: 57_000, promaster: 56_000 };
 const SHORT_CONVERSION = 162_000;
 const LONG_EXTRA = 170_000 - SHORT_CONVERSION;
 
 const VANS = [
   { slug: "sprinter-144", make: "sprinter", size: "short", wheelbase: 144, overallInches: 233.5, name: "Easy To Park", tagline: "Fits most driveways, for solo travelers and couples" },
   { slug: "sprinter-170", make: "sprinter", size: "long", wheelbase: 170, overallInches: 274, name: "Room To Spread Out", tagline: "More floor, more solar and more overhead storage" },
-  { slug: "transit-130", make: "transit", size: "short", wheelbase: 130, overallInches: 219.9, name: "Easy To Park", tagline: "The shortest van we build on, easy in town" },
   { slug: "transit-148", make: "transit", size: "long", wheelbase: 148, overallInches: 235.5, name: "Room To Spread Out", tagline: "More floor, more solar and more overhead storage" },
   { slug: "promaster-136", make: "promaster", size: "short", wheelbase: 136, overallInches: 213, name: "Easy To Park", tagline: "Tight turning and easy parking" },
   { slug: "promaster-159", make: "promaster", size: "long", wheelbase: 159, overallInches: 236, name: "Room To Spread Out", tagline: "More floor, more solar and more overhead storage" },
@@ -335,10 +337,14 @@ for (const p of (await payload.find({ collection: "floor-plans", pagination: fal
 }
 
 // 3. Vans.
-const ext = await bySlug("van-lengths", "sprinter-170-ext");
-if (ext) await payload.delete({ collection: "van-lengths", id: ext.id });
+// Retired: no extended bodies, and no Transit 130, which Ford builds only as
+// a low roof (owner, 2026-09-29: high roof or nothing).
+for (const gone of ["sprinter-170-ext", "transit-130"]) {
+  const v = await bySlug("van-lengths", gone);
+  if (v) await payload.delete({ collection: "van-lengths", id: v.id });
+}
 for (const [order, v] of VANS.entries()) {
-  const data = { ...v, order, vanPrice: VAN_PRICE, priceDelta: v.size === "long" ? LONG_EXTRA : 0 };
+  const data = { ...v, order, vanPrice: VAN_PRICES[v.make] ?? VAN_PRICE, priceDelta: v.size === "long" ? LONG_EXTRA : 0 };
   const found = await bySlug("van-lengths", v.slug);
   if (found) await payload.update({ collection: "van-lengths", id: found.id, data });
   else await payload.create({ collection: "van-lengths", data });

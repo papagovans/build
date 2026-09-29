@@ -31,7 +31,8 @@ audience language between them.
 Optimize for "can they visualize it," not for production hardening.
 
 **Pricing is the van plus the conversion** (Phase 1, owner 2026-09-28): the van
-is its own $75,000 line, the conversion $162,000 short or $170,000 long. The
+is its own line (Sprinter $75,000, Transit $57,000, ProMaster $56,000), the
+conversion $162,000 short or $170,000 long. The
 marketing site still says $180,000 van included; that is the owner's to change.
 
 **The catalog lives in Postgres now**, edited through the Payload admin at
