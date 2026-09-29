@@ -120,6 +120,7 @@ export async function loadCatalog(): Promise<Catalog> {
       whatItIs: o.whatItIs || undefined,
       whyYouNeedIt: o.whyYouNeedIt || undefined,
       sizes: o.sizes?.length ? (o.sizes as VanSize[]) : undefined,
+      partOf: relSlug(o.partOf as Rel),
     })),
 
     packages: packages.docs.map((p) => ({

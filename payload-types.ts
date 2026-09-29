@@ -346,6 +346,10 @@ export interface Product {
    */
   whyYouNeedIt?: string | null;
   /**
+   * Optional. Pick the system this belongs to, like Solar & Power System. It then shows inside that system's drawer instead of as its own card.
+   */
+  partOf?: (number | null) | Product;
+  /**
    * Leave empty if it comes on every van. Tick one when the short and long vans get different versions, like 200W and 400W solar.
    */
   sizes?: ('short' | 'long')[] | null;
@@ -635,6 +639,7 @@ export interface ProductsSelect<T extends boolean = true> {
   modelNumber?: T;
   whatItIs?: T;
   whyYouNeedIt?: T;
+  partOf?: T;
   sizes?: T;
   type?: T;
   price?: T;

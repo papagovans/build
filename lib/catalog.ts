@@ -55,6 +55,8 @@ export interface Option {
   whyYouNeedIt?: string;
   /** Van sizes this comes on. Undefined = every van. */
   sizes?: VanSize[];
+  /** The system this is a part of. Parts show in that system's drawer, not as cards. */
+  partOf?: string;
 }
 
 export type VanMake = "sprinter" | "transit" | "promaster";
@@ -1015,6 +1017,27 @@ export function includedFor(catalog: Catalog, floorPlanId: string, vanLengthId: 
       isAvailable(o, floorPlanId) &&
       (!o.sizes?.length || !size || o.sizes.includes(size)),
   );
+}
+
+/** The parts of a system that come on this van, in list order. */
+export function partsOf(items: Option[], systemId: string): Option[] {
+  return items.filter((o) => o.partOf === systemId);
+}
+
+/**
+ * What a buyer sees as cards: systems and stand-alone items, not the parts
+ * inside a system. A system takes the place of its first part, so the list
+ * keeps the order of the pricing sheet.
+ */
+export function topLevel(items: Option[]): Option[] {
+  const byId = new Map(items.map((o) => [o.id, o]));
+  const out: Option[] = [];
+  const seen = new Set<string>();
+  for (const o of items) {
+    const card = o.partOf && byId.has(o.partOf) ? byId.get(o.partOf)! : o;
+    if (!seen.has(card.id)) { seen.add(card.id); out.push(card); }
+  }
+  return out;
 }
 
 export function getFloorPlan(catalog: Catalog, id: string): FloorPlan | undefined {

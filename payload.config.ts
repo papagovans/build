@@ -483,6 +483,17 @@ const Products: CollectionConfig = {
       admin: { description: "Shown in the side drawer, under What it is. What it does for the owner on the road." },
     },
     {
+      name: "partOf",
+      label: "Part of",
+      type: "relationship",
+      relationTo: "products",
+      admin: {
+        description:
+          "Optional. Pick the system this belongs to, like Solar & Power System. It then shows inside that system's drawer instead of as its own card.",
+      },
+      filterOptions: ({ id }) => (id ? { id: { not_equals: id } } : true),
+    },
+    {
       name: "sizes",
       label: "Van sizes",
       type: "select",

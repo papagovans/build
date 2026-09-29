@@ -146,14 +146,22 @@ function linesFor(
   const lines: Line[] = [];
 
   const size = build.vanLengthId ? getVanLength(catalog, build.vanLengthId)?.size : undefined;
-  for (const option of optionsFor(catalog, categoryId, planId)) {
+  // Systems print with their parts right under them; a part is never printed
+  // on its own when its system is in the build.
+  const inCat = optionsFor(catalog, categoryId, planId);
+  const ids = new Set(inCat.map((o) => o.id));
+  const ordered = inCat
+    .filter((o) => !o.partOf || !ids.has(o.partOf))
+    .flatMap((o) => [o, ...inCat.filter((x) => x.partOf === o.id)]);
+  for (const option of ordered) {
     const picked = build.selected.includes(option.id);
     if (option.type === "included") {
       // Only what comes on this van's size: 200W solar on a short van, 400W on a long one.
       const fits = !option.sizes?.length || !size || option.sizes.includes(size);
       if (fits && !isSuperseded(catalog, option.id, build.selected)) {
         const brand = [option.manufacturer, option.model].filter(Boolean).join(" ");
-        lines.push({ name: option.name, note: brand || option.description, price: null });
+        const isPart = Boolean(option.partOf && ids.has(option.partOf));
+        lines.push({ name: isPart ? `\u00b7  ${option.name}` : option.name, note: brand || option.description, price: null });
       }
     } else if (picked) {
       lines.push({

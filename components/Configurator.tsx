@@ -22,6 +22,8 @@ import {
   VAN_MAKES,
   VAN_NOTE,
   includedFor,
+  partsOf,
+  topLevel,
   vanLabel,
 } from "@/lib/catalog";
 import {
@@ -1637,7 +1639,8 @@ function StepIncluded({
 }) {
   const catalog = useCatalog();
   const [expanded, setExpanded] = useState<Option | null>(null);
-  const items = includedFor(catalog, floorPlanId, vanLengthId);
+  const all = includedFor(catalog, floorPlanId, vanLengthId);
+  const items = topLevel(all);
   const sections = catalog.categories
     .map((c) => ({ category: c, items: items.filter((o) => o.categoryId === c.id) }))
     .filter((x) => x.items.length > 0);
@@ -1647,7 +1650,7 @@ function StepIncluded({
       <StepHeading
         eyebrow="Included in the price"
         title="What’s In Your Van"
-        blurb={`${items.length} items come in every build, on every floor plan. Tap one to see the brand, the model and why it is there.`}
+        blurb={`Everything below comes in every build, on every floor plan, ${all.filter((o) => partsOf(all, o.id).length === 0).length} parts in all. Tap a system to see every part in it, with the brand, the model and why it is there.`}
       />
 
 
@@ -1659,13 +1662,13 @@ function StepIncluded({
           </div>
           <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
             {items.map((o) => (
-              <OptionCard key={o.id} option={o} state="included" selected={[]} onToggle={() => {}} onExpand={setExpanded} />
+              <OptionCard key={o.id} option={o} state="included" selected={[]} onToggle={() => {}} onExpand={setExpanded} partCount={partsOf(all, o.id).length} />
             ))}
           </div>
         </section>
       ))}
 
-      {expanded && <Lightbox option={expanded} onClose={() => setExpanded(null)} />}
+      {expanded && <Lightbox option={expanded} parts={partsOf(all, expanded.id)} onClose={() => setExpanded(null)} />}
     </section>
   );
 }
@@ -1778,13 +1781,23 @@ function StepSummary({
           </summary>
           <div className="mt-3 grid gap-x-8 sm:grid-cols-2">
             {catalog.categories.map((c) => {
-              const items = included.filter((o) => o.categoryId === c.id);
+              const items = topLevel(included).filter((o) => o.categoryId === c.id);
               if (items.length === 0) return null;
               return (
                 <div key={c.id} className="mt-3">
                   <h4 className="text-xs font-bold uppercase tracking-widest text-steel mb-1">{c.name}</h4>
                   <ul className="text-sm text-charcoal space-y-0.5">
-                    {items.map((o) => <li key={o.id}>{o.name}</li>)}
+                    {items.map((o) => {
+                      const sub = partsOf(included, o.id);
+                      return (
+                        <li key={o.id}>
+                          {o.name}
+                          {sub.length > 0 && (
+                            <ul className="ml-4 text-xs text-steel">{sub.map((p) => <li key={p.id}>{p.name}</li>)}</ul>
+                          )}
+                        </li>
+                      );
+                    })}
                   </ul>
                 </div>
               );
@@ -1915,6 +1928,7 @@ function OptionCard({
   selected,
   onToggle,
   onExpand,
+  partCount = 0,
 }: {
   option: Option;
   /** included: ships as standard. superseded: replaced by a chosen upgrade. */
@@ -1922,6 +1936,8 @@ function OptionCard({
   selected: string[];
   onToggle: (id: string) => void;
   onExpand: (option: Option) => void;
+  /** A system's part count, shown so a buyer knows there is more behind the card. */
+  partCount?: number;
 }) {
   const catalog = useCatalog();
   const checked = selected.includes(option.id);
@@ -1953,6 +1969,11 @@ function OptionCard({
 
       {state === "superseded" && (
         <p className="mt-1 text-[11px] text-sky">Replaced by your upgrade</p>
+      )}
+      {partCount > 0 && (
+        <button type="button" onClick={() => onExpand(option)} className="mt-1 text-left text-[11px] font-semibold text-sky hover:underline">
+          {partCount} parts, see all
+        </button>
       )}
       {blocked && state === "choosable" && (
         <p className="mt-1 text-[11px] text-steel">Needs {requirementName}</p>
@@ -1998,9 +2019,12 @@ function OptionCard({
  */
 function Lightbox({
   option,
+  parts = [],
   onClose,
 }: {
   option: Option | null;
+  /** When the option is a system, the parts in it. */
+  parts?: Option[];
   onClose: () => void;
 }) {
   useEffect(() => {
@@ -2081,6 +2105,38 @@ function Lightbox({
             <p className="mt-3 text-[15px] leading-relaxed text-steel">
               {option.description}
             </p>
+          )}
+
+          {parts.length > 0 && (
+            <div className="mt-7">
+              <h3 className="text-xs font-bold uppercase tracking-widest text-navy">What&rsquo;s in it ({parts.length})</h3>
+              <ul className="mt-3 space-y-5">
+                {parts.map((part) => (
+                  <li key={part.id} className="flex gap-4">
+                    <div className="relative w-24 h-[72px] shrink-0 rounded-md overflow-hidden bg-offwhite">
+                      {part.thumb ? (
+                        <Image src={part.thumb} alt={part.name} fill sizes="96px" className="object-cover" />
+                      ) : (
+                        <span className="absolute inset-0 grid place-items-center text-steel/30 text-2xl font-bold">{part.name.charAt(0)}</span>
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-bold text-charcoal leading-snug">{part.name}</p>
+                      {(part.manufacturer || part.model) && (
+                        <p className="text-xs text-steel mt-0.5">{[part.manufacturer, part.model].filter(Boolean).join(" \u00b7 ")}</p>
+                      )}
+                      {part.whatItIs && <p className="text-[13px] leading-relaxed text-steel mt-1.5">{part.whatItIs}</p>}
+                      {part.whyYouNeedIt && (
+                        <p className="text-[13px] leading-relaxed text-steel mt-1">
+                          <strong className="text-charcoal">Why: </strong>
+                          {part.whyYouNeedIt}
+                        </p>
+                      )}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
           )}
 
           <p className="mt-5 text-sm font-bold text-navy">

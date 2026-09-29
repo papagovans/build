@@ -76,6 +76,12 @@ Not customer-facing yet.
 - **`npm run seed` is now legacy.** It still loads the old placeholder catalog
   (five plans, three trim tiers, 49 products) and would put it back. Use
   `scripts/phase1-catalog.ts` instead.
+- **Systems.** What's Included shows 12 systems (Solar & Power, Galley
+  Kitchen, Cabinets & Storage and so on) as single cards; a system's drawer
+  lists every part with its photo, brand, model and the two short
+  descriptions. A system is a product; its parts point at it with **Part of**
+  in the admin, so staff can regroup without code. The PDF prints each system
+  with its parts under it.
 - **Four floor plans:** El Capitan, Zion, Olympus and McKinley (renamed from
   Mammoth; its slug is still `mammoth` so saved links keep working). Rainier
   was deleted as a duplicate. They carry SketchUp Builds 1 to 4 in that order;

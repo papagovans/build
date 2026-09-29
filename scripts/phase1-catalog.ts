@@ -245,13 +245,69 @@ const ITEMS: Item[] = [
     why: "An easy step into a lifted van, with nothing hanging low to catch on rocks when you drive." },
 ];
 
+/*
+ * Systems (owner, 2026-09-29): one card per system on What's Included, its
+ * parts listed in the drawer. A system is a product itself; its parts point
+ * at it with Part of. Staff can regroup in the admin.
+ */
+const SYSTEMS: { slug: string; cat: Item["cat"]; name: string; img: string; what: string; why: string; parts: string[] }[] = [
+  { slug: "sys-solar-power", cat: "electrical", name: "Solar & Power System", img: "elec-solar-400.webp",
+    what: "Solar panels, a lithium battery bank, an inverter and the charging to tie it together, wired into 110-volt outlets through the van.",
+    why: "It runs the fridge, lights, fans, cooktop and laptops for days with no hookup, and tops itself up from the sun, the engine or a campground plug.",
+    parts: ["inc-solar-400", "inc-solar-200", "inc-dcdc", "inc-battery", "inc-inverter", "inc-outlets", "inc-gfci", "inc-shore"] },
+  { slug: "sys-water", cat: "water", name: "Fresh & Grey Water System", img: "plumb-fresh-33.webp",
+    what: "A fresh water tank with a level sensor, and a grey tank that holds what drains from the sink and shower.",
+    why: "Days of water for cooking, dishes and showers, and nothing dumped on the ground where it is not allowed.",
+    parts: ["inc-fresh-water", "inc-water-sensor", "inc-grey-water"] },
+  { slug: "sys-bathroom", cat: "water", name: "Bathroom", img: "plumb-shower-indoor.webp",
+    what: "A tiled indoor shower with hot and cold water, and a waterless dry flush toilet.",
+    why: "A real shower and toilet inside the van, so there is no hunting for a campground bathroom.",
+    parts: ["inc-toilet", "inc-shower"] },
+  { slug: "sys-galley", cat: "interior", name: "Galley Kitchen", img: "popup-counter.webp",
+    what: "An induction cooktop, sink and faucet, refrigerator with freezer and microwave, with a cutting board insert, pop-up counter and a fold-down table at the door.",
+    why: "Cook a real meal on battery power, with counter space where you need it and food that stays cold for the whole trip.",
+    parts: ["inc-cooktop", "inc-sink", "inc-cutting-board", "inc-popup-counter", "inc-door-table", "inc-microwave", "inc-fridge"] },
+  { slug: "sys-finishes", cat: "interior", name: "Ceiling, Lighting & Floor", img: "aes-ceiling.webp",
+    what: "A wood slat ceiling with LED strips recessed in it, over wood-look vinyl flooring.",
+    why: "It feels like a cabin, lights evenly end to end, and the floor takes sand and wet boots.",
+    parts: ["inc-ceiling", "inc-ceiling-lights", "inc-flooring"] },
+  { slug: "sys-storage", cat: "interior", name: "Cabinets & Storage", img: "storage-overhead.webp",
+    what: "Baltic birch cabinetry built in our shop: overhead cabinets, under-counter cabinets and drawers, a floor-to-ceiling closet and a bench with storage.",
+    why: "A place for everything, shut tight on washboard roads, so the van stays livable instead of piled up.",
+    parts: ["inc-cabinetry", "inc-overhead-5", "inc-overhead-3", "inc-cabinet-double", "inc-cabinet-drawers", "inc-cabinet-storage", "inc-closet", "inc-bench"] },
+  { slug: "sys-windows", cat: "interior", name: "Windows", img: "misc-windows.webp",
+    what: "A driver-side T-vent window, a T-vent window in the sliding door and solid glass in both rear doors.",
+    why: "Daylight, views and a cross breeze with the roof fan.",
+    parts: ["inc-window-driver", "inc-window-slider", "inc-window-rear"] },
+  { slug: "sys-safety", cat: "interior", name: "Safety Gear", img: "",
+    what: "A mounted fire extinguisher and a combined carbon monoxide and smoke alarm.",
+    why: "The basics every RV should carry, mounted where you can reach them.",
+    parts: ["inc-extinguisher", "inc-co-smoke"] },
+  { slug: "sys-front", cat: "exterior", name: "Front Bumper, Winch & Lights", img: "ext-winch.webp",
+    what: "A steel front bumper with a WARN winch and wireless remote, and a pair of KC lights mounted on it.",
+    why: "Pull yourself out of sand or mud, protect the front of the van, and light the trail close in.",
+    parts: ["inc-bumper-winch", "inc-bumper-lights"] },
+  { slug: "sys-roof", cat: "exterior", name: "Roof Rack & Light Bar", img: "roof-rack.webp",
+    what: "A safari roof rack with a roof-top deck and side ladder, and a KC light bar mounted on it.",
+    why: "Carry gear up top, climb up for the view, and light a campsite well past the headlights.",
+    parts: ["inc-roof-rack", "inc-light-bar"] },
+  { slug: "sys-wheels", cat: "exterior", name: "Wheels, Tires & Fenders", img: "ext-wheels.webp",
+    what: "Five all-terrain wheels and tires, paint-matched fender flares and a no-rub front fender kit.",
+    why: "Grip on dirt, gravel and snow, with the clearance to turn the bigger tires all the way.",
+    parts: ["inc-wheels", "inc-fender-flares", "inc-fender-kit"] },
+  { slug: "sys-rear", cat: "exterior", name: "Rear Carriers", img: "bike-carrier.webp",
+    what: "A spare tire carrier, a bike carrier and a storage box on the rear of the van.",
+    why: "The spare, the bikes and the muddy gear ride outside, not on your bed.",
+    parts: ["inc-tire-carrier", "inc-bike-carrier", "inc-rear-box"] },
+];
+
 const bySlug = async (collection: string, slug: string) =>
   (await payload.find({ collection: collection as any, where: { slug: { equals: slug } }, limit: 1, depth: 0 })).docs[0] as any;
 
 // 1. Trim packages and old products go; nothing in Phase 1 uses them.
 for (const p of (await payload.find({ collection: "trim-packages", pagination: false, depth: 0 })).docs)
   await payload.delete({ collection: "trim-packages", id: p.id });
-const keep = new Set(ITEMS.map((i) => i.slug));
+const keep = new Set([...ITEMS.map((i) => i.slug), ...SYSTEMS.map((x) => x.slug)]);
 for (const p of (await payload.find({ collection: "products", pagination: false, depth: 0 })).docs as any[])
   if (!keep.has(p.slug)) await payload.delete({ collection: "products", id: p.id });
 
@@ -317,5 +373,22 @@ for (const item of ITEMS) {
   else await payload.create({ collection: "products", data });
 }
 
+// 5. Systems, and the parts that belong to each.
+for (const sys of SYSTEMS) {
+  const data = {
+    name: sys.name, slug: sys.slug, category: catId[sys.cat], type: "included" as const, price: 0, selectable: true,
+    whatItIs: sys.what, whyYouNeedIt: sys.why, sizes: [],
+    ...(sys.img && mediaId[sys.img] ? { image: mediaId[sys.img] } : {}),
+  };
+  const found = await bySlug("products", sys.slug);
+  const id = found ? (await payload.update({ collection: "products", id: found.id, data })).id : (await payload.create({ collection: "products", data })).id;
+  for (const part of sys.parts) {
+    const p = await bySlug("products", part);
+    if (!p) throw new Error(`system ${sys.slug}: no part ${part}`);
+    await payload.update({ collection: "products", id: p.id, data: { partOf: id } });
+  }
+}
+
+console.log(`${SYSTEMS.length} systems`);
 console.log(`${VANS.length} vans, ${ITEMS.length} included items, conversion $${SHORT_CONVERSION} short / $${SHORT_CONVERSION + LONG_EXTRA} long, van $${VAN_PRICE}`);
 process.exit(0);
