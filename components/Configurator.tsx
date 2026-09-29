@@ -20,6 +20,7 @@ import {
   type Option,
   type VanLength,
   VAN_MAKES,
+  VAN_NOTE,
   includedFor,
   vanLabel,
 } from "@/lib/catalog";
@@ -421,7 +422,7 @@ const BUILD_FACTS: { value: string; label: string; detail: string }[] = [
   {
     value: "Three Vans",
     label: "Sprinter, Transit, ProMaster",
-    detail: "Priced with the van at a typical dealer price",
+    detail: "You buy the van direct through our dealers, to keep costs down",
   },
   {
     value: "RVIA Certified",
@@ -814,6 +815,8 @@ function StepVanLength({
         })}
       </div>
 
+      <p className="mt-6 text-sm text-steel max-w-3xl">{VAN_NOTE}</p>
+
       <div className="mt-8 flex justify-end">
         <button
           onClick={onContinue}
@@ -855,9 +858,10 @@ function StepFloorPlan({
       <StepHeading
         eyebrow={possessive}
         title="Choose Your Floor Plan"
-        blurb="Four layouts, each built to order on the van you picked. Prices include the van at a typical dealer price. Pick the layout that fits how you travel."
+        blurb="Four layouts, each built to order on the van you picked. Pick the one that fits how you travel."
       />
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      {/* Two by two: four plans, each big enough to read the 3D model. */}
+      <div className="grid gap-6 sm:grid-cols-2">
         {plans.map((plan) => {
           const isSelected = plan.id === selectedId;
           return (
@@ -872,7 +876,7 @@ function StepFloorPlan({
               {/* Static until chosen, then the buyer can turn it. The card is
                   not one big <button> because a draggable viewer inside a
                   button is invalid and every drag would also fire a click. */}
-              <div className="relative aspect-[2/1] bg-offwhite">
+              <div className="relative aspect-[16/10] bg-offwhite">
                 <model-viewer
                   src={plan.model ?? FLOOR_PLAN_MODEL}
                   alt={`${plan.name} 3D layout`}
@@ -919,6 +923,8 @@ function StepFloorPlan({
           );
         })}
       </div>
+
+      <p className="mt-6 text-sm text-steel max-w-3xl">{VAN_NOTE}</p>
     </section>
   );
 }
@@ -1704,7 +1710,7 @@ function StepSummary({
       <StepHeading
         eyebrow={firstName ? `Almost done, ${firstName}` : "Almost done"}
         title={`${possessive} Sheet`}
-        blurb="Review your van below. The total is the van at a typical dealer price plus the full conversion."
+        blurb="Review your van below. The total is the full conversion plus an average price for the van."
       />
 
       <div className="bg-white rounded-lg p-6 sm:p-8">
@@ -1715,7 +1721,7 @@ function StepSummary({
           </div>
         </div>
 
-        <LineItem label={van ? `${vanLabel(van)} (typical dealer price)` : "Van"} price={breakdown.vanPrice} />
+        <LineItem label={van ? `${vanLabel(van)} (average price)` : "Van"} price={breakdown.vanPrice} />
         <LineItem label={`${plan?.name} conversion`} price={breakdown.base + breakdown.lengthDelta} />
 
         {breakdown.upgrades.length > 0 && (
@@ -1753,9 +1759,7 @@ function StepSummary({
           </span>
         </div>
         <p className="mt-2 text-xs text-steel">
-          <strong className="text-charcoal">Van and conversion.</strong> The van
-          is shown at a typical dealer price; you buy it from the dealer and we
-          build it. Final pricing is confirmed after a build consultation.
+          {VAN_NOTE} Final pricing is confirmed after a build consultation.
         </p>
 
         <details className="mt-6 rounded-lg border border-black/10 p-4">

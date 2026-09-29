@@ -24,6 +24,7 @@ import {
   getVanLength,
   optionsFor,
   vanLabel,
+  VAN_NOTE,
   type Catalog,
 } from "./catalog";
 import {
@@ -288,7 +289,7 @@ function BuildSheet({
 
           <View style={s.totals} wrap={false}>
             <View style={s.totalRow}>
-              <Text>{van ? vanLabel(van) : "Van"}, typical dealer price</Text>
+              <Text>{van ? vanLabel(van) : "Van"}, average price</Text>
               <Text>{formatPrice(breakdown.vanPrice)}</Text>
             </View>
             <View style={s.totalRow}>
@@ -312,9 +313,8 @@ function BuildSheet({
               <Text style={s.grandValue}>{formatPrice(breakdown.total)}</Text>
             </View>
             <Text style={s.vanNote}>
-              The van is shown at a typical dealer price; you buy it from the
-              dealer and we build it. Final pricing is confirmed after a build
-              consultation. Prices and availability are subject to change.
+              {VAN_NOTE} Final pricing is confirmed after a build consultation.
+              Prices and availability are subject to change.
             </Text>
           </View>
 

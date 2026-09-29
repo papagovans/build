@@ -262,7 +262,17 @@ for (const p of (await payload.find({ collection: "floor-plans", pagination: fal
   await payload.update({
     collection: "floor-plans",
     id: p.id,
-    data: { basePrice: SHORT_CONVERSION, ...(p.slug === "mammoth" ? { name: "McKinley" } : {}), availableLengths: [] },
+    data: {
+      basePrice: SHORT_CONVERSION,
+      ...(p.slug === "mammoth" ? { name: "McKinley" } : {}),
+      availableLengths: [],
+      // Every plan ships the same list now, so the card specs must agree with it.
+      // Sleeps is the layout's own and stays.
+      specs: (p.specs ?? []).map((sp: any) => ({
+        label: sp.label,
+        value: /battery/i.test(sp.label) ? "920Ah" : /fresh water/i.test(sp.label) ? "33G" : sp.value,
+      })),
+    },
   });
 }
 

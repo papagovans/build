@@ -69,6 +69,10 @@ export const VAN_MAKES: { id: VanMake; name: string }[] = [
 
 export const makeName = (make: VanMake) => VAN_MAKES.find((m) => m.id === make)?.name ?? make;
 
+/** Owner's wording, 2026-09-28. Shown wherever a van price appears, on screen and on the PDF. */
+export const VAN_NOTE =
+  "To keep your costs down, you buy your van direct through one of our Mercedes-Benz, Ford or Ram dealers. The van price shown is an average, provided as a convenience for pricing only.";
+
 /** "Ford Transit 148"", the label a salesperson and the Build Sheet use. */
 export const vanLabel = (v: Pick<VanLength, "make" | "wheelbase">) => `${makeName(v.make)} ${v.wheelbase}"`;
 
