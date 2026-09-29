@@ -32,7 +32,12 @@ const PHOTOS: Record<string, string> = {
   ...Object.fromEntries(
     ["inc-outlets", "inc-cutting-board", "inc-popup-counter", "inc-door-table", "inc-microwave", "inc-ceiling-lights",
      "inc-cabinet-double", "inc-cabinet-drawers", "inc-cabinet-storage", "inc-closet", "inc-bed", "inc-window-driver",
-     "inc-window-slider", "inc-fender-flares", "inc-fender-kit", "inc-water-heater"].map((s) => [s, `${SH}/${s}.webp`]),
+     "inc-window-slider", "inc-fender-flares", "inc-fender-kit", "inc-water-heater",
+     // Papago's own vans: the KC lights and Lost Saguaro carrier as installed.
+     "inc-light-bar", "inc-bumper-lights", "inc-tire-carrier",
+     // Representative maker shots (Leviton, Garnet SeeLevel, ICON, First Alert):
+     // the shop has not confirmed brands for these. Replace before launch.
+     "inc-gfci", "inc-water-sensor", "inc-grey-water", "inc-extinguisher", "inc-co-smoke"].map((s) => [s, `${SH}/${s}.webp`]),
   ),
 };
 const MODELS: Record<string, string> = {

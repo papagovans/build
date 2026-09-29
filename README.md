@@ -67,12 +67,13 @@ Not customer-facing yet.
   `scripts/phase1-catalog.ts`. Brands and models come from that sheet or
   Papago's own site. Where neither names one (solar panels, awning, water
   heater, microwave and others) the field is blank for the shop to fill in
-  `/admin`. Do not guess model numbers. 47 of the 56 items per van have a
-  photo: branded ones from each maker's own site, shop-built ones cropped from
-  Papago's own builds (`scripts/phase1-photos.ts`, sources in
-  `assets/products/`). Still without one: GFCI outlets, water level sensor,
-  grey water tank, fire extinguisher, CO and smoke detector, light bar,
-  bumper lights, tire carrier, power steps.
+  `/admin`. Do not guess model numbers. 55 of the 56 parts have a photo:
+  branded ones from each maker's own site, installed ones (KC lights, Lost
+  Saguaro carrier, cabinets, windows) cropped from Papago's own builds, and
+  five generic ones (GFCI, tank monitor, grey tank, extinguisher, CO/smoke)
+  as representative maker shots until the shop confirms brands
+  (`scripts/phase1-photos.ts`, sources in `assets/products/`). The AMP
+  PowerStep has none: AMP only photographs pickups.
 - **`npm run seed` is now legacy.** It still loads the old placeholder catalog
   (five plans, three trim tiers, 49 products) and would put it back. Use
   `scripts/phase1-catalog.ts` instead.
