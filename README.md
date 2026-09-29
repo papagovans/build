@@ -75,9 +75,12 @@ Not customer-facing yet.
   Mammoth; its slug is still `mammoth` so saved links keep working). Rainier
   was deleted as a duplicate. They carry SketchUp Builds 1 to 4 in that order;
   El Capitan is confirmed as Build 1.
-- **Only the Sprinter has van renders.** The Transit and ProMaster cards show
-  their name until renders are sourced; Ford's and RAM's own configurator
-  images need the owner's OK first, as Mercedes' did.
+- **Van pictures.** The Sprinter uses Mercedes' own renders. The Transit and
+  ProMaster use Papago's own finished builds (Alpine Paws and Sunset Cruiser
+  Van), cut out and set on the same 903x576 transparent frame, tyres on the
+  same line, with a contact shadow drawn along each van's lower edge. One
+  picture per make, shared by both wheelbases. Ford's and RAM's press images
+  are for editorial use only, so they were not used.
 
 ### Making a 3D model
 
