@@ -41,6 +41,9 @@ assert.deepEqual(ids(long), ["inc-inverter", "inc-solar-400"], "the long van get
 
 assert.equal(vanLabel(C.vanLengths[2]), 'Ford Transit 148"', "the label names the make and wheelbase");
 
+// A van with no floor plan yet is the van alone, long or short.
+assert.equal(priceBuild(C, setVanLength(C, emptyBuild(C), "sprinter-170")).total, 75_000, "van picked, no plan: $75,000");
+
 // A link from before lengths existed has four fields; it means the first van.
 const legacy = decodeBuild(C, ["el-capitan", "", "", ""].join("~"));
 assert.equal(legacy.vanLengthId, "sprinter-144");

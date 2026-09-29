@@ -94,7 +94,9 @@ export function priceBuild(catalog: Catalog, state: BuildState): PriceBreakdown 
    * top of it rather than a second base price per combination. Three lengths
    * times five plans would otherwise be fifteen numbers to keep in step. */
   const length = state.vanLengthId ? getVanLength(catalog, state.vanLengthId) : undefined;
-  const lengthDelta = length?.priceDelta ?? 0;
+  // The long-van extra is part of the conversion, so it only counts once a
+  // plan is picked. Before that the total is the van alone.
+  const lengthDelta = plan ? (length?.priceDelta ?? 0) : 0;
   const vanPrice = length?.vanPrice ?? 0;
 
   const pkg =

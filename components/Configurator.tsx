@@ -369,7 +369,7 @@ export default function Configurator({ catalog }: { catalog: Catalog }) {
 
       <SummaryBar
         breakdown={breakdown}
-        planName={plan?.name}
+        planName={plan?.name ?? (van ? vanLabel(van) : undefined)}
         onGetBuildSheet={() => goTo(SUMMARY_STEP)}
         canFinish={Boolean(build.floorPlanId)}
         atSummary={step === SUMMARY_STEP}
@@ -1072,9 +1072,9 @@ function StepGallery({
     <section>
       <Script type="module" src={MODEL_VIEWER_SRC} strategy="afterInteractive" />
       <StepHeading
-        eyebrow="Step 3"
+        eyebrow="Layout"
         title={`Explore the ${plan.name}`}
-        blurb="Take a closer look at the layout from every angle before you choose a trim package."
+        blurb="Take a closer look at the layout from every angle, then see everything that comes in it."
       />
 
       {/* One model the buyer turns, in place of the eight fixed views. The
@@ -1134,7 +1134,7 @@ function StepGallery({
           onClick={onContinue}
           className="px-10 py-4 rounded bg-gold text-navy text-sm font-bold uppercase tracking-wide hover:bg-gold-deep transition-colors"
         >
-          Choose Your Trim Package →
+          See What’s Included →
         </button>
       </div>
     </section>
@@ -2125,6 +2125,8 @@ function SummaryBar({
   canFinish: boolean;
   atSummary: boolean;
 }) {
+  // Shows from the moment a van is picked: the van alone, then van plus
+  // conversion once there is a floor plan.
   if (!planName) return null;
 
   const extras = breakdown.upgrades.length + breakdown.addons.length;
@@ -2140,7 +2142,7 @@ function SummaryBar({
           <p className="text-2xl font-extrabold leading-tight">
             {formatPrice(breakdown.total)}
             <span className="ml-2 text-[11px] font-semibold uppercase tracking-widest text-gold align-middle">
-              Van + conversion
+              {breakdown.base > 0 ? "Van + conversion" : "Van, average price"}
             </span>
           </p>
         </div>
