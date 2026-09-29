@@ -272,6 +272,11 @@ export default function Configurator({ catalog }: { catalog: Catalog }) {
           hasDetails={isValidCustomer(customer)}
           hasPlan={Boolean(build.floorPlanId)}
         />
+        {/* Part of the pinned header, so it stays on screen the whole way down
+            the long included list instead of scrolling away under the bar. */}
+        {step === INCLUDED_STEP && build.floorPlanId && (
+          <IncludedNav floorPlanId={build.floorPlanId} vanLengthId={build.vanLengthId} />
+        )}
       </div>
 
       <main className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 py-10">
@@ -1601,6 +1606,28 @@ function StepOptions({
  * 1 has no upgrades, so this is the whole van: a card opens the drawer with
  * the brand, model, what it is and why it is there.
  */
+function IncludedNav({ floorPlanId, vanLengthId }: { floorPlanId: string; vanLengthId: string | null }) {
+  const catalog = useCatalog();
+  const items = includedFor(catalog, floorPlanId, vanLengthId);
+  const cats = catalog.categories.filter((c) => items.some((o) => o.categoryId === c.id));
+  return (
+    <nav aria-label="Systems" className="bg-white/95 backdrop-blur border-b border-black/10">
+      <ul className="max-w-6xl mx-auto px-4 sm:px-6 py-2 flex gap-1 overflow-x-auto text-xs">
+        {cats.map((c) => (
+          <li key={c.id} className="shrink-0">
+            <a
+              href={`#${c.id}`}
+              className="block px-3 py-1.5 rounded-full whitespace-nowrap font-semibold uppercase tracking-wide text-steel hover:bg-offwhite"
+            >
+              {c.name}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </nav>
+  );
+}
+
 function StepIncluded({
   floorPlanId,
   vanLengthId,
@@ -1623,26 +1650,9 @@ function StepIncluded({
         blurb={`${items.length} items come in every build, on every floor plan. Tap one to see the brand, the model and why it is there.`}
       />
 
-      <nav
-        aria-label="Systems"
-        className="sticky top-[104px] z-20 -mx-4 sm:-mx-6 px-4 sm:px-6 py-2 bg-white/95 backdrop-blur border-b border-black/10"
-      >
-        <ul className="flex gap-1 overflow-x-auto text-xs">
-          {sections.map(({ category }) => (
-            <li key={category.id} className="shrink-0">
-              <a
-                href={`#${category.id}`}
-                className="block px-3 py-1.5 rounded-full whitespace-nowrap font-semibold uppercase tracking-wide text-steel hover:bg-offwhite"
-              >
-                {category.name}
-              </a>
-            </li>
-          ))}
-        </ul>
-      </nav>
 
       {sections.map(({ category, items }) => (
-        <section key={category.id} id={category.id} className="scroll-mt-28 pt-10">
+        <section key={category.id} id={category.id} className="scroll-mt-[260px] pt-10">
           <div className="border-b border-black/10 pb-3 mb-6">
             <h2 className="brand-heading text-2xl">{category.name}</h2>
             <p className="mt-1 text-sm text-steel">{category.blurb}</p>

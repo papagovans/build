@@ -303,12 +303,14 @@ for (const item of ITEMS) {
     type: "included" as const,
     price: 0,
     selectable: true,
-    manufacturer: item.mfr ?? null,
-    modelNumber: item.model ?? null,
+    ...(item.mfr ? { manufacturer: item.mfr } : {}),
+    ...(item.model ? { modelNumber: item.model } : {}),
     whatItIs: item.what,
     whyYouNeedIt: item.why,
     sizes: item.sizes ?? [],
-    image: item.img ? mediaId[item.img] : null,
+    // Only set a photo the list names. Photos added later in the admin (or by
+    // scripts/phase1-photos.ts) are left alone on a re-run.
+    ...(item.img ? { image: mediaId[item.img] } : {}),
   };
   const found = await bySlug("products", item.slug);
   if (found) await payload.update({ collection: "products", id: found.id, data });
