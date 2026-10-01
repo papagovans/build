@@ -661,5 +661,5 @@ internal names, or HubSpot drops them silently: `papago_van_length`,
 npx tsx scripts/check-hubspot.ts    # asserts it skips cleanly and never throws
 ```
 
-**Phase 3** — Additional chassis (Transit, Promaster), Hearth financing
+**Phase 3** — Additional chassis (Transit, Promaster), a financing
 calculator, book-a-call handoff, sales-rep view of submitted builds.

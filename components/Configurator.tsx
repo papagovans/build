@@ -444,7 +444,7 @@ const BUILD_FACTS: { value: string; label: string; detail: string }[] = [
   {
     value: "Financing",
     label: "Available",
-    detail: "Through our partner, Hearth",
+    detail: "For the van and the build together",
   },
 ];
 
