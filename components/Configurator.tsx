@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import Image from "next/image";
 import Script from "next/script";
 import { BEDS, bedModelFor, getBed, hasBeds } from "@/lib/beds";
@@ -936,8 +936,8 @@ function BedStage({
   /** The bed in the van once the current move ends. */
   const shown = useRef<string | null>(null);
   const moving = useRef(false);
+  /** The latest choice, read when a move finishes. */
   const wanted = useRef(bedId);
-  wanted.current = bedId;
 
   useEffect(() => {
     const el = viewer.current;
@@ -948,6 +948,7 @@ function BedStage({
   }, []);
 
   useEffect(() => {
+    wanted.current = bedId;
     const el = viewer.current;
     if (!el || !loaded) return;
     // Placed almost at once when settled, or for anyone who has asked their
@@ -1008,6 +1009,64 @@ function BedStage({
   );
 }
 
+/* How to drive the 3D view, under it. Mouse wording by default; a touch
+ * screen gets the finger gestures, since it has no wheel or right button. */
+function ViewerLegend() {
+  const touch = useSyncExternalStore(
+    (change) => {
+      const q = window.matchMedia("(pointer: coarse)");
+      q.addEventListener("change", change);
+      return () => q.removeEventListener("change", change);
+    },
+    () => window.matchMedia("(pointer: coarse)").matches,
+    () => false, // server render: mouse wording, corrected on the client
+  );
+  const items = touch
+    ? [
+        { icon: "drag", text: "Drag to turn" },
+        { icon: "zoom", text: "Pinch to zoom" },
+        { icon: "move", text: "Two fingers to move" },
+      ]
+    : [
+        { icon: "drag", text: "Click and drag to turn" },
+        { icon: "zoom", text: "Scroll wheel to zoom" },
+        { icon: "move", text: "Right-click and drag to move" },
+      ];
+  return (
+    <ul aria-label="How to use the 3D view" className="mt-3 flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm text-steel">
+      {items.map((it) => (
+        <li key={it.icon} className="flex items-center gap-2">
+          <LegendIcon kind={it.icon} />
+          {it.text}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function LegendIcon({ kind }: { kind: string }) {
+  const common = { width: 18, height: 18, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 1.6, strokeLinecap: "round" as const, strokeLinejoin: "round" as const, "aria-hidden": true };
+  if (kind === "zoom")
+    return (
+      <svg {...common}>
+        <rect x="7" y="3" width="10" height="17" rx="5" />
+        <path d="M12 6.5v3" strokeWidth={2.2} />
+      </svg>
+    );
+  if (kind === "move")
+    return (
+      <svg {...common}>
+        <path d="M12 3v18M3 12h18M12 3l-2.5 2.5M12 3l2.5 2.5M12 21l-2.5-2.5M12 21l2.5-2.5M3 12l2.5-2.5M3 12l2.5 2.5M21 12l-2.5-2.5M21 12l-2.5 2.5" />
+      </svg>
+    );
+  return (
+    <svg {...common}>
+      <path d="M20 12a8 8 0 1 1-2.34-5.66" />
+      <path d="M20 4v4.5h-4.5" />
+    </svg>
+  );
+}
+
 /** Your Bed: the empty chassis, then the chosen bed sliding in. */
 function StepBed({
   vanId,
@@ -1034,6 +1093,7 @@ function StepBed({
             bedId={selectedId}
             hint={selectedId ? undefined : "Choose a bed to see it go in"}
           />
+          <ViewerLegend />
         </div>
 
         <ul role="radiogroup" aria-label="Beds" className="divide-y divide-line border-y border-line">
@@ -1100,7 +1160,10 @@ function StepFront({
         blurb={`The front half of the van: the galley, seating and storage, laid out to work with ${bed?.name ?? "your bed"}.`}
       />
       <div className="grid gap-8 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] items-start">
-        <BedStage vanId={vanId} bedId={bedId} settled />
+        <div>
+          <BedStage vanId={vanId} bedId={bedId} settled />
+          <ViewerLegend />
+        </div>
         <div className="rounded-2xl border border-dashed border-steel/30 p-6 sm:p-8">
           <p className="text-xs font-semibold uppercase tracking-widest text-steel">In design now</p>
           <h3 className="brand-heading text-2xl mt-2">Kitchen and living layouts</h3>
