@@ -3,6 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import Script from "next/script";
+import { BEDS, bedModelFor, getBed, hasBeds } from "@/lib/beds";
 import {
   getFloorPlan,
   getOption,
@@ -59,13 +60,19 @@ import {
  */
 const LENGTH_STEP = 0;
 const INTRO_STEP = 1;
-const PLAN_STEP = 2;
-const GALLERY_STEP = 3;
+/* The modular steps (owner, 2026-10-12): the chassis with the beds that fit
+ * it, then the kitchen and living area that fit the bed. Only for a van with a
+ * bed model (lib/beds.ts), today the Sprinter 170. Every other van steps
+ * straight over both; see stepFrom(). */
+const BED_STEP = 2;
+const FRONT_STEP = 3;
+const PLAN_STEP = 4;
+const GALLERY_STEP = 5;
 /* Phase 1 of the streamlined builder (owner, 2026-09-28): one included list,
  * no trim tiers, colours or upgrades. StepPackage, StepColors and StepOptions
  * below are kept, unused, for when upgrades come back. */
-const INCLUDED_STEP = 4;
-const SUMMARY_STEP = 5;
+const INCLUDED_STEP = 6;
+const SUMMARY_STEP = 7;
 
 /* The category that owns the colour swatches. It gets its own step; every
  * other category is a section on the single Options page. */
@@ -238,12 +245,26 @@ export default function Configurator({ catalog }: { catalog: Catalog }) {
   const breakdown = useMemo(() => priceBuild(catalog, build), [catalog, build]);
   const van = build.vanLengthId ? getVanLength(catalog, build.vanLengthId) : undefined;
 
+  const bedStep = hasBeds(build.vanLengthId);
+  /* The next step in a direction, stepping over the modular steps on a van
+   * that has no beds to choose. */
+  const stepFrom = (from: number, dir: 1 | -1) => {
+    let next = from + dir;
+    while (!bedStep && (next === BED_STEP || next === FRONT_STEP)) next += dir;
+    return next;
+  };
+  const afterDetails = bedStep ? BED_STEP : PLAN_STEP;
+
   const canAdvance =
     step === LENGTH_STEP
       ? Boolean(build.vanLengthId)
       : step === INTRO_STEP
         ? isValidCustomer(customer)
-        : Boolean(build.floorPlanId);
+        : step === BED_STEP
+          ? Boolean(build.bedId)
+          : step === FRONT_STEP
+            ? true // a placeholder until the kitchen and living models exist
+            : Boolean(build.floorPlanId);
 
   /** Last name drives the personalized headlines, with a neutral fallback. */
   const surname = customer.lastName.trim();
@@ -258,7 +279,9 @@ export default function Configurator({ catalog }: { catalog: Catalog }) {
     <CatalogContext.Provider value={catalog}>
     <div className="flex flex-col min-h-screen pb-28">
       <Header />
-      <Hero />
+      {/* The introduction belongs to the first screen. Repeated on every step
+          it pushed the 3D views below the fold on a laptop. */}
+      {step === LENGTH_STEP && <Hero />}
 
       {/* Van context and step nav travel together so neither scrolls away. */}
       {/* The stepper shows from the very first screen, because "step 1 of 8" is
@@ -266,13 +289,15 @@ export default function Configurator({ catalog }: { catalog: Catalog }) {
           above it waits until there is a van to name. */}
       <div className="sticky top-0 z-30 shadow-sm">
         {step > LENGTH_STEP && (
-          <VanContextBar planName={plan?.name} surname={surname} van={van} />
+          <VanContextBar planName={plan?.name} bedName={getBed(build.bedId)?.name} surname={surname} van={van} />
         )}
         <Stepper
           step={step}
           onJump={goTo}
           hasDetails={isValidCustomer(customer)}
           hasPlan={Boolean(build.floorPlanId)}
+          hasBedStep={bedStep}
+          hasBed={Boolean(build.bedId)}
         />
         {/* Part of the pinned header, so it stays on screen the whole way down
             the long included list instead of scrolling away under the bar. */}
@@ -303,7 +328,7 @@ export default function Configurator({ catalog }: { catalog: Catalog }) {
                   }),
                 }).catch(() => {});
               }
-              goTo(PLAN_STEP);
+              goTo(afterDetails);
             }}
           />
         )}
@@ -315,8 +340,21 @@ export default function Configurator({ catalog }: { catalog: Catalog }) {
             onChoose={(id) => setBuild((b) => setVanLength(catalog, b, id))}
             /* Details already on file: going back to change the van is not
                a reason to fill the form in again. */
-            onContinue={() => goTo(isValidCustomer(customer) ? PLAN_STEP : INTRO_STEP)}
+            onContinue={() => goTo(isValidCustomer(customer) ? afterDetails : INTRO_STEP)}
           />
+        )}
+
+        {step === BED_STEP && bedStep && (
+          <StepBed
+            vanId={build.vanLengthId}
+            selectedId={build.bedId}
+            possessive={possessive}
+            onSelect={(id) => setBuild((b) => ({ ...b, bedId: id }))}
+          />
+        )}
+
+        {step === FRONT_STEP && bedStep && build.bedId && (
+          <StepFront vanId={build.vanLengthId} bedId={build.bedId} possessive={possessive} />
         )}
 
         {step === PLAN_STEP && (
@@ -351,16 +389,16 @@ export default function Configurator({ catalog }: { catalog: Catalog }) {
         {step > LENGTH_STEP && (
           <div className="flex items-center justify-between mt-12">
             <button
-              onClick={() => goTo(step - 1)}
-              className="px-6 py-3 text-sm font-semibold uppercase tracking-wide text-steel hover:text-navy transition-colors"
+              onClick={() => goTo(stepFrom(step, -1))}
+              className="px-6 py-3 text-sm font-medium text-steel hover:text-navy transition-colors"
             >
               ← Back
             </button>
             {step < SUMMARY_STEP && (
               <button
-                onClick={() => goTo(step + 1)}
+                onClick={() => goTo(stepFrom(step, 1))}
                 disabled={!canAdvance}
-                className="px-8 py-3 rounded bg-navy text-white text-sm font-bold uppercase tracking-wide hover:bg-navy-deep transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                className="px-8 py-3 rounded-full bg-gold text-navy text-sm font-semibold hover:bg-gold-deep transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 {step === GALLERY_STEP
                   ? "Next: What\u2019s Included"
@@ -390,7 +428,7 @@ export default function Configurator({ catalog }: { catalog: Catalog }) {
 
 function Header() {
   return (
-    <header className="bg-navy">
+    <header className="bg-white border-b border-line">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
         {/* New tab rather than same tab: a half-configured van lives in the
             ?b= URL and in this page's state, and sending someone back to the
@@ -402,18 +440,20 @@ function Header() {
           aria-label="Papago Vans home page, opens in a new tab"
           className="inline-block rounded focus-visible:outline focus-visible:outline-2 focus-visible:outline-gold"
         >
+          {/* Served from this app. The old WordPress logo URL died with the
+              site's move to Vercel on 2026-10-01 and left a broken image. */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src="https://papagovans.com/wp-content/uploads/2023/06/papagovans.png"
+            src="/brand/papago-wordmark.svg"
             alt="Papago Vans"
-            className="h-12 w-auto transition-opacity hover:opacity-80"
+            width={174}
+            height={27}
+            className="h-6 w-auto transition-opacity hover:opacity-70"
           />
         </a>
         <a href="tel:+14807617175" className="text-right leading-tight">
-          <span className="block text-[11px] font-bold uppercase tracking-widest text-gold">
-            Got Questions?
-          </span>
-          <span className="block text-lg font-bold text-white">(480) 761-7175</span>
+          <span className="block text-xs text-steel">Questions? Call us</span>
+          <span className="block text-base font-semibold text-navy">(480) 761-7175</span>
         </a>
       </div>
     </header>
@@ -450,34 +490,25 @@ const BUILD_FACTS: { value: string; label: string; detail: string }[] = [
 
 function Hero() {
   return (
-    <section className="bg-navy-deep">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
+    <section className="bg-white">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-10 pb-8 sm:pt-12">
         <div className="text-center max-w-2xl mx-auto">
-          <h1 className="text-3xl sm:text-4xl font-extrabold uppercase tracking-tight text-white leading-none">
+          <h1 className="brand-heading text-4xl sm:text-5xl leading-none">
             Build Your Van
           </h1>
-          <p className="mt-3 text-white/75">
+          <p className="mt-4 text-steel">
             Three high-roof vans and four floor plans, with everything
             that comes in the build listed item by item. Your estimated total
             updates as you go.
           </p>
         </div>
 
-        <dl className="mt-7 grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <dl className="mt-8 grid grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-5 border-t border-line pt-6">
           {BUILD_FACTS.map((f) => (
-            <div
-              key={f.value}
-              className="rounded-lg bg-white/5 border border-white/10 p-4"
-            >
-              <dt className="text-gold font-bold uppercase tracking-wide text-sm leading-tight">
-                {f.value}
-              </dt>
-              <dd className="text-white text-sm font-semibold mt-0.5">
-                {f.label}
-              </dd>
-              <dd className="text-white/55 text-xs mt-1.5 leading-snug">
-                {f.detail}
-              </dd>
+            <div key={f.value}>
+              <dt className="text-sm font-semibold text-navy leading-tight">{f.value}</dt>
+              <dd className="text-sm text-steel mt-0.5">{f.label}</dd>
+              <dd className="text-xs text-steel/80 mt-1 leading-snug">{f.detail}</dd>
             </div>
           ))}
         </dl>
@@ -492,22 +523,24 @@ function Hero() {
  */
 function VanContextBar({
   planName,
+  bedName,
   surname,
   van,
 }: {
   planName?: string;
+  bedName?: string;
   surname: string;
   van?: VanLength;
 }) {
   return (
-    <div className="bg-cream border-b border-black/10">
+    <div className="bg-white border-b border-line">
       {/*
         The van overhangs a navy shelf that belongs to this bar rather than to
         the hero above it. Flush under the hero it reads as one header, and the
         overlap survives the bar going sticky instead of clipping at the
         viewport edge.
       */}
-      <div className="bg-navy-deep h-[29px] sm:h-[37px]" />
+      <div className="bg-white h-[29px] sm:h-[37px]" />
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-2.5 flex items-center justify-between gap-4">
         <div className="flex items-center gap-3 min-w-0">
           {/*
@@ -540,16 +573,24 @@ function VanContextBar({
           </div>
         </div>
 
-        {planName && (
-          <div className="text-right min-w-0 shrink-0">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-steel">
-              Floor Plan
-            </p>
-            <p className="brand-heading text-base sm:text-xl leading-tight truncate">
-              {planName}
-            </p>
-          </div>
-        )}
+        <div className="flex gap-6 min-w-0 shrink-0">
+          {bedName && (
+            <div className="text-right min-w-0">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-steel">Bed</p>
+              <p className="brand-heading text-base sm:text-xl leading-tight truncate">{bedName}</p>
+            </div>
+          )}
+          {planName && (
+            <div className="text-right min-w-0">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-steel">
+                Floor Plan
+              </p>
+              <p className="brand-heading text-base sm:text-xl leading-tight truncate">
+                {planName}
+              </p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -637,7 +678,7 @@ function StepIntro({
         <button
           type="submit"
           disabled={!ready}
-          className="w-full px-8 py-4 rounded bg-gold text-navy text-sm font-bold uppercase tracking-wide hover:bg-gold-deep transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          className="w-full px-8 py-4 rounded-full bg-gold text-navy text-sm font-semibold hover:bg-gold-deep transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
         >
           Start My Build →
         </button>
@@ -659,16 +700,22 @@ function Stepper({
   onJump,
   hasDetails,
   hasPlan,
+  hasBedStep,
+  hasBed,
 }: {
   step: number;
   onJump: (n: number) => void;
   hasDetails: boolean;
   hasPlan: boolean;
+  hasBedStep: boolean;
+  hasBed: boolean;
 }) {
   const catalog = useCatalog();
   const labels = [
     "Your Van",
     "Your Info",
+    "Your Bed",
+    "Kitchen & Living",
     "Floor Plan",
     "Layout",
     "What\u2019s Included",
@@ -680,7 +727,12 @@ function Stepper({
    * called. The nudges start where the finish is genuinely in sight, which is
    * also where people abandon. Nothing before step 6 gets one, because
    * cheerleading at step 2 is a lie about how far along you are. */
-  const total = labels.length;
+  // A van with no beds never sees the modular steps, so they are not counted or shown.
+  const shown = labels
+    .map((label, i) => ({ label, i }))
+    .filter(({ i }) => hasBedStep || (i !== BED_STEP && i !== FRONT_STEP));
+  const total = shown.length;
+  const position = shown.findIndex(({ i }) => i === step) + 1;
   const nudge: Record<number, string> = {
     [INCLUDED_STEP]: "almost there",
     [SUMMARY_STEP]: "that\u2019s the whole van",
@@ -689,12 +741,12 @@ function Stepper({
   return (
     <nav
       aria-label="Build steps"
-      className="bg-white border-b border-black/10"
+      className="bg-white border-b border-line"
     >
       <div className="max-w-6xl mx-auto px-4 sm:px-6 flex items-center gap-5">
         <p className="shrink-0 py-3 leading-tight">
           <span className="brand-heading block text-base sm:text-lg text-navy whitespace-nowrap">
-            Step {step + 1} of {total}
+            Step {position} of {total}
           </span>
           {nudge[step] && (
             <span className="block text-[11px] font-semibold uppercase tracking-wide text-steel">
@@ -703,17 +755,25 @@ function Stepper({
           )}
         </p>
         <ol className="flex gap-1 overflow-x-auto py-3 text-xs">
-          {labels.map((label, i) => {
+          {shown.map(({ label, i }) => {
             const isCurrent = i === step;
             const reachable =
-              i <= INTRO_STEP ? true : i === PLAN_STEP ? hasDetails : hasPlan;
+              i <= INTRO_STEP
+                ? true
+                : i === BED_STEP
+                  ? hasDetails && hasBedStep
+                  : i === FRONT_STEP
+                    ? hasDetails && hasBedStep && hasBed
+                  : i === PLAN_STEP
+                    ? hasDetails
+                    : hasPlan;
             return (
               <li key={label} className="shrink-0">
                 <button
                   onClick={() => reachable && onJump(i)}
                   disabled={!reachable}
                   aria-current={isCurrent ? "step" : undefined}
-                  className={`px-3 py-1.5 rounded-full whitespace-nowrap font-semibold uppercase tracking-wide transition-colors ${
+                  className={`px-3 py-1.5 rounded-full whitespace-nowrap font-medium transition-colors ${
                     isCurrent
                       ? "bg-navy text-white"
                       : reachable
@@ -827,10 +887,226 @@ function StepVanLength({
         <button
           onClick={onContinue}
           disabled={!selectedId}
-          className="px-8 py-3 rounded bg-navy text-white text-sm font-bold uppercase tracking-wide hover:bg-navy-deep transition-colors disabled:opacity-40"
+          className="px-8 py-3 rounded-full bg-gold text-navy text-sm font-semibold hover:bg-gold-deep transition-colors disabled:opacity-40"
         >
           Continue →
         </button>
+      </div>
+    </section>
+  );
+}
+
+/* The slice of model-viewer's element API the bed step drives. */
+type BedViewerElement = HTMLElement & {
+  animationName: string;
+  timeScale: number;
+  play(options?: { repetitions?: number }): void;
+};
+
+/**
+ * Your Bed: the empty chassis, then the chosen bed sliding in through the rear
+ * doors. Only for a van with a bed model (lib/beds.ts).
+ *
+ * The motion lives in the model as baked animations, "<bed>-in" and
+ * "<bed>-out" (scripts/bed-models.ts), so this only says which to play.
+ * Changing beds plays the old one out, then the new one in. A choice made mid
+ * slide abandons the slide in progress, rather than queueing behind it.
+ */
+/**
+ * The chassis with a bed in it. The motion lives in the model as baked
+ * animations, "<bed>-in" and "<bed>-out" (scripts/bed-models.ts), so this
+ * only says which to play. Changing beds plays the old one out, then the new
+ * one in; a change made mid slide abandons the slide in progress rather than
+ * queueing behind it. `settled` skips the slide and just shows the bed in
+ * place, for a step where the bed is already chosen.
+ */
+function BedStage({
+  vanId,
+  bedId,
+  settled = false,
+  hint,
+}: {
+  vanId: string | null;
+  bedId: string | null;
+  settled?: boolean;
+  hint?: string;
+}) {
+  const viewer = useRef<BedViewerElement>(null);
+  const [loaded, setLoaded] = useState(false);
+  /** The bed currently in the van, as far as the animations go. */
+  const shown = useRef<string | null>(null);
+  const run = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    const el = viewer.current;
+    if (!el) return;
+    const onLoad = () => setLoaded(true);
+    el.addEventListener("load", onLoad);
+    return () => el.removeEventListener("load", onLoad);
+  }, []);
+
+  useEffect(() => {
+    const el = viewer.current;
+    if (!el || !loaded || !bedId || shown.current === bedId) return;
+    run.current?.abort();
+    const ctrl = new AbortController();
+    run.current = ctrl;
+    // Placed almost at once when settled, or for anyone who has asked their
+    // device for less motion.
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    el.timeScale = settled || reduce ? 20 : 1;
+    const play = (name: string) =>
+      new Promise<void>((done) => {
+        el.addEventListener("finished", () => done(), { once: true, signal: ctrl.signal });
+        el.animationName = name;
+        el.play({ repetitions: 1 });
+      });
+    (async () => {
+      const previous = shown.current;
+      if (previous) await play(`${previous}-out`);
+      if (ctrl.signal.aborted) return;
+      shown.current = bedId;
+      await play(`${bedId}-in`);
+    })();
+  }, [bedId, loaded, settled]);
+
+  return (
+    <div className="relative aspect-[4/3] rounded-2xl overflow-hidden bg-offwhite">
+      <Script type="module" src={MODEL_VIEWER_SRC} strategy="afterInteractive" />
+      <model-viewer
+        ref={viewer}
+        src={bedModelFor(vanId)}
+        alt="The chassis with the chosen bed"
+        /* From behind and to the open side, so the bed is seen coming in
+           through the rear doors, pulled back far enough for the whole van. */
+        camera-orbit="-40deg 64deg 115%"
+        max-camera-orbit="auto 88deg auto"
+        camera-controls=""
+        disable-zoom=""
+        touch-action="pan-y"
+        interaction-prompt="none"
+        animation-crossfade-duration="0"
+        shadow-intensity="1.2"
+        shadow-softness="0.6"
+        exposure="0.9"
+        environment-image={STUDIO_LIGHT}
+        style={{ width: "100%", height: "100%" }}
+      />
+      {hint && (
+        <p className="pointer-events-none absolute inset-x-0 bottom-5 text-center text-sm text-steel">
+          {hint}
+        </p>
+      )}
+    </div>
+  );
+}
+
+/** Your Bed: the empty chassis, then the chosen bed sliding in. */
+function StepBed({
+  vanId,
+  selectedId,
+  possessive,
+  onSelect,
+}: {
+  vanId: string | null;
+  selectedId: string | null;
+  possessive: string;
+  onSelect: (id: string) => void;
+}) {
+  return (
+    <section>
+      <StepHeading
+        eyebrow={possessive}
+        title="Choose Your Bed"
+        blurb="The bed decides how the rest of the van lives. Pick one and watch it go in."
+      />
+      <div className="grid gap-8 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] items-start">
+        <div className="lg:sticky lg:top-44">
+          <BedStage
+            vanId={vanId}
+            bedId={selectedId}
+            hint={selectedId ? undefined : "Choose a bed to see it go in"}
+          />
+        </div>
+
+        <ul role="radiogroup" aria-label="Beds" className="divide-y divide-line border-y border-line">
+          {BEDS.map((bed) => {
+            const on = bed.id === selectedId;
+            return (
+              <li key={bed.id}>
+                <button
+                  type="button"
+                  role="radio"
+                  aria-checked={on}
+                  onClick={() => onSelect(bed.id)}
+                  className={`group w-full text-left flex gap-4 px-3 py-5 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-gold ${
+                    on ? "bg-white" : "hover:bg-white/60"
+                  }`}
+                >
+                  <span
+                    aria-hidden="true"
+                    className={`mt-1.5 h-3.5 w-3.5 shrink-0 rounded-full border transition-colors ${
+                      on ? "border-gold bg-gold" : "border-steel/40 group-hover:border-steel"
+                    }`}
+                  />
+                  <span className="min-w-0">
+                    <span className="brand-heading block text-xl leading-tight">{bed.name}</span>
+                    <span className="block mt-1 text-sm text-steel">{bed.kind}</span>
+                    <span className="block mt-2 text-[15px] leading-relaxed text-charcoal">
+                      {bed.description}
+                    </span>
+                  </span>
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+    </section>
+  );
+}
+
+/**
+ * Kitchen & Living: the front half of the van, chosen to fit the bed.
+ *
+ * ponytail: a placeholder (owner, 2026-10-12) while the front-half SketchUp
+ * models are drawn. It shows the bed in place and says what is coming; Next
+ * stays open so the rest of the build can be priced. When the models land,
+ * this becomes the bed step's twin: a list of front halves that fit the
+ * chosen bed, sliding in from the cab end.
+ */
+function StepFront({
+  vanId,
+  bedId,
+  possessive,
+}: {
+  vanId: string | null;
+  bedId: string;
+  possessive: string;
+}) {
+  const bed = getBed(bedId);
+  return (
+    <section>
+      <StepHeading
+        eyebrow={possessive}
+        title="Choose Your Kitchen & Living"
+        blurb={`The front half of the van: the galley, seating and storage, laid out to work with ${bed?.name ?? "your bed"}.`}
+      />
+      <div className="grid gap-8 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] items-start">
+        <BedStage vanId={vanId} bedId={bedId} settled />
+        <div className="rounded-2xl border border-dashed border-steel/30 p-6 sm:p-8">
+          <p className="text-xs font-semibold uppercase tracking-widest text-steel">In design now</p>
+          <h3 className="brand-heading text-2xl mt-2">Kitchen and living layouts</h3>
+          <p className="mt-3 text-charcoal leading-relaxed">
+            We are drawing the front halves that pair with {bed?.name ?? "each bed"}: where the
+            galley sits, how the seating faces, and what stores where. Once they are ready you will
+            pick one here and watch it slide in from the cab.
+          </p>
+          <p className="mt-4 text-sm text-steel">
+            For now, carry on to price the rest of your build. We will walk you through the
+            kitchen and living options on your design call.
+          </p>
+        </div>
       </div>
     </section>
   );
@@ -1138,7 +1414,7 @@ function StepGallery({
       <div className="mt-8 flex justify-center">
         <button
           onClick={onContinue}
-          className="px-10 py-4 rounded bg-gold text-navy text-sm font-bold uppercase tracking-wide hover:bg-gold-deep transition-colors"
+          className="px-10 py-4 rounded-full bg-gold text-navy text-sm font-semibold hover:bg-gold-deep transition-colors"
         >
           See What’s Included →
         </button>
@@ -1729,7 +2005,10 @@ function StepSummary({
         <div className="flex flex-wrap items-baseline justify-between gap-2 pb-4 border-b border-black/10">
           <div>
             <h3 className="brand-heading text-2xl">{plan?.name}</h3>
-            <p className="text-sm text-steel">{van ? vanLabel(van) : ""}</p>
+            <p className="text-sm text-steel">
+              {van ? vanLabel(van) : ""}
+              {getBed(build.bedId) ? ` \u00b7 ${getBed(build.bedId)!.name}` : ""}
+            </p>
           </div>
         </div>
 
@@ -1783,7 +2062,7 @@ function StepSummary({
           <button
             onClick={downloadBuildSheet}
             disabled={pdfState === "working"}
-            className="mt-4 px-8 py-3 rounded bg-gold text-navy text-sm font-bold uppercase tracking-wide hover:brightness-95 disabled:opacity-60 disabled:cursor-wait transition"
+            className="mt-4 px-8 py-3 rounded-full bg-gold text-navy text-sm font-semibold hover:brightness-95 disabled:opacity-60 disabled:cursor-wait transition"
           >
             {pdfState === "working"
               ? "Building your sheet…"
@@ -2230,7 +2509,7 @@ function SummaryBar({
           <button
             onClick={onGetBuildSheet}
             disabled={!canFinish}
-            className="shrink-0 px-5 sm:px-7 py-3 rounded bg-gold text-navy text-xs sm:text-sm font-bold uppercase tracking-wide hover:bg-gold-deep transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            className="shrink-0 px-5 sm:px-7 py-3 rounded-full bg-gold text-navy text-xs sm:text-sm font-semibold hover:bg-gold-deep transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
             Get Build Sheet
           </button>

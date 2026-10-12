@@ -9,6 +9,7 @@
  * The pricing math still comes from `priceBuild()`, so the PDF total and the
  * on-screen total can never drift.
  */
+import { getBed } from "./beds";
 import {
   Document,
   Page,
@@ -201,6 +202,7 @@ function BuildSheet({
   customer: Customer;
 }) {
   const plan = getFloorPlan(catalog, build.floorPlanId!)!;
+  const bed = getBed(build.bedId);
   const pkg = getPackages(catalog, build.floorPlanId!).find(
     (p) => p.id === build.packageId,
   );
@@ -258,6 +260,7 @@ function BuildSheet({
               <Text style={s.planName}>{plan.name.toUpperCase()}</Text>
               <Text style={s.planTag}>{plan.tagline}</Text>
               {van ? <Text style={[s.planTag, { marginTop: 6 }]}>On a {vanLabel(van)}</Text> : null}
+              {bed ? <Text style={[s.planTag, { marginTop: 6 }]}>{bed.name}: {bed.kind.toLowerCase()}</Text> : null}
               {pkg ? (
                 <Text style={[s.planTag, { marginTop: 6 }]}>
                   {pkg.name} trim package: {pkg.tagline}

@@ -95,6 +95,26 @@ Not customer-facing yet.
   Transit has none yet: Ford's configurator only serves its high-roof codes
   after a ZIP code is entered. Papago is a dealer for all three.
 
+### The bed step
+
+The beds are hard-coded in `lib/beds.ts` (names and copy are the owner's,
+2026-10-12), with one model per chassis. Only the Sprinter 170 has one, so
+every other van skips Your Bed and Kitchen & Living. The bed rides in the
+`?b=` link as its sixth field.
+
+The model comes from one SketchUp page: the chassis and the beds side by side,
+each named `Chassis - <van>` or `Bed - <name>` on its group or on a marker
+under it.
+
+```bash
+npm run bed-models -- "<sprinter 170 beds>.glb" public/models/sprinter-170-beds.glb
+```
+
+It moves each bed until its back edge is flush with the chassis rear, and
+bakes two animations per bed, `<id>-in` and `<id>-out`, that the step plays.
+Every bed starts hidden, so the step opens on the empty chassis. The bed
+names in `lib/beds.ts` must match: `Bed - High Camp` becomes `high-camp`.
+
 ### Making a 3D model
 
 Export from SketchUp as `.glb` (the SimLab exporter), delete any placeholder
@@ -182,6 +202,10 @@ Two things follow from that and are easy to undo by accident:
 Phase 1 (owner, 2026-09-28), streamlined:
   → Your Van          Sprinter 144/170, Transit 148, ProMaster 136/159, all high roof
   → Your Info         name, email, phone
+  → Your Bed          Sprinter 170 only: the chassis in 3D, five beds that fit
+                      it; the chosen bed slides in through the rear doors
+  → Kitchen & Living  Sprinter 170 only: placeholder until the front-half
+                      SketchUp models are drawn
   → Floor Plan        4 layouts
   → Layout            one large 3D model of the chosen plan, drag to rotate
   → What's Included   every included item by system; a card opens the drawer

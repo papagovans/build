@@ -69,10 +69,12 @@ body::before {
 }
 
 /* Headlines are uppercase across Papago's brand, and set in Prompt. */
+/* Title Case in Prompt with tight tracking, the website's headline style.
+   It used to be extra-bold capitals, which read as shouting next to the
+   site; the calmer face is most of what ties the two together. */
 .brand-heading {
   font-family: var(--font-display);
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.01em;
+  font-weight: 700;
+  letter-spacing: -0.01em;
   color: var(--color-navy);
 }
