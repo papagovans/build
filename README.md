@@ -111,7 +111,12 @@ npm run bed-models -- "<sprinter 170 beds>.glb" public/models/sprinter-170-beds.
 ```
 
 It moves each bed until its back edge is flush with the chassis rear, and
-bakes two animations per bed, `<id>-in` and `<id>-out`, that the step plays.
+bakes the motion in: `<id>-in` into the empty chassis, and `<old>-to-<new>`
+for every pair, one continuous swap. The old bed eases out the rear and
+curves away to the far side while the new one is already sweeping in from the
+near side, so the two never cross and nothing stops dead. Every curve starts
+and ends at rest speed and none overshoots. The viewer zooms on the scroll
+wheel.
 Every bed starts hidden, so the step opens on the empty chassis. The bed
 names in `lib/beds.ts` must match: `Bed - High Camp` becomes `high-camp`.
 

@@ -13,10 +13,14 @@
  * with the inside of the chassis rear.
  *
  * Then the motion is baked in, as glTF animations the web viewer plays:
- *   "<bed>-in"   the bed glides in through the rear doors and eases to a stop
- *   "<bed>-out"  it slides back out, for when the buyer picks another
- * Every bed starts hidden (scale 0), so the step opens on the empty chassis,
- * and each animation keeps the other beds hidden while it plays.
+ *   "<bed>-in"        into the empty chassis, easing in and settling softly
+ *   "<old>-to-<new>"  one continuous move: the old bed glides out the rear,
+ *                     and before it has gone the new one is already gliding
+ *                     in behind it, so there is never a dead stop between
+ * Every curve starts and ends at rest speed (no snap) and never overshoots
+ * (no bounce). Beds appear and vanish well behind the van, away from where
+ * the eye is. Every bed starts hidden (scale 0), so the step opens on the
+ * empty chassis, and each clip keeps the beds it does not move hidden.
  */
 import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -35,11 +39,19 @@ if (!input || !output) {
 /* Metres in from the chassis's outer rear to where a bed's back edge sits:
  * the thickness of the rear doors. Build 1's bed frame sits 8 cm in. */
 const REAR_INSET = 0.08;
-/* How far behind the van a bed starts its slide, past its own length. */
-const START_GAP = 0.6;
-const IN_SECONDS = 1.6;
-const OUT_SECONDS = 0.8;
-const FRAMES = 30;
+/* How far behind the van a bed starts its slide, past its own length: far
+ * enough that it appears and vanishes away from the van, not at its doors. */
+const START_GAP = 2.4;
+/* From empty: a single glide in. */
+const IN_SECONDS = 2.0;
+/* Swapping: the old bed leaves over OUT_SECONDS; the new one starts
+ * OVERLAP_AT seconds in and takes IN_SECONDS to settle. */
+const OUT_SECONDS = 1.1;
+const OVERLAP_AT = 0.55;
+/* Metres sideways the leaving and arriving lanes part by once a bed is clear
+ * of the doors. Positive is the sliding-door side, toward the camera. */
+const LANE = 1.4;
+const FPS = 30;
 
 const io = new NodeIO().registerExtensions(ALL_EXTENSIONS);
 const doc = await io.read(input);
@@ -111,7 +123,7 @@ function toLocal(parent: Node, world: number[]): [number, number, number] {
 // shift. Anchoring at the centre matters: a bed hidden at scale 0 collapses
 // to its wrapper's origin, and SketchUp's origins sit up to 33 m away on the
 // sheet, which made the viewer frame 38 m of nothing around a tiny van.
-const beds: { slug: string; wrapper: Node; rest: number[]; start: number[] }[] = [];
+const beds: { slug: string; wrapper: Node; rest: number[]; slide: number[]; side: number[]; clear: number }[] = [];
 for (const [name, model] of models) {
   if (!name.startsWith("Bed")) continue;
   const parent = model.getParentNode() ?? assembly;
@@ -130,7 +142,13 @@ for (const [name, model] of models) {
   parent.addChild(wrapper);
   model.setName(`${name} model`);
   const slug = name.replace(/^Bed - /, "").toLowerCase().replace(/[^a-z0-9]+/g, "-");
-  beds.push({ slug, wrapper, rest: at, start: at.map((v, i) => v + slide[i]) });
+  // Sideways, across the van: leaving beds drift to the far side and arriving
+  // beds come from the near side, so a swap never has two beds crossing.
+  const side = toLocal(parent, [0, 0, LANE]);
+  // The fraction of the slide spent inside the van: lanes only part once a
+  // bed is clear of the doors.
+  const clear = (b.max[0] - b.min[0]) / (b.max[0] - b.min[0] + START_GAP);
+  beds.push({ slug, wrapper, rest: at, slide, side, clear });
   console.log(`${name}: ${(b.max[0] - b.min[0]).toFixed(2)} m long, moved ${(rear - b.min[0]).toFixed(2)} m to the rear`);
 }
 if (!beds.length) throw new Error("no beds found: name each group or marker \"Bed - <name>\"");
@@ -138,30 +156,75 @@ if (!beds.length) throw new Error("no beds found: name each group or marker \"Be
 const buffer = doc.getRoot().listBuffers()[0];
 const acc = (type: "SCALAR" | "VEC3", arr: Float32Array) =>
   doc.createAccessor().setType(type).setArray(arr).setBuffer(buffer);
-const easeOut = (t: number) => 1 - (1 - t) ** 3; // fast in, settles gently
-const easeIn = (t: number) => t ** 3;
+/* Both start and end at zero speed, so nothing jerks into motion or stops
+ * dead, and neither overshoots, so nothing bounces. Arriving uses a longer,
+ * softer tail than leaving: a bed settles into place, it does not brake. */
+const easeInOut = (t: number) => (t < 0.5 ? 4 * t ** 3 : 1 - (-2 * t + 2) ** 3 / 2);
+const settle = (t: number) => 1 - (1 - t) ** 4; // quartic ease-out: a long, soft landing
+const arrive = (t: number) => easeInOut(t) * 0.35 + settle(t) * 0.65;
+const smoothstep = (a: number, b: number, t: number) => {
+  const k = Math.min(1, Math.max(0, (t - a) / (b - a)));
+  return k * k * (3 - 2 * k);
+};
 
-/* One clip: this bed moves from a to b; every other bed stays hidden. */
-function clip(name: string, bed: (typeof beds)[number], a: number[], b: number[], seconds: number, ease: (t: number) => number) {
+type Bed = (typeof beds)[number];
+/**
+ * Where a bed is, `u` of the way out (0 = installed, 1 = far behind the van),
+ * in a lane: +1 near side, -1 far side. Straight back through the doors, then
+ * curving into its lane once clear, so the path has no corner.
+ */
+const pathAt = (bed: Bed, u: number, lane: number) => {
+  const sway = lane * smoothstep(bed.clear, 1, u);
+  return bed.rest.map((v, c) => v + bed.slide[c] * u + bed.side[c] * sway);
+};
+/** Progress through a window [t0, t1], eased. */
+const progress = (t: number, t0: number, t1: number, ease: (k: number) => number) =>
+  ease(Math.min(1, Math.max(0, (t - t0) / (t1 - t0))));
+
+/**
+ * One clip from per-bed movement. `moves` gives, for each bed that moves, its
+ * path and the window it is visible in; every other bed stays hidden.
+ */
+function clip(name: string, seconds: number, moves: { bed: Bed; at: (t: number) => number[]; from: number; to: number }[]) {
   const anim = doc.createAnimation(name);
-  const times = Float32Array.from({ length: FRAMES + 1 }, (_, i) => (i / FRAMES) * seconds);
-  const path = new Float32Array((FRAMES + 1) * 3);
-  for (let i = 0; i <= FRAMES; i++) {
-    const k = ease(i / FRAMES);
-    for (let c = 0; c < 3; c++) path[i * 3 + c] = a[c] + (b[c] - a[c]) * k;
-  }
-  const move = doc.createAnimationSampler().setInput(acc("SCALAR", times)).setOutput(acc("VEC3", path)).setInterpolation("LINEAR");
-  anim.addSampler(move).addChannel(doc.createAnimationChannel().setTargetNode(bed.wrapper).setTargetPath("translation").setSampler(move));
-  const ends = Float32Array.from([0, seconds]);
-  for (const other of beds) {
-    const s = other === bed ? 1 : 0;
-    const scale = doc.createAnimationSampler().setInput(acc("SCALAR", ends)).setOutput(acc("VEC3", Float32Array.from([s, s, s, s, s, s]))).setInterpolation("STEP");
-    anim.addSampler(scale).addChannel(doc.createAnimationChannel().setTargetNode(other.wrapper).setTargetPath("scale").setSampler(scale));
+  const n = Math.round(seconds * FPS);
+  const times = Float32Array.from({ length: n + 1 }, (_, i) => (i / n) * seconds);
+  for (const bed of beds) {
+    const move = moves.find((m) => m.bed === bed);
+    if (move) {
+      const path = new Float32Array((n + 1) * 3);
+      times.forEach((t, i) => path.set(move.at(t), i * 3));
+      const s = doc.createAnimationSampler().setInput(acc("SCALAR", times)).setOutput(acc("VEC3", path)).setInterpolation("LINEAR");
+      anim.addSampler(s).addChannel(doc.createAnimationChannel().setTargetNode(bed.wrapper).setTargetPath("translation").setSampler(s));
+    }
+    // Visible only inside its window, switched with STEP so it never shrinks
+    // or grows on screen. The windows open and close well behind the van.
+    const on = (t: number) => (move && t >= move.from - 1e-6 && t <= move.to + 1e-6 ? 1 : 0);
+    const keys = move ? [0, move.from, move.to, seconds] : [0, seconds];
+    const uniq = [...new Set(keys)].sort((x, y) => x - y);
+    const vis = new Float32Array(uniq.length * 3);
+    uniq.forEach((t, i) => vis.fill(on(t), i * 3, i * 3 + 3));
+    const sc = doc.createAnimationSampler().setInput(acc("SCALAR", Float32Array.from(uniq))).setOutput(acc("VEC3", vis)).setInterpolation("STEP");
+    anim.addSampler(sc).addChannel(doc.createAnimationChannel().setTargetNode(bed.wrapper).setTargetPath("scale").setSampler(sc));
   }
 }
+
 for (const bed of beds) {
-  clip(`${bed.slug}-in`, bed, bed.start, bed.rest, IN_SECONDS, easeOut);
-  clip(`${bed.slug}-out`, bed, bed.rest, bed.start, OUT_SECONDS, easeIn);
+  // Into the empty chassis.
+  clip(`${bed.slug}-in`, IN_SECONDS, [
+    { bed, at: (t) => pathAt(bed, 1 - progress(t, 0, IN_SECONDS, arrive), 1), from: 0, to: IN_SECONDS },
+  ]);
+}
+for (const old of beds) {
+  for (const next of beds) {
+    if (old === next) continue;
+    const end = OVERLAP_AT + IN_SECONDS;
+    clip(`${old.slug}-to-${next.slug}`, end, [
+      // Leaves, then is gone: its window closes the moment it reaches the far point.
+      { bed: old, at: (t) => pathAt(old, progress(t, 0, OUT_SECONDS, easeInOut), -1), from: 0, to: OUT_SECONDS },
+      { bed: next, at: (t) => pathAt(next, 1 - progress(t, OVERLAP_AT, end, arrive), 1), from: OVERLAP_AT, to: end },
+    ]);
+  }
 }
 
 const graded = process.env.GRADED_OUT ?? join(mkdtempSync(join(tmpdir(), "bed-models-")), "graded.glb");

@@ -914,11 +914,11 @@ type BedViewerElement = HTMLElement & {
  */
 /**
  * The chassis with a bed in it. The motion lives in the model as baked
- * animations, "<bed>-in" and "<bed>-out" (scripts/bed-models.ts), so this
- * only says which to play. Changing beds plays the old one out, then the new
- * one in; a change made mid slide abandons the slide in progress rather than
- * queueing behind it. `settled` skips the slide and just shows the bed in
- * place, for a step where the bed is already chosen.
+ * animations (scripts/bed-models.ts): "<bed>-in" into the empty chassis, and
+ * "<old>-to-<new>", one continuous swap. This only says which to play. A
+ * choice made mid move waits for the move to finish, then goes straight to
+ * the latest choice, so nothing ever jumps. `settled` just shows the bed in
+ * place, for a step where it is already chosen.
  */
 function BedStage({
   vanId,
@@ -933,9 +933,11 @@ function BedStage({
 }) {
   const viewer = useRef<BedViewerElement>(null);
   const [loaded, setLoaded] = useState(false);
-  /** The bed currently in the van, as far as the animations go. */
+  /** The bed in the van once the current move ends. */
   const shown = useRef<string | null>(null);
-  const run = useRef<AbortController | null>(null);
+  const moving = useRef(false);
+  const wanted = useRef(bedId);
+  wanted.current = bedId;
 
   useEffect(() => {
     const el = viewer.current;
@@ -947,42 +949,47 @@ function BedStage({
 
   useEffect(() => {
     const el = viewer.current;
-    if (!el || !loaded || !bedId || shown.current === bedId) return;
-    run.current?.abort();
-    const ctrl = new AbortController();
-    run.current = ctrl;
+    if (!el || !loaded) return;
     // Placed almost at once when settled, or for anyone who has asked their
     // device for less motion.
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    el.timeScale = settled || reduce ? 20 : 1;
-    const play = (name: string) =>
-      new Promise<void>((done) => {
-        el.addEventListener("finished", () => done(), { once: true, signal: ctrl.signal });
-        el.animationName = name;
-        el.play({ repetitions: 1 });
-      });
-    (async () => {
-      const previous = shown.current;
-      if (previous) await play(`${previous}-out`);
-      if (ctrl.signal.aborted) return;
-      shown.current = bedId;
-      await play(`${bedId}-in`);
-    })();
+    const next = () => {
+      const target = wanted.current;
+      if (moving.current || !target || target === shown.current) return;
+      const from = shown.current;
+      shown.current = target;
+      moving.current = true;
+      el.timeScale = settled || reduce ? 20 : 1;
+      el.addEventListener(
+        "finished",
+        () => {
+          moving.current = false;
+          next(); // a choice made while this one was moving
+        },
+        { once: true },
+      );
+      el.animationName = from ? `${from}-to-${target}` : `${target}-in`;
+      el.play({ repetitions: 1 });
+    };
+    next();
   }, [bedId, loaded, settled]);
 
   return (
-    <div className="relative aspect-[4/3] rounded-2xl overflow-hidden bg-offwhite">
+    <div className="relative aspect-[16/10] rounded-2xl overflow-hidden bg-offwhite">
       <Script type="module" src={MODEL_VIEWER_SRC} strategy="afterInteractive" />
       <model-viewer
         ref={viewer}
         src={bedModelFor(vanId)}
         alt="The chassis with the chosen bed"
         /* From behind and to the open side, so the bed is seen coming in
-           through the rear doors, pulled back far enough for the whole van. */
-        camera-orbit="-40deg 64deg 115%"
-        max-camera-orbit="auto 88deg auto"
+           through the rear doors, close enough that the van fills the frame. */
+        camera-orbit="-40deg 64deg 70%"
+        /* The scroll wheel zooms (owner, 2026-10-12). The viewer's default
+           closest distance is this framing itself, which would block zooming
+           in, so allow down to 1.5 m. */
+        min-camera-orbit="auto auto 1.5m"
+        max-camera-orbit="auto 88deg 16m"
         camera-controls=""
-        disable-zoom=""
         touch-action="pan-y"
         interaction-prompt="none"
         animation-crossfade-duration="0"
@@ -1020,7 +1027,7 @@ function StepBed({
         title="Choose Your Bed"
         blurb="The bed decides how the rest of the van lives. Pick one and watch it go in."
       />
-      <div className="grid gap-8 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] items-start">
+      <div className="grid gap-8 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] items-start">
         <div className="lg:sticky lg:top-44">
           <BedStage
             vanId={vanId}
@@ -1092,7 +1099,7 @@ function StepFront({
         title="Choose Your Kitchen & Living"
         blurb={`The front half of the van: the galley, seating and storage, laid out to work with ${bed?.name ?? "your bed"}.`}
       />
-      <div className="grid gap-8 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] items-start">
+      <div className="grid gap-8 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] items-start">
         <BedStage vanId={vanId} bedId={bedId} settled />
         <div className="rounded-2xl border border-dashed border-steel/30 p-6 sm:p-8">
           <p className="text-xs font-semibold uppercase tracking-widest text-steel">In design now</p>
