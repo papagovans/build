@@ -311,6 +311,34 @@ export default function Configurator({ catalog }: { catalog: Catalog }) {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
 
+  /* Back and Next. On the modular steps they sit between the title and the
+   * 3D view (owner, 2026-10-26): under a tall viewer they fell below the fold. */
+  const onModularStep = modular && MODULAR_STEPS.includes(step);
+  const stepNav = (
+    <div className="flex items-center justify-between">
+      <button
+        onClick={() => goTo(stepFrom(step, -1))}
+        className="px-6 py-3 text-sm font-medium text-steel hover:text-navy transition-colors"
+      >
+        ← Back
+      </button>
+      {step < SUMMARY_STEP && (
+        <button
+          onClick={() => goTo(stepFrom(step, 1))}
+          disabled={!canAdvance}
+          className="px-8 py-3 rounded-full bg-gold text-navy text-sm font-semibold hover:bg-gold-deep transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          {step === GALLERY_STEP
+            ? "Next: What\u2019s Included"
+            : step === INCLUDED_STEP
+              ? "Next: Build Sheet"
+              : "Next"}{" "}
+          →
+        </button>
+      )}
+      </div>
+  );
+
   return (
     <CatalogContext.Provider value={catalog}>
     <div className="flex flex-col min-h-screen pb-28">
@@ -400,6 +428,7 @@ export default function Configurator({ catalog }: { catalog: Catalog }) {
             layout={layout}
             possessive={possessive}
             onChange={updateLayout}
+            nav={stepNav}
           />
         )}
 
@@ -432,30 +461,7 @@ export default function Configurator({ catalog }: { catalog: Catalog }) {
           />
         )}
 
-        {step > LENGTH_STEP && (
-          <div className="flex items-center justify-between mt-12">
-            <button
-              onClick={() => goTo(stepFrom(step, -1))}
-              className="px-6 py-3 text-sm font-medium text-steel hover:text-navy transition-colors"
-            >
-              ← Back
-            </button>
-            {step < SUMMARY_STEP && (
-              <button
-                onClick={() => goTo(stepFrom(step, 1))}
-                disabled={!canAdvance}
-                className="px-8 py-3 rounded-full bg-gold text-navy text-sm font-semibold hover:bg-gold-deep transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                {step === GALLERY_STEP
-                  ? "Next: What\u2019s Included"
-                  : step === INCLUDED_STEP
-                    ? "Next: Build Sheet"
-                    : "Next"}{" "}
-                →
-              </button>
-            )}
-          </div>
-        )}
+        {step > LENGTH_STEP && !onModularStep && <div className="mt-12">{stepNav}</div>}
       </main>
 
       <SummaryBar
@@ -1075,6 +1081,17 @@ const STAGE_ORBIT: Record<number, string> = {
   [EXTRAS_STEP]: "-40deg 55deg 75%",
 };
 
+/** Which wizard phase each piece belongs to, for the Show toggles. */
+const PHASES = ["Bed", "Driver Side", "Passenger Side", "Extras"];
+const PHASE_OF: Record<string, string> = {
+  BC01: "Bed", BC02: "Bed",
+  DW01: "Driver Side", DW02: "Driver Side",
+  DL01: "Driver Side", DL02: "Driver Side", DL03: "Driver Side", DL04: "Driver Side",
+  PK01: "Passenger Side", FT01: "Passenger Side",
+  PI01: "Passenger Side", PI02: "Passenger Side", PU01: "Passenger Side", PU02: "Passenger Side",
+  SC01: "Extras", OC01: "Extras", SS01: "Extras", ST01: "Extras", CB01: "Extras",
+};
+
 /** The pieces in the van at a step: the choices so far, plus the standard
  * kitchen once the passenger side is the subject or has been chosen (so a
  * restored link never shows uppers floating over nothing). BD01 is part of
@@ -1096,12 +1113,14 @@ function StepModular({
   layout,
   possessive,
   onChange,
+  nav,
 }: {
   step: number;
   vanId: string | null;
   layout: Layout;
   possessive: string;
   onChange: (change: (l: Layout) => Layout) => void;
+  nav: React.ReactNode;
 }) {
   const choose = (id: Slot["id"]) => (code: string) => onChange((l) => pick(l, id, code));
   const heading = {
@@ -1123,13 +1142,37 @@ function StepModular({
     },
   }[step]!;
   const living = livingRoomsFor(layout);
+  /* Phases switched off in the 3D view, so a buyer can look at one part of
+   * the van on its own (owner, 2026-10-26). View only: the build keeps them. */
+  const [hidden, setHidden] = useState<string[]>([]);
+  const codes = stageCodes(layout, step).filter((c) => !hidden.includes(PHASE_OF[c] ?? ""));
 
   return (
     <section>
       <StepHeading eyebrow={possessive} title={heading.title} blurb={heading.blurb} />
+      <div className="-mt-2 mb-6">{nav}</div>
       <div className="grid gap-8 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] items-start">
         <div className="lg:sticky lg:top-44">
-          <LineupStage vanId={vanId} codes={stageCodes(layout, step)} orbit={STAGE_ORBIT[step]} />
+          <div role="group" aria-label="Show in the 3D view" className="mb-3 flex flex-wrap items-center gap-2 text-sm">
+            <span className="text-steel mr-1">Show:</span>
+            {PHASES.map((phase) => {
+              const on = !hidden.includes(phase);
+              return (
+                <button
+                  key={phase}
+                  type="button"
+                  aria-pressed={on}
+                  onClick={() => setHidden((h) => (on ? [...h, phase] : h.filter((x) => x !== phase)))}
+                  className={`px-3 py-1 rounded-full border font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-gold ${
+                    on ? "bg-navy border-navy text-white" : "border-steel/30 text-steel hover:border-steel"
+                  }`}
+                >
+                  {phase}
+                </button>
+              );
+            })}
+          </div>
+          <LineupStage vanId={vanId} codes={codes} orbit={STAGE_ORBIT[step]} />
           <ViewerLegend />
         </div>
 
