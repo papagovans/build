@@ -4,7 +4,7 @@
  *   npm run van-model -- "<export>.glb" public/models/floor-plan.glb
  *
  * The colour and finish fixes and the compression live in lib/van-look.ts,
- * shared with bed-models.ts. This adds what only a floor plan needs: the
+ * shared with modular-models.ts. This adds what only a floor plan needs: the
  * bedspread, the walk-through map and the interior shell.
  */
 import { mkdtempSync } from "node:fs";

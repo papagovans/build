@@ -1,4 +1,4 @@
-import { getBed, hasBeds } from "./beds";
+import { isModular, layoutCode, parseLayout } from "./modules";
 import {
   defaultColors,
   getColorChoice,
@@ -29,8 +29,9 @@ export interface BuildState {
   selected: string[];
   /** groupId -> choiceId. Exactly one choice per colour group, always. */
   colors: Record<string, string>;
-  /** The bed, on a van that has bed choices (lib/beds.ts). Null otherwise. */
-  bedId: string | null;
+  /** The build code of a modular van (lib/modules.ts), e.g.
+   * "BD01-BC02-DW01-DL02-PI01-PU01+SC01". Null on any other van. */
+  layout: string | null;
 }
 
 /**
@@ -45,7 +46,7 @@ export function emptyBuild(catalog: Catalog): BuildState {
     packageId: null,
     selected: [],
     colors: defaultColors(catalog),
-    bedId: null,
+    layout: null,
   };
 }
 
@@ -225,7 +226,7 @@ export function applyPackage(
   const pkg = getPackages(catalog, floorPlanId).find((p) => p.id === packageId);
   return {
     vanLengthId: state.vanLengthId,
-    bedId: state.bedId,
+    layout: state.layout,
     floorPlanId,
     packageId,
     // Filtered against the chosen plan, not taken as given. A trim package can
@@ -250,7 +251,7 @@ export function setFloorPlan(state: BuildState, floorPlanId: string): BuildState
     packageId: null,
     selected: [],
     colors: state.colors,
-    bedId: state.bedId,
+    layout: state.layout,
   };
 }
 
@@ -265,15 +266,15 @@ export function setVanLength(
   vanLengthId: string,
 ): BuildState {
   if (state.vanLengthId === vanLengthId) return state;
-  // Beds belong to one chassis, so a different van always means choosing again.
-  const bedId = null;
+  // A layout belongs to one chassis, so a different van always starts over.
+  const layout = isModular(vanLengthId) ? layoutCode(parseLayout(null)) : null;
   const keepsPlan =
     state.floorPlanId && planFitsLength(catalog, state.floorPlanId, vanLengthId);
-  if (keepsPlan) return { ...state, vanLengthId, bedId };
+  if (keepsPlan) return { ...state, vanLengthId, layout };
   return {
     ...state,
     vanLengthId,
-    bedId,
+    layout,
     floorPlanId: null,
     packageId: null,
     selected: [],
@@ -316,14 +317,14 @@ export function encodeBuild(state: BuildState): string {
     colors,
     state.vanLengthId ?? "",
     /* Sixth and last for the same reason as the length: a link from before
-     * beds existed simply has no bed. */
-    state.bedId ?? "",
+     * modular vans simply has no layout. */
+    state.layout ?? "",
   ].join("~");
 }
 
 export function decodeBuild(catalog: Catalog, raw: string | null): BuildState {
   if (!raw) return emptyBuild(catalog);
-  const [floorPlanId, packageId, selectedRaw, colorsRaw, vanLengthRaw, bedRaw] = raw.split("~");
+  const [floorPlanId, packageId, selectedRaw, colorsRaw, vanLengthRaw, layoutRaw] = raw.split("~");
   if (!floorPlanId || !getFloorPlan(catalog, floorPlanId)) return emptyBuild(catalog);
 
   const selected = (selectedRaw ?? "")
@@ -349,9 +350,9 @@ export function decodeBuild(catalog: Catalog, raw: string | null): BuildState {
       ? vanLengthRaw
       : (defaultVanLength(catalog)?.id ?? null);
 
-  // A bed only stands if this van offers it; a hand-edited link cannot put a
-  // bed into a van that has none.
-  const bedId = bedRaw && hasBeds(vanLengthId) && getBed(bedRaw) ? bedRaw : null;
+  // Re-read rather than trusted: unknown codes and a living room that does
+  // not fit the shower fall away, and only a modular van carries a layout.
+  const layout = isModular(vanLengthId) ? layoutCode(parseLayout(layoutRaw)) : null;
 
-  return { vanLengthId, floorPlanId, packageId: packageId || null, selected, colors, bedId };
+  return { vanLengthId, floorPlanId, packageId: packageId || null, selected, colors, layout };
 }

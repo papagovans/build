@@ -13,7 +13,7 @@
     "seed": "tsx scripts/seed.ts",
     "backup:all": "bash scripts/backup-all.sh",
     "van-model": "tsx scripts/van-model.ts",
-    "bed-models": "tsx scripts/bed-models.ts"
+    "modular-models": "tsx scripts/modular-models.ts"
   },
   "dependencies": {
     "@payloadcms/db-postgres": "^3.90.1",

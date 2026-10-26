@@ -9,7 +9,7 @@
  * The pricing math still comes from `priceBuild()`, so the PDF total and the
  * on-screen total can never drift.
  */
-import { getBed } from "./beds";
+import { fullCode, layoutLines } from "./modules";
 import {
   Document,
   Page,
@@ -202,7 +202,10 @@ function BuildSheet({
   customer: Customer;
 }) {
   const plan = getFloorPlan(catalog, build.floorPlanId!)!;
-  const bed = getBed(build.bedId);
+  const layout = build.layout ? layoutLines(build.layout) : null;
+  /* A modular van has no floor plan of its own; the plan behind it only
+   * carries the conversion price. */
+  const planName = layout ? "Custom Layout" : plan.name;
   const pkg = getPackages(catalog, build.floorPlanId!).find(
     (p) => p.id === build.packageId,
   );
@@ -223,7 +226,7 @@ function BuildSheet({
 
   return (
     <Document
-      title={`Papago Vans Build Sheet - ${plan.name}`}
+      title={`Papago Vans Build Sheet - ${planName}`}
       author="Papago Vans"
     >
       <Page size="LETTER" style={s.page}>
@@ -257,10 +260,9 @@ function BuildSheet({
 
           <View style={s.planBox}>
             <View>
-              <Text style={s.planName}>{plan.name.toUpperCase()}</Text>
-              <Text style={s.planTag}>{plan.tagline}</Text>
+              <Text style={s.planName}>{planName.toUpperCase()}</Text>
+              <Text style={s.planTag}>{layout ? fullCode(build.layout) : plan.tagline}</Text>
               {van ? <Text style={[s.planTag, { marginTop: 6 }]}>On a {vanLabel(van)}</Text> : null}
-              {bed ? <Text style={[s.planTag, { marginTop: 6 }]}>{bed.name}: {bed.kind.toLowerCase()}</Text> : null}
               {pkg ? (
                 <Text style={[s.planTag, { marginTop: 6 }]}>
                   {pkg.name} trim package: {pkg.tagline}
@@ -272,6 +274,21 @@ function BuildSheet({
               <Text style={s.planPriceNote}>estimated, van and conversion</Text>
             </View>
           </View>
+
+          {layout ? (
+            <View style={s.section} wrap={false}>
+              <Text style={s.sectionTitle}>YOUR LAYOUT</Text>
+              {layout.map(({ label, piece }) => (
+                <View key={piece.code} style={s.row}>
+                  <View style={s.rowName}>
+                    <Text>{label}: {piece.name}</Text>
+                    <Text style={s.rowNote}>{piece.note}</Text>
+                  </View>
+                  <Text style={s.rowPrice}>{piece.code}</Text>
+                </View>
+              ))}
+            </View>
+          ) : null}
 
           {catalog.categories.map((category) => {
             const lines = linesFor(catalog, category.id, build);
@@ -304,7 +321,7 @@ function BuildSheet({
               <Text>{formatPrice(breakdown.vanPrice)}</Text>
             </View>
             <View style={s.totalRow}>
-              <Text>{plan.name} conversion</Text>
+              <Text>{planName} conversion</Text>
               <Text>{formatPrice(breakdown.base + breakdown.lengthDelta)}</Text>
             </View>
             {pkg && breakdown.packageDelta > 0 ? (

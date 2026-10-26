@@ -13,6 +13,7 @@ import type { Catalog } from "./catalog";
 import { getFloorPlan, getPackages, getVanLength, vanLabel } from "./catalog";
 import type { BuildState } from "./pricing";
 import { priceBuild, encodeBuild } from "./pricing";
+import { fullCode } from "./modules";
 
 const PORTAL_ID = process.env.HUBSPOT_PORTAL_ID;
 /* Two forms, not one submitted twice. Each gets its own notification and its
@@ -121,7 +122,8 @@ export async function submitBuildSheetLead(
     { name: "lastname", value: customer.lastName },
     { name: "email", value: customer.email },
     { name: "phone", value: customer.phone },
-    { name: "papago_floor_plan", value: plan?.name ?? "" },
+    // A modular van has no floor plan; its build code says what it is instead.
+    { name: "papago_floor_plan", value: build.layout ? fullCode(build.layout) : (plan?.name ?? "") },
     { name: "papago_trim_package", value: pkg?.name ?? "" },
     { name: "papago_build_total", value: String(price.total) },
     { name: "papago_option_count", value: String(build.selected.length) },

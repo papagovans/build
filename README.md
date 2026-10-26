@@ -95,30 +95,41 @@ Not customer-facing yet.
   Transit has none yet: Ford's configurator only serves its high-roof codes
   after a ZIP code is entered. Papago is a dealer for all three.
 
-### The bed step
+### The modular build (Sprinter 170)
 
-The beds are hard-coded in `lib/beds.ts` (names and copy are the owner's,
-2026-10-12), with one model per chassis. Only the Sprinter 170 has one, so
-every other van skips Your Bed and Kitchen & Living. The bed rides in the
-`?b=` link as its sixth field.
+The Sprinter 170 is built piece by piece instead of from a floor plan
+(owner, 2026-10-26). Every piece has a code from the team's system
+(`S170-DL02` is driver-side living room 2; the full list is in
+`lib/modules.ts` and claude.ai/artifact/YX4sDowV5Siyscyhn7sTSS), and a whole
+van is one build code: `BD01-BC02-DW01-DL02-PI01-PU01+SC01+SS01`, pick-one
+pieces joined by `-`, each yes add-on by `+`. That code is the `?b=` link's
+sixth field, the Build Code in the header, the Build Sheet's subtitle, and
+what HubSpot gets in `papago_floor_plan` for these vans.
 
-The model comes from one SketchUp page: the chassis and the beds side by side,
-each named `Chassis - <van>` or `Bed - <name>` on its group or on a marker
-under it.
+The steps: **Bed** (the bed, then a bed cap), **Driver Side** (shower or no
+shower, then a living room that fits it: the shower takes the two blue
+ones, no shower the two red), **Passenger Side** (the kitchenette insert and
+the uppers, with or without microwave; the kitchenette and fold-out table are
+standard), **Extras** (five yes-or-no add-ons). Floor Plan and Layout are
+skipped; the van quietly takes the first floor plan only because that is
+where the conversion price lives, and every plan costs the same. Pieces have
+no prices yet.
+
+The model comes from one SketchUp sheet per lineup: the chassis with its bed,
+every other piece laid out in a row beside it.
 
 ```bash
-npm run bed-models -- "<sprinter 170 beds>.glb" public/models/sprinter-170-beds.glb
+npm run modular-models -- "<Papago Builder - 1st bed option>.glb" public/models/sprinter-170-lineup-1.glb
 ```
 
-It moves each bed until its back edge is flush with the chassis rear, and
-bakes the motion in: `<id>-in` into the empty chassis, and `<old>-to-<new>`
-for every pair, one continuous swap. The old bed eases out the rear and
-curves away to the far side while the new one is already sweeping in from the
-near side, so the two never cross and nothing stops dead. Every curve starts
-and ends at rest speed and none overshoots. The viewer zooms on the scroll
-wheel.
-Every bed starts hidden, so the step opens on the empty chassis. The bed
-names in `lib/beds.ts` must match: `Bed - High Camp` becomes `high-camp`.
+That export carries no names, so the script finds pieces by geometry (parts
+whose boxes touch are one piece) and matches each to its code by where it sits
+on the sheet; the table at the top of `scripts/modular-models.ts` holds those
+positions and where each piece is installed. **A new lineup laid out
+differently needs that table re-measured** (`DEBUG=1` prints every piece).
+Naming each group with its code in SketchUp would end that. Each piece gets
+`<code>-in` (drops in from above and settles) and `<code>-out`, and the
+viewer runs several at once, so changing one choice only moves that piece.
 
 ### Making a 3D model
 
@@ -207,11 +218,11 @@ Two things follow from that and are easy to undo by accident:
 Phase 1 (owner, 2026-09-28), streamlined:
   → Your Van          Sprinter 144/170, Transit 148, ProMaster 136/159, all high roof
   → Your Info         name, email, phone
-  → Your Bed          Sprinter 170 only: the chassis in 3D, five beds that fit
-                      it; the chosen bed slides in through the rear doors
-  → Kitchen & Living  Sprinter 170 only: placeholder until the front-half
-                      SketchUp models are drawn
-  → Floor Plan        4 layouts
+  → Bed              Sprinter 170 only, built piece by piece in one 3D view:
+  → Driver Side        bed cap; shower or not, then a living room that fits;
+  → Passenger Side     kitchenette insert and uppers; five yes-or-no extras
+  → Extras             (see "The modular build" above)
+  → Floor Plan        every other van: 4 layouts
   → Layout            one large 3D model of the chosen plan, drag to rotate
   → What's Included   every included item by system; a card opens the drawer
                       with brand, model, What it is, Why you need it

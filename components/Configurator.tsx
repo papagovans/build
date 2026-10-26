@@ -3,7 +3,24 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import Image from "next/image";
 import Script from "next/script";
-import { BEDS, bedModelFor, getBed, hasBeds } from "@/lib/beds";
+import {
+  EXTRAS,
+  type Layout,
+  type Piece,
+  SLOTS,
+  type Slot,
+  STANDARD,
+  fullCode,
+  isModular,
+  layoutCode,
+  layoutLines,
+  lineupModelFor,
+  livingRoomsFor,
+  parseLayout,
+  pick,
+  slot,
+  toggleExtra,
+} from "@/lib/modules";
 import {
   getFloorPlan,
   getOption,
@@ -60,19 +77,22 @@ import {
  */
 const LENGTH_STEP = 0;
 const INTRO_STEP = 1;
-/* The modular steps (owner, 2026-10-12): the chassis with the beds that fit
- * it, then the kitchen and living area that fit the bed. Only for a van with a
- * bed model (lib/beds.ts), today the Sprinter 170. Every other van steps
- * straight over both; see stepFrom(). */
+/* The modular steps (owner, 2026-10-26): bed, driver side, passenger side,
+ * add-ons, built up piece by piece in 3D. Only for a van with a lineup model
+ * (lib/modules.ts), today the Sprinter 170, which skips the floor plans
+ * instead. Every other van steps over these four; see stepFrom(). */
 const BED_STEP = 2;
-const FRONT_STEP = 3;
-const PLAN_STEP = 4;
-const GALLERY_STEP = 5;
+const DRIVER_STEP = 3;
+const PASSENGER_STEP = 4;
+const EXTRAS_STEP = 5;
+const MODULAR_STEPS = [BED_STEP, DRIVER_STEP, PASSENGER_STEP, EXTRAS_STEP];
+const PLAN_STEP = 6;
+const GALLERY_STEP = 7;
 /* Phase 1 of the streamlined builder (owner, 2026-09-28): one included list,
  * no trim tiers, colours or upgrades. StepPackage, StepColors and StepOptions
  * below are kept, unused, for when upgrades come back. */
-const INCLUDED_STEP = 6;
-const SUMMARY_STEP = 7;
+const INCLUDED_STEP = 8;
+const SUMMARY_STEP = 9;
 
 /* The category that owns the colour swatches. It gets its own step; every
  * other category is a section on the single Options page. */
@@ -211,7 +231,7 @@ export default function Configurator({ catalog }: { catalog: Catalog }) {
        form first, the same gate the Van Length step applies. */
     if (restored.floorPlanId || restored.vanLengthId) {
       setBuild(restored);
-      setStep(isValidCustomer(known) ? PLAN_STEP : INTRO_STEP);
+      setStep(isValidCustomer(known) ? (isModular(restored.vanLengthId) ? BED_STEP : PLAN_STEP) : INTRO_STEP);
     }
   }, [catalog]);
 
@@ -245,26 +265,42 @@ export default function Configurator({ catalog }: { catalog: Catalog }) {
   const breakdown = useMemo(() => priceBuild(catalog, build), [catalog, build]);
   const van = build.vanLengthId ? getVanLength(catalog, build.vanLengthId) : undefined;
 
-  const bedStep = hasBeds(build.vanLengthId);
-  /* The next step in a direction, stepping over the modular steps on a van
-   * that has no beds to choose. */
+  const modular = isModular(build.vanLengthId);
+  const layout = useMemo(() => parseLayout(build.layout), [build.layout]);
+  // An updater, not a value, so two quick clicks each build on the other.
+  const updateLayout = (change: (l: Layout) => Layout) =>
+    setBuild((b) => ({ ...b, layout: layoutCode(change(parseLayout(b.layout))) }));
+  /* A modular van skips the floor plans; every other van skips the modular steps. */
+  const skips = (i: number) =>
+    modular ? i === PLAN_STEP || i === GALLERY_STEP : MODULAR_STEPS.includes(i);
   const stepFrom = (from: number, dir: 1 | -1) => {
     let next = from + dir;
-    while (!bedStep && (next === BED_STEP || next === FRONT_STEP)) next += dir;
+    while (skips(next)) next += dir;
     return next;
   };
-  const afterDetails = bedStep ? BED_STEP : PLAN_STEP;
+  const afterDetails = modular ? BED_STEP : PLAN_STEP;
 
-  const canAdvance =
-    step === LENGTH_STEP
+  /** Whether each step's own choices are made. */
+  const done = (i: number) =>
+    i === LENGTH_STEP
       ? Boolean(build.vanLengthId)
-      : step === INTRO_STEP
+      : i === INTRO_STEP
         ? isValidCustomer(customer)
-        : step === BED_STEP
-          ? Boolean(build.bedId)
-          : step === FRONT_STEP
-            ? true // a placeholder until the kitchen and living models exist
-            : Boolean(build.floorPlanId);
+        : i === BED_STEP
+          ? Boolean(layout.picks.BC)
+          : i === DRIVER_STEP
+            ? Boolean(layout.picks.DW && layout.picks.DL)
+            : i === PASSENGER_STEP
+              ? Boolean(layout.picks.PI && layout.picks.PU)
+              : i === EXTRAS_STEP
+                ? true
+                : Boolean(build.floorPlanId);
+  const canAdvance = done(step);
+  /** A step can be jumped to once every step before it that is not skipped is done. */
+  const canReach = (i: number) => {
+    for (let j = LENGTH_STEP; j < i; j++) if (!skips(j) && !done(j)) return false;
+    return !skips(i);
+  };
 
   /** Last name drives the personalized headlines, with a neutral fallback. */
   const surname = customer.lastName.trim();
@@ -289,15 +325,18 @@ export default function Configurator({ catalog }: { catalog: Catalog }) {
           above it waits until there is a van to name. */}
       <div className="sticky top-0 z-30 shadow-sm">
         {step > LENGTH_STEP && (
-          <VanContextBar planName={plan?.name} bedName={getBed(build.bedId)?.name} surname={surname} van={van} />
+          <VanContextBar
+            planName={modular ? undefined : plan?.name}
+            buildCode={modular ? fullCode(build.layout) : undefined}
+            surname={surname}
+            van={van}
+          />
         )}
         <Stepper
           step={step}
           onJump={goTo}
-          hasDetails={isValidCustomer(customer)}
-          hasPlan={Boolean(build.floorPlanId)}
-          hasBedStep={bedStep}
-          hasBed={Boolean(build.bedId)}
+          canReach={canReach}
+          skips={skips}
         />
         {/* Part of the pinned header, so it stays on screen the whole way down
             the long included list instead of scrolling away under the bar. */}
@@ -337,24 +376,31 @@ export default function Configurator({ catalog }: { catalog: Catalog }) {
           <StepVanLength
             selectedId={build.vanLengthId}
             possessive={possessive}
-            onChoose={(id) => setBuild((b) => setVanLength(catalog, b, id))}
+            onChoose={(id) =>
+              setBuild((b) => {
+                const next = setVanLength(catalog, b, id);
+                /* A modular van has no floor plan step, but the conversion
+                 * price still lives on a plan, and every plan costs the same
+                 * (owner, 2026-09-28). So it quietly takes the first that fits. */
+                if (!isModular(id) || next.floorPlanId) return next;
+                const plan = catalog.floorPlans.find((p) => planFitsLength(catalog, p.id, id));
+                return plan ? setFloorPlan(next, plan.id) : next;
+              })
+            }
             /* Details already on file: going back to change the van is not
                a reason to fill the form in again. */
             onContinue={() => goTo(isValidCustomer(customer) ? afterDetails : INTRO_STEP)}
           />
         )}
 
-        {step === BED_STEP && bedStep && (
-          <StepBed
+        {modular && MODULAR_STEPS.includes(step) && (
+          <StepModular
+            step={step}
             vanId={build.vanLengthId}
-            selectedId={build.bedId}
+            layout={layout}
             possessive={possessive}
-            onSelect={(id) => setBuild((b) => ({ ...b, bedId: id }))}
+            onChange={updateLayout}
           />
-        )}
-
-        {step === FRONT_STEP && bedStep && build.bedId && (
-          <StepFront vanId={build.vanLengthId} bedId={build.bedId} possessive={possessive} />
         )}
 
         {step === PLAN_STEP && (
@@ -414,9 +460,9 @@ export default function Configurator({ catalog }: { catalog: Catalog }) {
 
       <SummaryBar
         breakdown={breakdown}
-        planName={plan?.name ?? (van ? vanLabel(van) : undefined)}
+        planName={(modular ? undefined : plan?.name) ?? (van ? vanLabel(van) : undefined)}
         onGetBuildSheet={() => goTo(SUMMARY_STEP)}
-        canFinish={Boolean(build.floorPlanId)}
+        canFinish={canReach(SUMMARY_STEP)}
         atSummary={step === SUMMARY_STEP}
       />
     </div>
@@ -523,12 +569,13 @@ function Hero() {
  */
 function VanContextBar({
   planName,
-  bedName,
+  buildCode,
   surname,
   van,
 }: {
   planName?: string;
-  bedName?: string;
+  /** A modular van's code, the line the team quotes on a call. */
+  buildCode?: string;
   surname: string;
   van?: VanLength;
 }) {
@@ -574,10 +621,10 @@ function VanContextBar({
         </div>
 
         <div className="flex gap-6 min-w-0 shrink-0">
-          {bedName && (
-            <div className="text-right min-w-0">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-steel">Bed</p>
-              <p className="brand-heading text-base sm:text-xl leading-tight truncate">{bedName}</p>
+          {buildCode && (
+            <div className="text-right min-w-0 max-w-[45vw]">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-steel">Build Code</p>
+              <p className="font-mono text-xs sm:text-sm text-navy leading-tight break-all">{buildCode}</p>
             </div>
           )}
           {planName && (
@@ -698,24 +745,21 @@ function StepIntro({
 function Stepper({
   step,
   onJump,
-  hasDetails,
-  hasPlan,
-  hasBedStep,
-  hasBed,
+  canReach,
+  skips,
 }: {
   step: number;
   onJump: (n: number) => void;
-  hasDetails: boolean;
-  hasPlan: boolean;
-  hasBedStep: boolean;
-  hasBed: boolean;
+  canReach: (i: number) => boolean;
+  skips: (i: number) => boolean;
 }) {
-  const catalog = useCatalog();
   const labels = [
     "Your Van",
     "Your Info",
-    "Your Bed",
-    "Kitchen & Living",
+    "Bed",
+    "Driver Side",
+    "Passenger Side",
+    "Extras",
     "Floor Plan",
     "Layout",
     "What\u2019s Included",
@@ -727,10 +771,8 @@ function Stepper({
    * called. The nudges start where the finish is genuinely in sight, which is
    * also where people abandon. Nothing before step 6 gets one, because
    * cheerleading at step 2 is a lie about how far along you are. */
-  // A van with no beds never sees the modular steps, so they are not counted or shown.
-  const shown = labels
-    .map((label, i) => ({ label, i }))
-    .filter(({ i }) => hasBedStep || (i !== BED_STEP && i !== FRONT_STEP));
+  // Steps this van skips are neither counted nor shown.
+  const shown = labels.map((label, i) => ({ label, i })).filter(({ i }) => !skips(i));
   const total = shown.length;
   const position = shown.findIndex(({ i }) => i === step) + 1;
   const nudge: Record<number, string> = {
@@ -757,16 +799,7 @@ function Stepper({
         <ol className="flex gap-1 overflow-x-auto py-3 text-xs">
           {shown.map(({ label, i }) => {
             const isCurrent = i === step;
-            const reachable =
-              i <= INTRO_STEP
-                ? true
-                : i === BED_STEP
-                  ? hasDetails && hasBedStep
-                  : i === FRONT_STEP
-                    ? hasDetails && hasBedStep && hasBed
-                  : i === PLAN_STEP
-                    ? hasDetails
-                    : hasPlan;
+            const reachable = i <= INTRO_STEP || canReach(i);
             return (
               <li key={label} className="shrink-0">
                 <button
@@ -896,48 +929,26 @@ function StepVanLength({
   );
 }
 
-/* The slice of model-viewer's element API the bed step drives. */
-type BedViewerElement = HTMLElement & {
-  animationName: string;
-  timeScale: number;
-  play(options?: { repetitions?: number }): void;
+/* The slice of model-viewer's element API the modular steps drive. */
+type LineupViewerElement = HTMLElement & {
+  appendAnimation(name: string, options?: { repetitions?: number; timeScale?: number }): void;
+  detachAnimation(name: string, options?: { fade?: boolean }): void;
 };
 
 /**
- * Your Bed: the empty chassis, then the chosen bed sliding in through the rear
- * doors. Only for a van with a bed model (lib/beds.ts).
- *
- * The motion lives in the model as baked animations, "<bed>-in" and
- * "<bed>-out" (scripts/bed-models.ts), so this only says which to play.
- * Changing beds plays the old one out, then the new one in. A choice made mid
- * slide abandons the slide in progress, rather than queueing behind it.
+ * The van, built up piece by piece. Every piece has a "<code>-in" and a
+ * "<code>-out" animation baked into the model (scripts/modular-models.ts),
+ * and model-viewer runs several at once, so this only compares what should be
+ * in the van with what is and plays the difference. A finished clip holds its
+ * piece in place; the other clip is stopped before one starts, so the two
+ * never blend. The camera turns to face the side the step is about.
  */
-/**
- * The chassis with a bed in it. The motion lives in the model as baked
- * animations (scripts/bed-models.ts): "<bed>-in" into the empty chassis, and
- * "<old>-to-<new>", one continuous swap. This only says which to play. A
- * choice made mid move waits for the move to finish, then goes straight to
- * the latest choice, so nothing ever jumps. `settled` just shows the bed in
- * place, for a step where it is already chosen.
- */
-function BedStage({
-  vanId,
-  bedId,
-  settled = false,
-  hint,
-}: {
-  vanId: string | null;
-  bedId: string | null;
-  settled?: boolean;
-  hint?: string;
-}) {
-  const viewer = useRef<BedViewerElement>(null);
+function LineupStage({ vanId, codes, orbit }: { vanId: string | null; codes: string[]; orbit: string }) {
+  const viewer = useRef<LineupViewerElement>(null);
   const [loaded, setLoaded] = useState(false);
-  /** The bed in the van once the current move ends. */
-  const shown = useRef<string | null>(null);
-  const moving = useRef(false);
-  /** The latest choice, read when a move finishes. */
-  const wanted = useRef(bedId);
+  const shown = useRef(new Set<string>());
+  const placed = useRef(false);
+  const key = codes.join(",");
 
   useEffect(() => {
     const el = viewer.current;
@@ -948,43 +959,36 @@ function BedStage({
   }, []);
 
   useEffect(() => {
-    wanted.current = bedId;
     const el = viewer.current;
     if (!el || !loaded) return;
-    // Placed almost at once when settled, or for anyone who has asked their
+    // Whatever was chosen before the model loaded (a shared link, a return
+    // visit) is simply there; so is everything for anyone who asked their
     // device for less motion.
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const next = () => {
-      const target = wanted.current;
-      if (moving.current || !target || target === shown.current) return;
-      const from = shown.current;
-      shown.current = target;
-      moving.current = true;
-      el.timeScale = settled || reduce ? 20 : 1;
-      el.addEventListener(
-        "finished",
-        () => {
-          moving.current = false;
-          next(); // a choice made while this one was moving
-        },
-        { once: true },
-      );
-      el.animationName = from ? `${from}-to-${target}` : `${target}-in`;
-      el.play({ repetitions: 1 });
-    };
-    next();
-  }, [bedId, loaded, settled]);
+    const timeScale = !placed.current || reduce ? 40 : 1;
+    placed.current = true;
+    const want = new Set(key ? key.split(",") : []);
+    for (const c of want)
+      if (!shown.current.has(c)) {
+        el.detachAnimation(`${c}-out`, { fade: false });
+        el.appendAnimation(`${c}-in`, { repetitions: 1, timeScale });
+      }
+    for (const c of shown.current)
+      if (!want.has(c)) {
+        el.detachAnimation(`${c}-in`, { fade: false });
+        el.appendAnimation(`${c}-out`, { repetitions: 1, timeScale });
+      }
+    shown.current = want;
+  }, [key, loaded]);
 
   return (
     <div className="relative aspect-[16/10] rounded-2xl overflow-hidden bg-offwhite">
       <Script type="module" src={MODEL_VIEWER_SRC} strategy="afterInteractive" />
       <model-viewer
         ref={viewer}
-        src={bedModelFor(vanId)}
-        alt="The chassis with the chosen bed"
-        /* From behind and to the open side, so the bed is seen coming in
-           through the rear doors, close enough that the van fills the frame. */
-        camera-orbit="-40deg 64deg 70%"
+        src={lineupModelFor(vanId)}
+        alt="Your van, built up as you choose"
+        camera-orbit={orbit}
         /* The scroll wheel zooms (owner, 2026-10-12). The viewer's default
            closest distance is this framing itself, which would block zooming
            in, so allow down to 1.5 m. */
@@ -993,18 +997,12 @@ function BedStage({
         camera-controls=""
         touch-action="pan-y"
         interaction-prompt="none"
-        animation-crossfade-duration="0"
         shadow-intensity="1.2"
         shadow-softness="0.6"
         exposure="0.9"
         environment-image={STUDIO_LIGHT}
         style={{ width: "100%", height: "100%" }}
       />
-      {hint && (
-        <p className="pointer-events-none absolute inset-x-0 bottom-5 text-center text-sm text-steel">
-          {hint}
-        </p>
-      )}
     </div>
   );
 }
@@ -1067,118 +1065,176 @@ function LegendIcon({ kind }: { kind: string }) {
   );
 }
 
-/** Your Bed: the empty chassis, then the chosen bed sliding in. */
-function StepBed({
+/* Where the camera sits for each modular step: behind for the bed, across
+ * the aisle for the driver side, and from the cab for the passenger side,
+ * where looking across the aisle the driver-side cabinets would block it. */
+const STAGE_ORBIT: Record<number, string> = {
+  [BED_STEP]: "-40deg 64deg 70%",
+  [DRIVER_STEP]: "-20deg 52deg 75%",
+  [PASSENGER_STEP]: "115deg 55deg 60%",
+  [EXTRAS_STEP]: "-40deg 55deg 75%",
+};
+
+/** The pieces in the van at a step: the choices so far, plus the standard
+ * kitchen once the passenger side is the subject or has been chosen (so a
+ * restored link never shows uppers floating over nothing). BD01 is part of
+ * the chassis model, so it has no piece of its own. */
+function stageCodes(layout: Layout, step: number) {
+  const picked = SLOTS.map((s) => layout.picks[s.id]).filter((c): c is string => Boolean(c) && c !== "BD01");
+  const kitchen = step >= PASSENGER_STEP || layout.picks.PI || layout.picks.PU;
+  return [...picked, ...(kitchen ? STANDARD : []), ...layout.extras];
+}
+
+/**
+ * The four modular steps (owner, 2026-10-26): bed, driver side, passenger
+ * side, add-ons. One component for all four so the 3D view stays mounted
+ * between them and the van keeps building rather than reloading each step.
+ */
+function StepModular({
+  step,
   vanId,
-  selectedId,
+  layout,
   possessive,
-  onSelect,
+  onChange,
 }: {
+  step: number;
   vanId: string | null;
-  selectedId: string | null;
+  layout: Layout;
   possessive: string;
-  onSelect: (id: string) => void;
+  onChange: (change: (l: Layout) => Layout) => void;
 }) {
+  const choose = (id: Slot["id"]) => (code: string) => onChange((l) => pick(l, id, code));
+  const heading = {
+    [BED_STEP]: {
+      title: "Choose Your Bed Cap",
+      blurb: "The bed sets the shape of the van. Pick the panel that closes its front.",
+    },
+    [DRIVER_STEP]: {
+      title: "Choose Your Driver Side",
+      blurb: "Shower or no shower first. It decides which living rooms fit beside it.",
+    },
+    [PASSENGER_STEP]: {
+      title: "Choose Your Passenger Side",
+      blurb: "The kitchenette and its fold-out table come on every van. Pick what goes under the counter and above it.",
+    },
+    [EXTRAS_STEP]: {
+      title: "Add the Extras",
+      blurb: "Each one is a simple yes or no. Leave them all off if you like.",
+    },
+  }[step]!;
+  const living = livingRoomsFor(layout);
+
   return (
     <section>
-      <StepHeading
-        eyebrow={possessive}
-        title="Choose Your Bed"
-        blurb="The bed decides how the rest of the van lives. Pick one and watch it go in."
-      />
+      <StepHeading eyebrow={possessive} title={heading.title} blurb={heading.blurb} />
       <div className="grid gap-8 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] items-start">
         <div className="lg:sticky lg:top-44">
-          <BedStage
-            vanId={vanId}
-            bedId={selectedId}
-            hint={selectedId ? undefined : "Choose a bed to see it go in"}
-          />
+          <LineupStage vanId={vanId} codes={stageCodes(layout, step)} orbit={STAGE_ORBIT[step]} />
           <ViewerLegend />
         </div>
 
-        <ul role="radiogroup" aria-label="Beds" className="divide-y divide-line border-y border-line">
-          {BEDS.map((bed) => {
-            const on = bed.id === selectedId;
-            return (
-              <li key={bed.id}>
-                <button
-                  type="button"
-                  role="radio"
-                  aria-checked={on}
-                  onClick={() => onSelect(bed.id)}
-                  className={`group w-full text-left flex gap-4 px-3 py-5 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-gold ${
-                    on ? "bg-white" : "hover:bg-white/60"
-                  }`}
-                >
-                  <span
-                    aria-hidden="true"
-                    className={`mt-1.5 h-3.5 w-3.5 shrink-0 rounded-full border transition-colors ${
-                      on ? "border-gold bg-gold" : "border-steel/40 group-hover:border-steel"
-                    }`}
-                  />
-                  <span className="min-w-0">
-                    <span className="brand-heading block text-xl leading-tight">{bed.name}</span>
-                    <span className="block mt-1 text-sm text-steel">{bed.kind}</span>
-                    <span className="block mt-2 text-[15px] leading-relaxed text-charcoal">
-                      {bed.description}
-                    </span>
-                  </span>
-                </button>
-              </li>
-            );
-          })}
-        </ul>
+        <div className="space-y-8">
+          {step === BED_STEP && (
+            <>
+              <Choices label="Bed" pieces={slot("BD").pieces} selected={layout.picks.BD} onSelect={choose("BD")} />
+              <Choices label="Bed Cap" pieces={slot("BC").pieces} selected={layout.picks.BC} onSelect={choose("BC")} />
+            </>
+          )}
+          {step === DRIVER_STEP && (
+            <>
+              <Choices label="Shower" pieces={slot("DW").pieces} selected={layout.picks.DW} onSelect={choose("DW")} />
+              {living.length ? (
+                <Choices label="Living Room" pieces={living} selected={layout.picks.DL} onSelect={choose("DL")} />
+              ) : (
+                <p className="text-sm text-steel">Choose shower or no shower to see the living rooms that fit.</p>
+              )}
+            </>
+          )}
+          {step === PASSENGER_STEP && (
+            <>
+              <Choices label="Kitchenette Insert" pieces={slot("PI").pieces} selected={layout.picks.PI} onSelect={choose("PI")} />
+              <Choices label="Kitchen Uppers" pieces={slot("PU").pieces} selected={layout.picks.PU} onSelect={choose("PU")} />
+            </>
+          )}
+          {step === EXTRAS_STEP && (
+            <ul aria-label="Extras" className="divide-y divide-line border-y border-line">
+              {EXTRAS.map((piece) => {
+                const on = layout.extras.includes(piece.code);
+                return (
+                  <li key={piece.code}>
+                    <ChoiceRow piece={piece} on={on} role="checkbox" onClick={() => onChange((l) => toggleExtra(l, piece.code))} />
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
       </div>
     </section>
   );
 }
 
-/**
- * Kitchen & Living: the front half of the van, chosen to fit the bed.
- *
- * ponytail: a placeholder (owner, 2026-10-12) while the front-half SketchUp
- * models are drawn. It shows the bed in place and says what is coming; Next
- * stays open so the rest of the build can be priced. When the models land,
- * this becomes the bed step's twin: a list of front halves that fit the
- * chosen bed, sliding in from the cab end.
- */
-function StepFront({
-  vanId,
-  bedId,
-  possessive,
+/** A pick-one list under a small heading. */
+function Choices({
+  label,
+  pieces,
+  selected,
+  onSelect,
 }: {
-  vanId: string | null;
-  bedId: string;
-  possessive: string;
+  label: string;
+  pieces: Piece[];
+  selected?: string;
+  onSelect: (code: string) => void;
 }) {
-  const bed = getBed(bedId);
   return (
-    <section>
-      <StepHeading
-        eyebrow={possessive}
-        title="Choose Your Kitchen & Living"
-        blurb={`The front half of the van: the galley, seating and storage, laid out to work with ${bed?.name ?? "your bed"}.`}
+    <div>
+      <h3 className="text-xs font-bold uppercase tracking-widest text-steel mb-2">{label}</h3>
+      <ul role="radiogroup" aria-label={label} className="divide-y divide-line border-y border-line">
+        {pieces.map((piece) => (
+          <li key={piece.code}>
+            <ChoiceRow piece={piece} on={piece.code === selected} role="radio" onClick={() => onSelect(piece.code)} />
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function ChoiceRow({
+  piece,
+  on,
+  role,
+  onClick,
+}: {
+  piece: Piece;
+  on: boolean;
+  role: "radio" | "checkbox";
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      role={role}
+      aria-checked={on}
+      onClick={onClick}
+      className={`group w-full text-left flex gap-4 px-3 py-4 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-gold ${
+        on ? "bg-white" : "hover:bg-white/60"
+      }`}
+    >
+      <span
+        aria-hidden="true"
+        className={`mt-1.5 h-3.5 w-3.5 shrink-0 border transition-colors ${role === "radio" ? "rounded-full" : "rounded"} ${
+          on ? "border-gold bg-gold" : "border-steel/40 group-hover:border-steel"
+        }`}
       />
-      <div className="grid gap-8 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] items-start">
-        <div>
-          <BedStage vanId={vanId} bedId={bedId} settled />
-          <ViewerLegend />
-        </div>
-        <div className="rounded-2xl border border-dashed border-steel/30 p-6 sm:p-8">
-          <p className="text-xs font-semibold uppercase tracking-widest text-steel">In design now</p>
-          <h3 className="brand-heading text-2xl mt-2">Kitchen and living layouts</h3>
-          <p className="mt-3 text-charcoal leading-relaxed">
-            We are drawing the front halves that pair with {bed?.name ?? "each bed"}: where the
-            galley sits, how the seating faces, and what stores where. Once they are ready you will
-            pick one here and watch it slide in from the cab.
-          </p>
-          <p className="mt-4 text-sm text-steel">
-            For now, carry on to price the rest of your build. We will walk you through the
-            kitchen and living options on your design call.
-          </p>
-        </div>
-      </div>
-    </section>
+      <span className="min-w-0 flex-1">
+        <span className="flex items-baseline justify-between gap-3">
+          <span className="brand-heading text-lg leading-tight">{piece.name}</span>
+          <span className="font-mono text-[11px] text-steel">{piece.code}</span>
+        </span>
+        <span className="block mt-1 text-sm text-charcoal">{piece.note}</span>
+      </span>
+    </button>
   );
 }
 
@@ -2033,6 +2089,9 @@ function StepSummary({
 }) {
   const catalog = useCatalog();
   const plan = getFloorPlan(catalog, build.floorPlanId!);
+  /* A modular van has no floor plan of its own; the plan behind it only
+   * carries the conversion price. */
+  const planName = build.layout ? "Custom Layout" : plan?.name;
   const van = build.vanLengthId ? getVanLength(catalog, build.vanLengthId) : undefined;
   const included = includedFor(catalog, build.floorPlanId!, build.vanLengthId);
   const [pdfState, setPdfState] = useState<"idle" | "working" | "error">("idle");
@@ -2074,16 +2133,29 @@ function StepSummary({
       <div className="bg-white rounded-lg p-6 sm:p-8">
         <div className="flex flex-wrap items-baseline justify-between gap-2 pb-4 border-b border-black/10">
           <div>
-            <h3 className="brand-heading text-2xl">{plan?.name}</h3>
+            <h3 className="brand-heading text-2xl">{planName}</h3>
             <p className="text-sm text-steel">
               {van ? vanLabel(van) : ""}
-              {getBed(build.bedId) ? ` \u00b7 ${getBed(build.bedId)!.name}` : ""}
+              {build.layout ? <span className="font-mono"> \u00b7 {fullCode(build.layout)}</span> : null}
             </p>
           </div>
         </div>
 
+        {build.layout && (
+          <SummaryGroup title="Your Layout">
+            {layoutLines(build.layout).map(({ label, piece }) => (
+              <div key={piece.code} className="flex justify-between gap-4 py-1.5 text-sm">
+                <span>
+                  {label}: <span className="font-semibold">{piece.name}</span>
+                </span>
+                <span className="font-mono text-xs text-steel">{piece.code}</span>
+              </div>
+            ))}
+          </SummaryGroup>
+        )}
+
         <LineItem label={van ? `${vanLabel(van)} (average price)` : "Van"} price={breakdown.vanPrice} />
-        <LineItem label={`${plan?.name} conversion`} price={breakdown.base + breakdown.lengthDelta} />
+        <LineItem label={`${planName} conversion`} price={breakdown.base + breakdown.lengthDelta} />
 
         {breakdown.upgrades.length > 0 && (
           <SummaryGroup title="Upgrades">

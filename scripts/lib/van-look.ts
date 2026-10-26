@@ -1,6 +1,6 @@
 /**
  * The look every SketchUp export gets on its way to the web: shared by
- * van-model.ts (the floor plans) and bed-models.ts (the bed step).
+ * van-model.ts (the floor plans) and modular-models.ts (the modular steps).
  *
  * The SketchUp exporter (SimLab) gets three things wrong, and all three are
  * why the raw export looks flat and washed out:
@@ -50,8 +50,8 @@ const toLinear = (c: number) =>
   c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
 
 /* Undo the exporter's colour-space mistake, then saturate around luminance. */
-function deepen([r, g, b, a]: number[]): [number, number, number, number] {
-  const [lr, lg, lb] = [r, g, b].map(toLinear);
+function deepen([r, g, b, a]: number[], fix: boolean): [number, number, number, number] {
+  const [lr, lg, lb] = fix ? [r, g, b].map(toLinear) : [r, g, b];
   const l = 0.2126 * lr + 0.7152 * lg + 0.0722 * lb;
   const s = (c: number) => Math.min(1, Math.max(0, l + (c - l) * FLAT_SAT));
   return [s(lr), s(lg), s(lb), a];
@@ -59,6 +59,13 @@ function deepen([r, g, b, a]: number[]): [number, number, number, number] {
 
 /** Fixes the exporter's colours and finishes, in place. */
 export async function gradeMaterials(doc: Document) {
+  /* Only SimLab's specular-glossiness exports carry the colour mistake.
+   * SketchUp's own glTF export (lineup 1, 2026-10-26) writes metal-rough
+   * with correct linear colour, and "fixing" it turns grey cabinets black. */
+  const simlab = doc
+    .getRoot()
+    .listExtensionsUsed()
+    .some((e) => e.extensionName === "KHR_materials_pbrSpecularGlossiness");
   await doc.transform(metalRough());
   const textures = new Map<NonNullable<ReturnType<Material["getBaseColorTexture"]>>, number>();
   for (const mat of doc.getRoot().listMaterials()) {
@@ -69,7 +76,7 @@ export async function gradeMaterials(doc: Document) {
     const tex = mat.getBaseColorTexture();
     const t = WOOD.test(name) ? WOOD_TEX : TEX;
     // A texture carries its own colour; the factor is only a multiplier on it.
-    mat.setBaseColorFactor(tex ? [t.dark, t.dark, t.dark, 1] : deepen(mat.getBaseColorFactor()));
+    mat.setBaseColorFactor(tex ? [t.dark, t.dark, t.dark, 1] : deepen(mat.getBaseColorFactor(), simlab));
     if (tex) textures.set(tex, t.sat);
 
     // The exporter marks everything as cut-out. Only foliage actually is.
