@@ -21,6 +21,7 @@ import {
   slot,
   toggleExtra,
 } from "@/lib/modules";
+import { UPGRADES_CATEGORY_ID } from "@/lib/upgrades";
 import {
   getFloorPlan,
   getOption,
@@ -92,7 +93,9 @@ const GALLERY_STEP = 7;
  * no trim tiers, colours or upgrades. StepPackage, StepColors and StepOptions
  * below are kept, unused, for when upgrades come back. */
 const INCLUDED_STEP = 8;
-const SUMMARY_STEP = 9;
+/* Placeholder add-ons for now (owner, 2026-10-26; lib/upgrades.ts). */
+const UPGRADES_STEP = 9;
+const SUMMARY_STEP = 10;
 
 /* The category that owns the colour swatches. It gets its own step; every
  * other category is a section on the single Options page. */
@@ -331,8 +334,10 @@ export default function Configurator({ catalog }: { catalog: Catalog }) {
           {step === GALLERY_STEP
             ? "Next: What\u2019s Included"
             : step === INCLUDED_STEP
-              ? "Next: Build Sheet"
-              : "Next"}{" "}
+              ? "Next: Upgrades"
+              : step === UPGRADES_STEP
+                ? "Next: Build Sheet"
+                : "Next"}{" "}
           →
         </button>
       )}
@@ -449,6 +454,14 @@ export default function Configurator({ catalog }: { catalog: Catalog }) {
 
         {step === INCLUDED_STEP && build.floorPlanId && (
           <StepIncluded floorPlanId={build.floorPlanId} vanLengthId={build.vanLengthId} />
+        )}
+
+        {step === UPGRADES_STEP && build.floorPlanId && (
+          <StepUpgrades
+            selected={build.selected}
+            possessive={possessive}
+            onToggle={(id) => setBuild((b) => toggleOption(catalog, b, id))}
+          />
         )}
 
         {step === SUMMARY_STEP && plan && (
@@ -769,6 +782,7 @@ function Stepper({
     "Floor Plan",
     "Layout",
     "What\u2019s Included",
+    "Upgrades",
     "Build Sheet",
   ];
 
@@ -1080,6 +1094,78 @@ const STAGE_ORBIT: Record<number, string> = {
   [PASSENGER_STEP]: "115deg 55deg 60%",
   [EXTRAS_STEP]: "-40deg 55deg 75%",
 };
+
+/**
+ * Upgrades: yes-or-no extras with their prices. Picking one that needs
+ * another (the winch needs the bumper) adds both, and dropping the base drops
+ * what hangs off it; toggleOption() does that, so this only lists and asks.
+ */
+function StepUpgrades({
+  selected,
+  possessive,
+  onToggle,
+}: {
+  selected: string[];
+  possessive: string;
+  onToggle: (id: string) => void;
+}) {
+  const catalog = useCatalog();
+  const upgrades = catalog.options.filter((o) => o.categoryId === UPGRADES_CATEGORY_ID);
+  return (
+    <section>
+      <StepHeading
+        eyebrow={possessive}
+        title="Add Upgrades"
+        blurb="All optional. Pick what you want on top of the build; the total updates as you go."
+      />
+      <p className="-mt-4 mb-6 text-xs font-semibold uppercase tracking-widest text-steel">
+        Placeholder prices
+      </p>
+      <ul aria-label="Upgrades" className="max-w-3xl divide-y divide-line border-y border-line">
+        {upgrades.map((o) => {
+          const on = selected.includes(o.id);
+          const needs = (o.requires ?? []).map((id) => getOption(catalog, id)?.name).filter(Boolean);
+          return (
+            <li key={o.id}>
+              <button
+                type="button"
+                role="checkbox"
+                aria-checked={on}
+                onClick={() => onToggle(o.id)}
+                className={`group w-full text-left flex gap-4 px-3 py-4 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-gold ${
+                  on ? "bg-white" : "hover:bg-white/60"
+                }`}
+              >
+                <span
+                  aria-hidden="true"
+                  className={`mt-1.5 h-3.5 w-3.5 shrink-0 rounded border transition-colors ${
+                    on ? "border-gold bg-gold" : "border-steel/40 group-hover:border-steel"
+                  }`}
+                />
+                <span className="relative hidden sm:block w-28 aspect-[4/3] shrink-0 rounded-md overflow-hidden bg-offwhite">
+                  {o.thumb && <Image src={o.thumb} alt="" fill sizes="112px" className="object-cover" />}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="flex items-baseline justify-between gap-3">
+                    <span className="brand-heading text-lg leading-tight">{o.name}</span>
+                    <span className="text-sm font-semibold text-navy shrink-0">+{formatPrice(o.price)}</span>
+                  </span>
+                  {(o.manufacturer || o.model) && (
+                    <span className="block mt-0.5 text-xs text-steel">{[o.manufacturer, o.model].filter(Boolean).join(" ")}</span>
+                  )}
+                  <span className="block mt-1 text-sm text-charcoal">{o.whatItIs}</span>
+                  {needs.length > 0 && (
+                    <span className="block mt-1 text-xs text-steel">Needs the {needs.join(", ")}, added with it</span>
+                  )}
+                </span>
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
+  );
+}
 
 /** Which wizard phase each piece belongs to, for the Show toggles. */
 const PHASES = ["Bed", "Driver Side", "Passenger Side", "Extras"];

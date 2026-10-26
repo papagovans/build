@@ -226,6 +226,8 @@ Phase 1 (owner, 2026-09-28), streamlined:
   → Layout            one large 3D model of the chosen plan, drag to rotate
   → What's Included   every included item by system; a card opens the drawer
                       with brand, model, What it is, Why you need it
+  → Upgrades          every Exterior item as an optional add-on, placeholder
+                      prices (lib/upgrades.ts; owner, 2026-10-26)
   → Build Sheet       van line + conversion line, itemized PDF
 ```
 
