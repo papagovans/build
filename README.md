@@ -112,7 +112,7 @@ then a living room that goes with it: `LRSH01`/`LRSH02` with a shower,
 alone says so; no colour tags. A bare `LR01` is reserved for a living room
 that fits either), **Passenger Side** (the kitchenette insert and
 the uppers, with or without microwave; the kitchenette and fold-out table are
-standard), **Extras** (five yes-or-no add-ons). Floor Plan and Layout are
+standard), **Extras** (six yes-or-no add-ons, the overhead shelf `OHS1` over the cab seats among them). Floor Plan and Layout are
 skipped; the van quietly takes the first floor plan only because that is
 where the conversion price lives, and every plan costs the same. Pieces have
 no prices yet.

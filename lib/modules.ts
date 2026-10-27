@@ -98,6 +98,7 @@ export const EXTRAS: Piece[] = [
   { code: "SS01", name: "Rear Garage Slide-Out", note: "A tray that pulls out the back doors" },
   { code: "ST01", name: "Stove Top", note: "A two-burner cooktop set into the counter" },
   { code: "CB01", name: "Sink Cutting Board", note: "A board that sits over the sink" },
+  { code: "OHS1", name: "Overhead Shelf", note: "A shelf over the driver and passenger seats" },
 ];
 
 /** On every van, never a choice: the kitchenette (the full counter the

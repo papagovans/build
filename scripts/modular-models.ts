@@ -43,6 +43,9 @@ const BED_MID = 0.875;
 const PS_SHIFT = -0.46 - 4.62;
 const SHOWER = 1.155; // SHY's width; the LRSH living rooms start after it
 const TALL = 0.609; // SHN's width; the LRNSH ones after it
+/* Middle of the two cab seats, front to back (the chassis draws them at x
+ * 4.42 to 5.09). */
+const SEATS_MID = 4.755;
 /* Middle of the kitchenette's insert bay, and of its sink, in the van. */
 const BAY_MID = LINE_START + (13.885 - 13.238);
 const SINK_MID = LINE_START + (14.8085 - 13.238);
@@ -62,6 +65,7 @@ const PIECES: Record<string, { side: Side; at?: number; mid?: number }> = {
   SS01: { side: "DS", at: BED_FRONT - 0.02 - 1.549 }, // under the bed, front edge just inside it
   SC01: { side: "DS", mid: BED_MID }, // the pair
   OC01: { side: "DS", mid: BED_MID },
+  OHS1: { side: "DS", mid: SEATS_MID }, // over the cab seats; drawn centred across the van already
   PK01: { side: "PS", at: LINE_START },
   PI01: { side: "PS", mid: BAY_MID },
   PI02: { side: "PS", mid: BAY_MID },

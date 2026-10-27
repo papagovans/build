@@ -1176,7 +1176,7 @@ const PHASE_OF: Record<string, string> = {
   LRSH01: "Driver Side", LRSH02: "Driver Side", LRNSH01: "Driver Side", LRNSH02: "Driver Side",
   PK01: "Passenger Side", FT01: "Passenger Side",
   PI01: "Passenger Side", PI02: "Passenger Side", PU01: "Passenger Side", PU02: "Passenger Side",
-  SC01: "Extras", OC01: "Extras", SS01: "Extras", ST01: "Extras", CB01: "Extras",
+  SC01: "Extras", OC01: "Extras", SS01: "Extras", ST01: "Extras", CB01: "Extras", OHS1: "Extras",
 };
 
 /** The pieces in the van at a step: the choices so far, plus the standard
