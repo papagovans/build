@@ -124,12 +124,12 @@ every other piece laid out in a row beside it.
 npm run modular-models -- "<Papago Builder - 1st bed option>.glb" public/models/sprinter-170-lineup-1.glb
 ```
 
-That export carries no names, so the script finds pieces by geometry (parts
-whose boxes touch are one piece) and matches each to its code by where it sits
-on the sheet; the table at the top of `scripts/modular-models.ts` holds those
-positions and where each piece is installed. **A new lineup laid out
-differently needs that table re-measured** (`DEBUG=1` prints every piece).
-Naming each group with its code in SketchUp would end that. Each piece gets
+Each piece on the sheet is a SketchUp component named with its code
+(`PK01-KITCHENETTE`, `S170-MERCEDES SPRINTER 170` for the chassis; the code
+is everything before the first dash or space), and the script matches on that
+name. Where each piece goes in the van is the table at the top of
+`scripts/modular-models.ts`; a new piece needs one line there or it is left
+out with a warning (`DEBUG=1` prints every piece). Each piece gets
 `<code>-in` (drops in from above and settles) and `<code>-out`, and the
 viewer runs several at once, so changing one choice only moves that piece.
 

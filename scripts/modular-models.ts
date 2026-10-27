@@ -4,11 +4,9 @@
  *   npm run modular-models -- "<Papago Builder - 1st bed option>.glb" public/models/sprinter-170-lineup-1.glb
  *
  * The sheet (owner, 2026-10-26) lays every piece out in a row beside the
- * chassis: the driver-side line at its installed depth, the passenger-side
- * line further along z, a coloured dot under each choice. The export carries
- * no names (3,386 nodes called "empty_N"), so pieces are found by geometry:
- * parts whose boxes touch are one piece, and each piece is matched to its
- * code by where its left edge sits on the sheet. Codes are the team's
+ * chassis, each piece a SketchUp component named with its code
+ * ("PK01-KITCHENETTE"; owner, 2026-10-27). The code is the part of the name
+ * before the first dash or space. Codes are the team's
  * (claude.ai/artifact/YX4sDowV5Siyscyhn7sTSS), without the "S170-" prefix.
  *
  * Every piece moves to where it is installed and is baked two animations:
@@ -16,10 +14,10 @@
  * "<code>-out" lifts it out and away. The van has no roof in the cutaway,
  * so nothing passes through anything. Every piece starts hidden.
  *
- * ponytail: the sheet positions and installed positions below are measured
- * from lineup 1. A new lineup with a different sheet layout needs this table
- * re-measured (run with DEBUG=1 to print every piece's box). Upgrade path:
- * name each group in SketchUp and match on names, as bed-models.ts does.
+ * ponytail: where each piece is installed is measured from lineup 1's
+ * chassis (the table below). A different chassis needs it re-measured; a new
+ * piece needs one line in it, or it is left out with a warning. DEBUG=1
+ * prints every piece's box.
  */
 import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -50,28 +48,28 @@ const BAY_MID = LINE_START + (13.885 - 13.238);
 const SINK_MID = LINE_START + (14.8085 - 13.238);
 
 type Side = "DS" | "PS";
-/* code: [side, sheet x of its left edge(s), where its left edge goes in the
- * van]. Or `mid` to centre the piece on a point instead. */
-const PIECES: Record<string, { side: Side; sheet: number[]; at?: number; mid?: number }> = {
-  BC01: { side: "DS", sheet: [8.145], at: BED_FRONT },
-  BC02: { side: "DS", sheet: [9.796], at: BED_FRONT },
-  SHY: { side: "DS", sheet: [13.238], at: LINE_START },
-  SHN: { side: "DS", sheet: [14.889], at: LINE_START },
-  LRSH01: { side: "DS", sheet: [20.743], at: LINE_START + SHOWER }, // lower and upper are two pieces
-  LRSH02: { side: "DS", sheet: [22.521], at: LINE_START + SHOWER },
-  LRNSH01: { side: "DS", sheet: [26.547], at: LINE_START + TALL },
-  LRNSH02: { side: "DS", sheet: [28.833], at: LINE_START + TALL },
-  SS01: { side: "DS", sheet: [33.252], at: BED_FRONT - 0.02 - 1.549 }, // under the bed, front edge just inside it
-  SC01: { side: "DS", sheet: [35.856, 37.272], mid: BED_MID }, // the pair
-  OC01: { side: "DS", sheet: [38.371], mid: BED_MID },
-  PK01: { side: "PS", sheet: [13.238], at: LINE_START },
-  PI01: { side: "PS", sheet: [19.969], mid: BAY_MID },
-  PI02: { side: "PS", sheet: [21.239], mid: BAY_MID },
-  ST01: { side: "PS", sheet: [26.71], mid: BAY_MID }, // drops into the counter over the insert
-  CB01: { side: "PS", sheet: [28.607], mid: SINK_MID },
-  FT01: { side: "PS", sheet: [30.306], at: LINE_START + 1.828 }, // hinged to the galley's door end
-  PU02: { side: "PS", sheet: [33.232], at: LINE_START },
-  PU01: { side: "PS", sheet: [36.407], at: LINE_START }, // the set with the microwave
+/* code: [side, where its left edge goes in the van]. Or `mid` to centre the
+ * piece on a point instead. */
+const PIECES: Record<string, { side: Side; at?: number; mid?: number }> = {
+  BC01: { side: "DS", at: BED_FRONT },
+  BC02: { side: "DS", at: BED_FRONT },
+  SHY: { side: "DS", at: LINE_START },
+  SHN: { side: "DS", at: LINE_START },
+  LRSH01: { side: "DS", at: LINE_START + SHOWER },
+  LRSH02: { side: "DS", at: LINE_START + SHOWER },
+  LRNSH01: { side: "DS", at: LINE_START + TALL },
+  LRNSH02: { side: "DS", at: LINE_START + TALL },
+  SS01: { side: "DS", at: BED_FRONT - 0.02 - 1.549 }, // under the bed, front edge just inside it
+  SC01: { side: "DS", mid: BED_MID }, // the pair
+  OC01: { side: "DS", mid: BED_MID },
+  PK01: { side: "PS", at: LINE_START },
+  PI01: { side: "PS", mid: BAY_MID },
+  PI02: { side: "PS", mid: BAY_MID },
+  ST01: { side: "PS", mid: BAY_MID }, // drops into the counter over the insert
+  CB01: { side: "PS", mid: SINK_MID },
+  FT01: { side: "PS", at: LINE_START + 1.828 }, // hinged to the galley's door end
+  PU02: { side: "PS", at: LINE_START },
+  PU01: { side: "PS", at: LINE_START }, // the set with the microwave
 };
 /* How high above its place a piece appears, and how long the moves take. */
 const DROP = 1.4;
@@ -84,52 +82,47 @@ const doc = await io.read(input);
 await gradeMaterials(doc);
 
 const scene = doc.getRoot().listScenes()[0];
-const leaves: { n: Node; min: number[]; max: number[] }[] = [];
-scene.traverse((n) => {
-  if (n.getMesh()) leaves.push({ n, ...getBounds(n) });
-});
-
-// Parts whose boxes touch (within 3 cm) are one piece.
-const TOUCH = 0.03;
-const root = leaves.map((_, i) => i);
-const find = (i: number): number => (root[i] === i ? i : (root[i] = find(root[i])));
-for (let i = 0; i < leaves.length; i++)
-  for (let j = i + 1; j < leaves.length; j++) {
-    const [a, b] = [leaves[i], leaves[j]];
-    if ([0, 1, 2].every((k) => a.min[k] <= b.max[k] + TOUCH && b.min[k] <= a.max[k] + TOUCH)) root[find(i)] = find(j);
-  }
-const groups = new Map<number, typeof leaves>();
-leaves.forEach((l, i) => groups.set(find(i), [...(groups.get(find(i)) ?? []), l]));
-const box = (ls: typeof leaves) => ({
+type Part = { n: Node; min: number[]; max: number[] };
+const box = (ls: Part[]) => ({
   min: [0, 1, 2].map((k) => Math.min(...ls.map((l) => l.min[k]))),
   max: [0, 1, 2].map((k) => Math.max(...ls.map((l) => l.max[k]))),
 });
 
-const byCode = new Map<string, typeof leaves>();
-let chassis: typeof leaves | undefined;
-for (const g of groups.values()) {
-  const b = box(g);
-  if (process.env.DEBUG) console.log(g.length, b.min.map((v) => v.toFixed(3)), b.max.map((v) => v.toFixed(3)));
-  if (b.max[1] < 0.08) {
-    g.forEach((l) => l.n.dispose()); // the coloured dots under each choice
-    continue;
-  }
-  if (b.min[0] < 1) {
-    chassis = g;
-    continue;
-  }
-  const side: Side = (b.min[2] + b.max[2]) / 2 > 3 ? "PS" : "DS";
-  const code = Object.keys(PIECES).find(
-    (c) => PIECES[c].side === side && PIECES[c].sheet.some((x) => Math.abs(x - b.min[0]) < 0.01),
-  );
-  if (!code) {
-    console.warn(`unmatched piece at x ${b.min[0].toFixed(3)} (${side}), left out`);
-    g.forEach((l) => l.n.dispose());
-    continue;
-  }
-  byCode.set(code, [...(byCode.get(code) ?? []), ...g]);
+/* Every piece is a SketchUp component whose name starts with its code
+ * ("PK01-KITCHENETTE", "S170-MERCEDES SPRINTER 170"); the exporter appends
+ * "_<instance>". Each is lifted out of the export's nesting with its world
+ * transform baked in, so the rest of this script works in sheet space. */
+const codeOf = (name: string) => /^([A-Z]+\d+|SH[YN])(?=[-_ ]|$)/.exec(name)?.[1];
+const named: { code: string; n: Node }[] = [];
+scene.traverse((n) => {
+  const code = codeOf(n.getName());
+  if (!code || named.some((p) => p.n !== n && isAncestor(p.n, n))) return;
+  named.push({ code, n });
+});
+function isAncestor(a: Node, n: Node): boolean {
+  for (let p = n.getParentNode(); p; p = p.getParentNode()) if (p === a) return true;
+  return false;
 }
-if (!chassis) throw new Error("no chassis found at the start of the sheet");
+const byCode = new Map<string, Part[]>();
+const chassis: Part[] = [];
+for (const { code, n } of named) {
+  const part = { n, ...getBounds(n) };
+  const m = n.getWorldMatrix();
+  n.getParentNode()?.removeChild(n);
+  n.setMatrix(m);
+  scene.addChild(n);
+  if (process.env.DEBUG) console.log(code, part.min.map((v) => v.toFixed(3)), part.max.map((v) => v.toFixed(3)));
+  // The chassis and its one bed travel together until there is a second bed.
+  if (code === "S170" || code === "BD01") chassis.push(part);
+  else if (PIECES[code]) byCode.set(code, [part]);
+  else {
+    console.warn(`${code}: no install position in PIECES yet, left out`);
+    n.dispose();
+  }
+}
+// Whatever is left (the coloured dots, the OR labels) is sheet furniture.
+for (const n of scene.listChildren()) if (!named.some((p) => p.n === n)) n.dispose();
+if (!chassis.length) throw new Error("no chassis (a component named S170-...) found");
 const missing = Object.keys(PIECES).filter((c) => !byCode.has(c));
 if (missing.length) throw new Error(`pieces not found on the sheet: ${missing.join(", ")}`);
 
