@@ -31,15 +31,31 @@ export const SLOTS: Slot[] = [
   {
     id: "BD",
     title: "Bed",
-    /* The five beds are named (owner, 2026-10-12): BD01 The Trailhead, BD02
-     * The Ridgeline, BD03 The Lookout, BD04 The Campfire, BD05 The High Camp.
-     * Only BD01 has a lineup drawn; each other bed joins this list when its
-     * SketchUp lineup is exported. */
+    /* The five beds are named (owner, 2026-10-12). Only BD01 has a lineup
+     * drawn, so every bed shows the Trailhead in 3D for now (owner,
+     * 2026-10-27); a bed's own model replaces that when its lineup is
+     * exported. */
     pieces: [
       {
         code: "BD01",
         name: "The Trailhead",
         note: "A fixed bed that\u2019s always made, with room under it for the gear you start every day with.",
+      },
+      { code: "BD02", name: "The Ridgeline", note: "The full-size fixed bed. Stretch out, and keep the big gear stowed below." },
+      {
+        code: "BD03",
+        name: "The Lookout",
+        note: "A fixed bed plus a two-seat nook by the window for coffee, maps and the view.",
+      },
+      {
+        code: "BD04",
+        name: "The Campfire",
+        note: "Eat around the table at night, drop it and it\u2019s a bed. The whole van works as one room.",
+      },
+      {
+        code: "BD05",
+        name: "The High Camp",
+        note: "Dinner at the table, then bring the bed down from the ceiling. Sleep upstairs and keep the living room set up.",
       },
     ],
   },

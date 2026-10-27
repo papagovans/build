@@ -1181,10 +1181,11 @@ const PHASE_OF: Record<string, string> = {
 
 /** The pieces in the van at a step: the choices so far, plus the standard
  * kitchen once the passenger side is the subject or has been chosen (so a
- * restored link never shows uppers floating over nothing). BD01 is part of
- * the chassis model, so it has no piece of its own. */
+ * restored link never shows uppers floating over nothing). Every bed is
+ * part of the chassis model (the Trailhead stands in for all five until the
+ * others are drawn), so no bed has a piece of its own. */
 function stageCodes(layout: Layout, step: number) {
-  const picked = SLOTS.map((s) => layout.picks[s.id]).filter((c): c is string => Boolean(c) && c !== "BD01");
+  const picked = SLOTS.map((s) => layout.picks[s.id]).filter((c): c is string => !!c && !c.startsWith("BD"));
   const kitchen = step >= PASSENGER_STEP || layout.picks.PI || layout.picks.PU;
   return [...picked, ...(kitchen ? STANDARD : []), ...layout.extras];
 }
@@ -1267,6 +1268,9 @@ function StepModular({
           {step === BED_STEP && (
             <>
               <Choices label="Bed" pieces={slot("BD").pieces} selected={layout.picks.BD} onSelect={choose("BD")} />
+              {layout.picks.BD !== "BD01" && (
+                <p className="text-sm text-steel">The 3D view shows The Trailhead until this bed is drawn.</p>
+              )}
               <Choices label="Bed Cap" pieces={slot("BC").pieces} selected={layout.picks.BC} onSelect={choose("BC")} />
             </>
           )}

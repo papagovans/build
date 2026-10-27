@@ -106,7 +106,7 @@ pieces joined by `-`, each yes add-on by `+`. That code is the `?b=` link's
 sixth field, the Build Code in the header, the Build Sheet's subtitle, and
 what HubSpot gets in `papago_floor_plan` for these vans.
 
-The steps: **Bed** (the bed, then a bed cap), **Driver Side** (shower `SHY` or no shower `SHN`,
+The steps: **Bed** (one of five named beds, BD01 to BD05, then a bed cap; only BD01 is drawn, so all five show the Trailhead in 3D for now), **Driver Side** (shower `SHY` or no shower `SHN`,
 then a living room that goes with it: `LRSH01`/`LRSH02` with a shower,
 `LRNSH01`/`LRNSH02` without. SHY takes LRSH, SHN takes LRNSH, and the code
 alone says so; no colour tags. A bare `LR01` is reserved for a living room
