@@ -315,11 +315,11 @@ export default function Configurator({ catalog }: { catalog: Catalog }) {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
 
-  /* Back and Next. On the modular steps they sit between the title and the
-   * 3D view (owner, 2026-10-26): under a tall viewer they fell below the fold. */
+  /* Back and Next. On the modular steps they sit side by side beside the
+   * title (owner, 2026-10-27): under a tall viewer they fell below the fold. */
   const onModularStep = modular && MODULAR_STEPS.includes(step);
   const stepNav = (
-    <div className="flex items-center justify-between">
+    <div className={`flex items-center ${onModularStep ? "gap-2" : "justify-between"}`}>
       <button
         onClick={() => goTo(stepFrom(step, -1))}
         className="px-6 py-3 text-sm font-medium text-steel hover:text-navy transition-colors"
@@ -1003,7 +1003,9 @@ function LineupStage({ vanId, codes, orbit }: { vanId: string | null; codes: str
   }, [key, loaded]);
 
   return (
-    <div className="relative aspect-[16/10] rounded-2xl overflow-hidden bg-offwhite">
+    /* Square for the most room to look around (owner, 2026-10-27), but never
+     * taller than the screen leaves under the header and the price bar. */
+    <div className="relative aspect-square max-h-[calc(100svh-15rem)] w-full rounded-2xl overflow-hidden bg-offwhite">
       <Script type="module" src={MODEL_VIEWER_SRC} strategy="afterInteractive" />
       <model-viewer
         ref={viewer}
@@ -1237,8 +1239,10 @@ function StepModular({
 
   return (
     <section>
-      <StepHeading eyebrow={possessive} title={heading.title} blurb={heading.blurb} />
-      <div className="-mt-2 mb-6">{nav}</div>
+      <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <StepHeading eyebrow={possessive} title={heading.title} blurb={heading.blurb} className="" />
+        <div className="shrink-0 lg:pt-4">{nav}</div>
+      </div>
       <div className="grid gap-8 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] items-start">
         <div className="lg:sticky lg:top-44">
           <div role="group" aria-label="Show in the 3D view" className="mb-3 flex flex-wrap items-center gap-2 text-sm">
@@ -2422,13 +2426,15 @@ function StepHeading({
   eyebrow,
   title,
   blurb,
+  className = "mb-8",
 }: {
   eyebrow: string;
   title: string;
   blurb: string;
+  className?: string;
 }) {
   return (
-    <div className="mb-8">
+    <div className={className}>
       <p className="text-xs font-bold uppercase tracking-widest text-sky">{eyebrow}</p>
       <h2 className="brand-heading text-3xl mt-1">{title}</h2>
       <p className="mt-2 text-steel max-w-2xl">{blurb}</p>
