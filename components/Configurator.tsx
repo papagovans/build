@@ -10,6 +10,7 @@ import {
   SLOTS,
   type Slot,
   STANDARD,
+  STANDARD_PIECES,
   fullCode,
   isModular,
   layoutCode,
@@ -1281,6 +1282,20 @@ function StepModular({
           )}
           {step === PASSENGER_STEP && (
             <>
+              <div>
+                <h3 className="text-xs font-bold uppercase tracking-widest text-steel mb-2">Comes Standard</h3>
+                <ul aria-label="Comes standard" className="divide-y divide-line border-y border-line">
+                  {STANDARD_PIECES.map((piece) => (
+                    <li key={piece.code} className="px-3 py-4 bg-white">
+                      <span className="flex items-baseline justify-between gap-3">
+                        <span className="brand-heading text-lg leading-tight">{piece.name}</span>
+                        <span className="font-mono text-[11px] text-steel">{piece.code}</span>
+                      </span>
+                      <span className="block mt-1 text-sm text-charcoal">{piece.note}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
               <Choices label="Kitchenette Insert" pieces={slot("PI").pieces} selected={layout.picks.PI} onSelect={choose("PI")} />
               <Choices label="Kitchen Uppers" pieces={slot("PU").pieces} selected={layout.picks.PU} onSelect={choose("PU")} />
             </>

@@ -100,8 +100,13 @@ export const EXTRAS: Piece[] = [
   { code: "CB01", name: "Sink Cutting Board", note: "A board that sits over the sink" },
 ];
 
-/** On every van, never a choice: the kitchenette and the fold-out table. */
-export const STANDARD = ["PK01", "FT01"];
+/** On every van, never a choice: the kitchenette (the full counter the
+ * insert and uppers fit into) and the fold-out table. */
+export const STANDARD_PIECES: Piece[] = [
+  { code: "PK01", name: "Kitchenette Counter", note: "The full counter with the sink. The insert you pick fits under it" },
+  { code: "FT01", name: "Fold-Out Table", note: "Hinged to the end of the counter" },
+];
+export const STANDARD = STANDARD_PIECES.map((p) => p.code);
 
 /** Van id -> the lineup model. */
 const LINEUPS: Record<string, string> = {
@@ -172,13 +177,9 @@ export const slot = (id: Slot["id"]) => SLOTS.find((s) => s.id === id)!;
 /** Every piece in a layout, labelled, for the summary and the Build Sheet. */
 export function layoutLines(code: string | null) {
   const layout = parseLayout(code);
-  const standard: Piece[] = [
-    { code: "PK01", name: "Kitchenette", note: "Counter, sink and storage, passenger side" },
-    { code: "FT01", name: "Fold-Out Table", note: "Hinged to the end of the galley" },
-  ];
   return [
     ...SLOTS.filter((s) => layout.picks[s.id]).map((s) => ({ label: s.title, piece: getPiece(layout.picks[s.id]!)! })),
-    ...standard.map((piece) => ({ label: "Standard", piece })),
+    ...STANDARD_PIECES.map((piece) => ({ label: "Standard", piece })),
     ...layout.extras.map((c) => ({ label: "Add-on", piece: getPiece(c)! })),
   ];
 }
