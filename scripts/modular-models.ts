@@ -43,8 +43,8 @@ const BED_FRONT = 1.64;
 const LINE_START = 1.653;
 const BED_MID = 0.875;
 const PS_SHIFT = -0.46 - 4.62;
-const SHOWER = 1.155; // SHY's width; the LRY living rooms start after it
-const TALL = 0.609; // SHN's width; the LRN ones after it
+const SHOWER = 1.155; // SHY's width; the LRSH living rooms start after it
+const TALL = 0.609; // SHN's width; the LRNSH ones after it
 /* Middle of the kitchenette's insert bay, and of its sink, in the van. */
 const BAY_MID = LINE_START + (13.885 - 13.238);
 const SINK_MID = LINE_START + (14.8085 - 13.238);
@@ -57,10 +57,10 @@ const PIECES: Record<string, { side: Side; sheet: number[]; at?: number; mid?: n
   BC02: { side: "DS", sheet: [9.796], at: BED_FRONT },
   SHY: { side: "DS", sheet: [13.238], at: LINE_START },
   SHN: { side: "DS", sheet: [14.889], at: LINE_START },
-  LRY01: { side: "DS", sheet: [20.743], at: LINE_START + SHOWER }, // lower and upper are two pieces
-  LRY02: { side: "DS", sheet: [22.521], at: LINE_START + SHOWER },
-  LRN01: { side: "DS", sheet: [26.547], at: LINE_START + TALL },
-  LRN02: { side: "DS", sheet: [28.833], at: LINE_START + TALL },
+  LRSH01: { side: "DS", sheet: [20.743], at: LINE_START + SHOWER }, // lower and upper are two pieces
+  LRSH02: { side: "DS", sheet: [22.521], at: LINE_START + SHOWER },
+  LRNSH01: { side: "DS", sheet: [26.547], at: LINE_START + TALL },
+  LRNSH02: { side: "DS", sheet: [28.833], at: LINE_START + TALL },
   SS01: { side: "DS", sheet: [33.252], at: BED_FRONT - 0.02 - 1.549 }, // under the bed, front edge just inside it
   SC01: { side: "DS", sheet: [35.856, 37.272], mid: BED_MID }, // the pair
   OC01: { side: "DS", sheet: [38.371], mid: BED_MID },

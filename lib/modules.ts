@@ -3,7 +3,7 @@
  * (owner, 2026-10-26; claude.ai/artifact/YX4sDowV5Siyscyhn7sTSS).
  *
  * A layout is stored as its build code, the same line the team says on a
- * call: "BD01-BC02-SHY-LRY02-PI01-PU01+SC01+SS01". Pick-one pieces in step
+ * call: "BD01-BC02-SHY-LRSH02-PI01-PU01+SC01+SS01". Pick-one pieces in step
  * order joined by "-", each yes add-on with "+". The chassis prefix (S170-)
  * is left off because the van is already its own field of the build.
  *
@@ -31,7 +31,17 @@ export const SLOTS: Slot[] = [
   {
     id: "BD",
     title: "Bed",
-    pieces: [{ code: "BD01", name: "Rear Platform Bed", note: "Fixed across the back, with a garage underneath" }],
+    /* The five beds are named (owner, 2026-10-12): BD01 The Trailhead, BD02
+     * The Ridgeline, BD03 The Lookout, BD04 The Campfire, BD05 The High Camp.
+     * Only BD01 has a lineup drawn; each other bed joins this list when its
+     * SketchUp lineup is exported. */
+    pieces: [
+      {
+        code: "BD01",
+        name: "The Trailhead",
+        note: "A fixed bed that\u2019s always made, with room under it for the gear you start every day with.",
+      },
+    ],
   },
   {
     id: "BC",
@@ -42,7 +52,9 @@ export const SLOTS: Slot[] = [
     ],
   },
   /* Shower yes or no (SHY, SHN), and the living rooms that fit each: the
-   * letter after LR must match the letter after SH (owner, 2026-10-26). */
+   * shower takes LRSH living rooms, no shower takes LRNSH (owner, 2026-10-27).
+   * Both sides are spelled out: a bare LR01 is kept for a future living room
+   * that fits either. */
   {
     id: "SH",
     title: "Shower",
@@ -55,10 +67,10 @@ export const SLOTS: Slot[] = [
     id: "LR",
     title: "Living Room",
     pieces: [
-      { code: "LRY01", name: "Living Room 1", note: "Bench seat, fold-out table, under-counter fridge" },
-      { code: "LRY02", name: "Living Room 2", note: "Bench seat, fold-out table, tall fridge" },
-      { code: "LRN01", name: "Living Room 1", note: "Longer bench, fold-out table, under-counter fridge" },
-      { code: "LRN02", name: "Living Room 2", note: "Longer bench, fold-out table, tall fridge" },
+      { code: "LRSH01", name: "Living Room 1", note: "Bench seat, fold-out table, under-counter fridge" },
+      { code: "LRSH02", name: "Living Room 2", note: "Bench seat, fold-out table, tall fridge" },
+      { code: "LRNSH01", name: "Living Room 1", note: "Longer bench, fold-out table, under-counter fridge" },
+      { code: "LRNSH02", name: "Living Room 2", note: "Longer bench, fold-out table, tall fridge" },
     ],
   },
   {
@@ -104,8 +116,9 @@ export interface Layout {
   extras: string[];
 }
 
-/** "Y" or "N": the shower a piece goes with, read off its code (SHY, LRN02). */
-const showerOf = (code = "") => /^(?:SH|LR)([YN])/.exec(code)?.[1];
+/** "Y" or "N": the shower a piece goes with, read off its code (SHY, LRNSH02). */
+const showerOf = (code = "") =>
+  /^SH([YN])$/.exec(code)?.[1] ?? (code.startsWith("LRNSH") ? "N" : code.startsWith("LRSH") ? "Y" : undefined);
 
 const slotOf = (code: string) => SLOTS.find((s) => s.pieces.some((p) => p.code === code));
 export const getPiece = (code: string) =>

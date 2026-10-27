@@ -1172,7 +1172,7 @@ const PHASES = ["Bed", "Driver Side", "Passenger Side", "Extras"];
 const PHASE_OF: Record<string, string> = {
   BC01: "Bed", BC02: "Bed",
   SHY: "Driver Side", SHN: "Driver Side",
-  LRY01: "Driver Side", LRY02: "Driver Side", LRN01: "Driver Side", LRN02: "Driver Side",
+  LRSH01: "Driver Side", LRSH02: "Driver Side", LRNSH01: "Driver Side", LRNSH02: "Driver Side",
   PK01: "Passenger Side", FT01: "Passenger Side",
   PI01: "Passenger Side", PI02: "Passenger Side", PU01: "Passenger Side", PU02: "Passenger Side",
   SC01: "Extras", OC01: "Extras", SS01: "Extras", ST01: "Extras", CB01: "Extras",

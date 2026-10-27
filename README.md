@@ -99,17 +99,18 @@ Not customer-facing yet.
 
 The Sprinter 170 is built piece by piece instead of from a floor plan
 (owner, 2026-10-26). Every piece has a code from the team's system
-(`S170-LRY02` is living room 2 of the two that go with a shower; the full list is in
+(`S170-LRSH02` is living room 2 of the two that go with a shower; the full list is in
 `lib/modules.ts` and claude.ai/artifact/YX4sDowV5Siyscyhn7sTSS), and a whole
-van is one build code: `BD01-BC02-SHY-LRY02-PI01-PU01+SC01+SS01`, pick-one
+van is one build code: `BD01-BC02-SHY-LRSH02-PI01-PU01+SC01+SS01`, pick-one
 pieces joined by `-`, each yes add-on by `+`. That code is the `?b=` link's
 sixth field, the Build Code in the header, the Build Sheet's subtitle, and
 what HubSpot gets in `papago_floor_plan` for these vans.
 
 The steps: **Bed** (the bed, then a bed cap), **Driver Side** (shower `SHY` or no shower `SHN`,
-then a living room that goes with it: `LRY01`/`LRY02` with a shower,
-`LRN01`/`LRN02` without. The letter after LR must match the letter after SH,
-and the code alone says so; no colour tags), **Passenger Side** (the kitchenette insert and
+then a living room that goes with it: `LRSH01`/`LRSH02` with a shower,
+`LRNSH01`/`LRNSH02` without. SHY takes LRSH, SHN takes LRNSH, and the code
+alone says so; no colour tags. A bare `LR01` is reserved for a living room
+that fits either), **Passenger Side** (the kitchenette insert and
 the uppers, with or without microwave; the kitchenette and fold-out table are
 standard), **Extras** (five yes-or-no add-ons). Floor Plan and Layout are
 skipped; the van quietly takes the first floor plan only because that is
