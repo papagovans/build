@@ -292,7 +292,7 @@ export default function Configurator({ catalog }: { catalog: Catalog }) {
         : i === BED_STEP
           ? Boolean(layout.picks.BC)
           : i === DRIVER_STEP
-            ? Boolean(layout.picks.DW && layout.picks.DL)
+            ? Boolean(layout.picks.SH && layout.picks.LR)
             : i === PASSENGER_STEP
               ? Boolean(layout.picks.PI && layout.picks.PU)
               : i === EXTRAS_STEP
@@ -1171,8 +1171,8 @@ function StepUpgrades({
 const PHASES = ["Bed", "Driver Side", "Passenger Side", "Extras"];
 const PHASE_OF: Record<string, string> = {
   BC01: "Bed", BC02: "Bed",
-  DW01: "Driver Side", DW02: "Driver Side",
-  DL01: "Driver Side", DL02: "Driver Side", DL03: "Driver Side", DL04: "Driver Side",
+  SHY: "Driver Side", SHN: "Driver Side",
+  LRY01: "Driver Side", LRY02: "Driver Side", LRN01: "Driver Side", LRN02: "Driver Side",
   PK01: "Passenger Side", FT01: "Passenger Side",
   PI01: "Passenger Side", PI02: "Passenger Side", PU01: "Passenger Side", PU02: "Passenger Side",
   SC01: "Extras", OC01: "Extras", SS01: "Extras", ST01: "Extras", CB01: "Extras",
@@ -1271,9 +1271,9 @@ function StepModular({
           )}
           {step === DRIVER_STEP && (
             <>
-              <Choices label="Shower" pieces={slot("DW").pieces} selected={layout.picks.DW} onSelect={choose("DW")} />
+              <Choices label="Shower" pieces={slot("SH").pieces} selected={layout.picks.SH} onSelect={choose("SH")} />
               {living.length ? (
-                <Choices label="Living Room" pieces={living} selected={layout.picks.DL} onSelect={choose("DL")} />
+                <Choices label="Living Room" pieces={living} selected={layout.picks.LR} onSelect={choose("LR")} />
               ) : (
                 <p className="text-sm text-steel">Choose shower or no shower to see the living rooms that fit.</p>
               )}

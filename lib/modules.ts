@@ -3,7 +3,7 @@
  * (owner, 2026-10-26; claude.ai/artifact/YX4sDowV5Siyscyhn7sTSS).
  *
  * A layout is stored as its build code, the same line the team says on a
- * call: "BD01-BC02-DW01-DL02-PI01-PU01+SC01+SS01". Pick-one pieces in step
+ * call: "BD01-BC02-SHY-LRY02-PI01-PU01+SC01+SS01". Pick-one pieces in step
  * order joined by "-", each yes add-on with "+". The chassis prefix (S170-)
  * is left off because the van is already its own field of the build.
  *
@@ -15,18 +15,14 @@
  * names. The names here are descriptive placeholders until the owner names
  * them; no prices yet, so the conversion price is unchanged.
  */
-export type Fit = "blue" | "red";
-
 export interface Piece {
   code: string;
   name: string;
   note: string;
-  /** DW sets the fit; DL must match it. */
-  fit?: Fit;
 }
 
 export interface Slot {
-  id: "BD" | "BC" | "DW" | "DL" | "PI" | "PU";
+  id: "BD" | "BC" | "SH" | "LR" | "PI" | "PU";
   title: string;
   pieces: Piece[];
 }
@@ -45,22 +41,24 @@ export const SLOTS: Slot[] = [
       { code: "BC02", name: "Bed Cap 2", note: "The panel that closes the front of the bed" },
     ],
   },
+  /* Shower yes or no (SHY, SHN), and the living rooms that fit each: the
+   * letter after LR must match the letter after SH (owner, 2026-10-26). */
   {
-    id: "DW",
+    id: "SH",
     title: "Shower",
     pieces: [
-      { code: "DW01", name: "Shower", note: "Enclosed shower with toilet", fit: "blue" },
-      { code: "DW02", name: "No Shower", note: "A tall cabinet in its place", fit: "red" },
+      { code: "SHY", name: "Shower", note: "Enclosed shower with toilet" },
+      { code: "SHN", name: "No Shower", note: "A tall cabinet in its place" },
     ],
   },
   {
-    id: "DL",
+    id: "LR",
     title: "Living Room",
     pieces: [
-      { code: "DL01", name: "Living Room 1", note: "Bench seat, fold-out table, under-counter fridge", fit: "blue" },
-      { code: "DL02", name: "Living Room 2", note: "Bench seat, fold-out table, tall fridge", fit: "blue" },
-      { code: "DL03", name: "Living Room 3", note: "Longer bench, fold-out table, under-counter fridge", fit: "red" },
-      { code: "DL04", name: "Living Room 4", note: "Longer bench, fold-out table, tall fridge", fit: "red" },
+      { code: "LRY01", name: "Living Room 1", note: "Bench seat, fold-out table, under-counter fridge" },
+      { code: "LRY02", name: "Living Room 2", note: "Bench seat, fold-out table, tall fridge" },
+      { code: "LRN01", name: "Living Room 1", note: "Longer bench, fold-out table, under-counter fridge" },
+      { code: "LRN02", name: "Living Room 2", note: "Longer bench, fold-out table, tall fridge" },
     ],
   },
   {
@@ -106,6 +104,9 @@ export interface Layout {
   extras: string[];
 }
 
+/** "Y" or "N": the shower a piece goes with, read off its code (SHY, LRN02). */
+const showerOf = (code = "") => /^(?:SH|LR)([YN])/.exec(code)?.[1];
+
 const slotOf = (code: string) => SLOTS.find((s) => s.pieces.some((p) => p.code === code));
 export const getPiece = (code: string) =>
   [...SLOTS.flatMap((s) => s.pieces), ...EXTRAS].find((p) => p.code === code);
@@ -124,8 +125,7 @@ export function parseLayout(code: string | null | undefined): Layout {
     if (slot) layout.picks[slot.id] = c;
   }
   layout.extras = EXTRAS.map((e) => e.code).filter((c) => extras.includes(c));
-  const dl = layout.picks.DL;
-  if (dl && getPiece(dl)?.fit !== getPiece(layout.picks.DW ?? "")?.fit) delete layout.picks.DL;
+  if (layout.picks.LR && showerOf(layout.picks.LR) !== showerOf(layout.picks.SH)) delete layout.picks.LR;
   return layout;
 }
 
@@ -134,10 +134,10 @@ export function layoutCode(layout: Layout): string {
   return [main, ...layout.extras].join("+");
 }
 
-/** Choosing a shower (or not) drops a living room of the other colour. */
+/** Changing the shower drops a living room that does not go with it. */
 export function pick(layout: Layout, slot: Slot["id"], code: string): Layout {
   const picks = { ...layout.picks, [slot]: code };
-  if (slot === "DW" && picks.DL && getPiece(picks.DL)?.fit !== getPiece(code)?.fit) delete picks.DL;
+  if (slot === "SH" && picks.LR && showerOf(picks.LR) !== showerOf(code)) delete picks.LR;
   return { ...layout, picks };
 }
 
@@ -150,8 +150,8 @@ export const toggleExtra = (layout: Layout, code: string): Layout => ({
 
 /** Living rooms the chosen shower allows; none until a shower is chosen. */
 export const livingRoomsFor = (layout: Layout) => {
-  const fit = getPiece(layout.picks.DW ?? "")?.fit;
-  return fit ? SLOTS.find((s) => s.id === "DL")!.pieces.filter((p) => p.fit === fit) : [];
+  const shower = showerOf(layout.picks.SH);
+  return shower ? slot("LR").pieces.filter((p) => showerOf(p.code) === shower) : [];
 };
 
 export const slot = (id: Slot["id"]) => SLOTS.find((s) => s.id === id)!;
