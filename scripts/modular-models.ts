@@ -109,7 +109,7 @@ function isAncestor(a: Node, n: Node): boolean {
 }
 const byCode = new Map<string, Part[]>();
 const chassis: Part[] = [];
-for (const { code, n } of named) {
+for (const { code, n } of [...named]) {
   const part = { n, ...getBounds(n) };
   const m = n.getWorldMatrix();
   n.getParentNode()?.removeChild(n);
@@ -118,7 +118,20 @@ for (const { code, n } of named) {
   if (process.env.DEBUG) console.log(code, part.min.map((v) => v.toFixed(3)), part.max.map((v) => v.toFixed(3)));
   // The chassis and its one bed travel together until there is a second bed.
   if (code === "S170" || code === "BD01") chassis.push(part);
-  else if (PIECES[code]) byCode.set(code, [part]);
+  else if (code === "SS01") {
+    // Two trays in one component, and each slides on its own: split them.
+    byCode.set(
+      code,
+      n.listChildren().map((k) => {
+        const km = k.getWorldMatrix();
+        n.removeChild(k);
+        k.setMatrix(km);
+        scene.addChild(k);
+        named.push({ code, n: k });
+        return { n: k, ...getBounds(k) };
+      }),
+    );
+  } else if (PIECES[code]) byCode.set(code, [part]);
   else {
     console.warn(`${code}: no install position in PIECES yet, left out`);
     n.dispose();
@@ -135,7 +148,7 @@ if (missing.length) throw new Error(`pieces not found on the sheet: ${missing.jo
  * rather than somewhere down the sheet; the inner one carries the move. The
  * export is flat (every part a child of the scene, no rotation), so a move is
  * a plain translation. */
-const pieces: { code: string; wrapper: Node; rest: number[] }[] = [];
+const pieces: { code: string; wrapper: Node; inner: Node; rest: number[] }[] = [];
 for (const [code, ls] of byCode) {
   const p = PIECES[code];
   const b = box(ls);
@@ -150,7 +163,7 @@ for (const [code, ls] of byCode) {
     inner.addChild(l.n);
   }
   scene.addChild(wrapper.addChild(inner));
-  pieces.push({ code, wrapper, rest });
+  pieces.push({ code, wrapper, inner, rest });
   console.log(`${code}: ${ls.length} parts, ${width.toFixed(2)} m, x ${(b.min[0] + dx).toFixed(3)}`);
 }
 const ch = doc.createNode("Chassis - Sprinter 170");
@@ -189,6 +202,34 @@ for (const { code, wrapper, rest } of pieces) {
   clip(`${code}-out`, wrapper, rest, OUT_SECONDS, easeInOut, [1, 0]);
 }
 
+/* The rear garage slide-out holds two trays, and each opens on its own:
+ * "SS01-<n>-open" slides tray n out the back doors by 70% of its length,
+ * slowly, and "SS01-<n>-close" brings it home (owner, 2026-10-27). Tray 1 is
+ * the one against the driver-side wall. Each moves its own node inside the
+ * piece, so they never fight each other or the piece's -in and -out. The
+ * site puts a dot on each tray to play them; its positions are printed here. */
+const SLIDE = 0.7;
+const SLIDE_SECONDS = 2.4;
+const ss = pieces.find((p) => p.code === "SS01")!;
+const trays = [...byCode.get("SS01")!].sort((a, b) => a.min[2] - b.min[2]);
+const n = Math.round(SLIDE_SECONDS * FPS);
+const times = Array.from({ length: n + 1 }, (_, i) => (i / n) * SLIDE_SECONDS);
+trays.forEach((t, i) => {
+  const slider = doc.createNode(`SS01 tray ${i + 1}`);
+  ss.inner.removeChild(t.n);
+  ss.inner.addChild(slider.addChild(t.n));
+  const length = t.max[0] - t.min[0];
+  for (const [name, out] of [["open", (k: number) => k], ["close", (k: number) => 1 - k]] as const) {
+    const path = times.flatMap((k) => [-SLIDE * length * out(easeInOut(k / SLIDE_SECONDS)), 0, 0]);
+    const s = doc.createAnimationSampler().setInput(acc("SCALAR", times)).setOutput(acc("VEC3", path)).setInterpolation("LINEAR");
+    doc
+      .createAnimation(`SS01-${i + 1}-${name}`)
+      .addSampler(s)
+      .addChannel(doc.createAnimationChannel().setTargetNode(slider).setTargetPath("translation").setSampler(s));
+  }
+  const back = BED_FRONT - 0.02 - 1.549; // SS01's installed rear edge, from PIECES
+  console.log(`SS01 tray ${i + 1}: slides ${(SLIDE * length).toFixed(2)} m; rear edge x ${back.toFixed(3)} y ${t.max[1].toFixed(3)} z ${((t.min[2] + t.max[2]) / 2).toFixed(3)}`);
+});
 const graded = process.env.GRADED_OUT ?? join(mkdtempSync(join(tmpdir(), "modular-models-")), "graded.glb");
 await io.write(graded, doc);
 compressForWeb(graded, output);

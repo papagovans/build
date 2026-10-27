@@ -608,7 +608,9 @@ function VanContextBar({
         viewport edge.
       */}
       <div className="bg-white h-[29px] sm:h-[37px]" />
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-2.5 flex items-center justify-between gap-4">
+      {/* On a phone a long build code takes its own line under the van, rather
+          than squeezing the build's name to nothing (owner, 2026-10-27). */}
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-2.5 flex flex-wrap sm:flex-nowrap items-center justify-between gap-x-4 gap-y-2">
         <div className="flex items-center gap-3 min-w-0">
           {/*
             Twice the old render. The box holds the lower two thirds and the
@@ -640,9 +642,9 @@ function VanContextBar({
           </div>
         </div>
 
-        <div className="flex gap-6 min-w-0 shrink-0">
+        <div className="flex gap-6 min-w-0 w-full sm:w-auto sm:shrink-0">
           {buildCode && (
-            <div className="text-right min-w-0 max-w-[45vw]">
+            <div className="sm:text-right min-w-0 sm:max-w-[45vw]">
               <p className="text-[10px] font-bold uppercase tracking-widest text-steel">Build Code</p>
               <p className="font-mono text-xs sm:text-sm text-navy leading-tight break-all">{buildCode}</p>
             </div>
@@ -954,7 +956,18 @@ function StepVanLength({
 type LineupViewerElement = HTMLElement & {
   appendAnimation(name: string, options?: { repetitions?: number; timeScale?: number }): void;
   detachAnimation(name: string, options?: { fade?: boolean }): void;
+  updateHotspot(config: { name: string; position: string }): void;
 };
+
+/* The garage slide-out's two trays, each opened by its own dot (owner,
+ * 2026-10-27). Positions are the model's, printed by modular-models: each
+ * tray's rear edge and top, and how far "SS01-<n>-open" slides it. */
+const TRAYS = [
+  { n: 1, z: -1.637 },
+  { n: 2, z: -1.129 },
+];
+const TRAY_DOT = { x: 0.13, y: 0.21, slide: 1.084, seconds: 2.4 };
+const trayDot = (z: number, out: number) => `${TRAY_DOT.x - TRAY_DOT.slide * out}m ${TRAY_DOT.y}m ${z}m`;
 
 /**
  * The van, built up piece by piece. Every piece has a "<code>-in" and a
@@ -970,6 +983,8 @@ function LineupStage({ vanId, codes, orbit }: { vanId: string | null; codes: str
   const shown = useRef(new Set<string>());
   const placed = useRef(false);
   const key = codes.join(",");
+  const [open, setOpen] = useState<number[]>([]);
+  const garage = loaded && codes.includes("SS01");
 
   useEffect(() => {
     const el = viewer.current;
@@ -1000,7 +1015,37 @@ function LineupStage({ vanId, codes, orbit }: { vanId: string | null; codes: str
         el.appendAnimation(`${c}-out`, { repetitions: 1, timeScale });
       }
     shown.current = want;
+    // A slide-out that leaves the van goes home with it, so it comes back shut.
+    if (!want.has("SS01"))
+      setOpen((o) => {
+        for (const n of o) {
+          el.detachAnimation(`SS01-${n}-open`, { fade: false });
+          el.appendAnimation(`SS01-${n}-close`, { repetitions: 1, timeScale: 40 });
+        }
+        return [];
+      });
   }, [key, loaded]);
+
+  /** Slides one tray out or back, and walks its dot along with it. */
+  function toggleTray(n: number, z: number) {
+    const el = viewer.current;
+    if (!el) return;
+    const opening = !open.includes(n);
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    el.detachAnimation(`SS01-${n}-${opening ? "close" : "open"}`, { fade: false });
+    el.appendAnimation(`SS01-${n}-${opening ? "open" : "close"}`, { repetitions: 1, timeScale: reduce ? 40 : 1 });
+    setOpen((o) => (opening ? [...o, n] : o.filter((x) => x !== n)));
+    const start = performance.now();
+    const ms = reduce ? 0 : TRAY_DOT.seconds * 1000;
+    const ease = (t: number) => (t < 0.5 ? 4 * t ** 3 : 1 - (-2 * t + 2) ** 3 / 2); // the clip's own curve
+    const step = (now: number) => {
+      const t = ms ? Math.min(1, (now - start) / ms) : 1;
+      const out = opening ? ease(t) : 1 - ease(t);
+      el.updateHotspot({ name: `hotspot-tray-${n}`, position: trayDot(z, out) });
+      if (t < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  }
 
   return (
     /* Square for the most room to look around (owner, 2026-10-27), but never
@@ -1025,7 +1070,25 @@ function LineupStage({ vanId, codes, orbit }: { vanId: string | null; codes: str
         exposure="0.9"
         environment-image={STUDIO_LIGHT}
         style={{ width: "100%", height: "100%" }}
-      />
+      >
+        {garage &&
+          TRAYS.map(({ n, z }) => (
+            <button
+              key={n}
+              type="button"
+              slot={`hotspot-tray-${n}`}
+              data-position={trayDot(z, open.includes(n) ? 1 : 0)}
+              data-normal="0m 1m 0m"
+              aria-label={`${open.includes(n) ? "Slide in" : "Slide out"} garage tray ${n}`}
+              aria-pressed={open.includes(n)}
+              onClick={() => toggleTray(n, z)}
+              className="relative grid place-items-center h-7 w-7 cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-navy rounded-full"
+            >
+              <span aria-hidden="true" className="absolute h-4 w-4 rounded-full bg-gold opacity-75 motion-safe:animate-ping" />
+              <span aria-hidden="true" className="relative h-3.5 w-3.5 rounded-full bg-gold ring-2 ring-white shadow" />
+            </button>
+          ))}
+      </model-viewer>
     </div>
   );
 }
