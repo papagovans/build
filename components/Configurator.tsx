@@ -876,8 +876,10 @@ function Stepper({
 }
 
 /**
- * Step one: which van. Three makes, each in its real wheelbases plus its
- * extended body (owner, 2026-10-30), every card carrying its van price.
+ * Step one: which van. The render on the left; on the right the three makes,
+ * and the chosen make opens to its lengths, each with its van price (owner,
+ * 2026-10-30). Picking a make picks its first length, so the render always
+ * shows the van the total is priced on.
  *
  * Choosing sets the van; Continue advances. Those are deliberately separate,
  * so a buyer can click between vans and watch the render change.
@@ -895,6 +897,7 @@ function StepVanLength({
 }) {
   const catalog = useCatalog();
   const active = getVanLength(catalog, selectedId ?? "") ?? catalog.vanLengths[0];
+  const chosenMake = selectedId ? getVanLength(catalog, selectedId)?.make : undefined;
 
   return (
     <section>
@@ -904,80 +907,95 @@ function StepVanLength({
         blurb="We build on the Mercedes-Benz Sprinter, Ford Transit and Ram ProMaster. Pick the van, then how long it is."
       />
 
-      {/* One stage, the chosen van's render. Makes without renders yet show
-          their name instead of borrowing another maker's van. */}
-      <div className="relative w-full max-w-[720px] mx-auto aspect-[903/576] bg-offwhite rounded-lg overflow-hidden">
-        {catalog.vanLengths.filter((v) => v.image).map((v) => (
-          <Image
-            key={v.id}
-            src={v.image}
-            alt={vanLabel(v)}
-            fill
-            priority={v.id === active?.id}
-            sizes="(max-width: 1024px) 100vw, 900px"
-            /* Inline rather than a Tailwind opacity utility: next/image writes
-             * its own style attribute for `fill`, and that inline style wins
-             * over the class, so the wrong van stayed visible. */
-            style={{ opacity: v.id === active?.id ? 1 : 0 }}
-            className="object-contain transition-opacity duration-500"
-          />
-        ))}
-        {active && !active.image && (
-          <div className="absolute inset-0 grid place-items-center text-center px-6">
-            <p className="brand-heading text-2xl sm:text-3xl text-navy">{vanLabel(active)}</p>
-          </div>
-        )}
-      </div>
-
-      <div className="mt-8 space-y-6">
-        {VAN_MAKES.map((make) => {
-          const vans = catalog.vanLengths.filter((v) => v.make === make.id);
-          if (vans.length === 0) return null;
-          return (
-            <div key={make.id}>
-              <h3 className="text-xs font-bold uppercase tracking-widest text-steel mb-2">{make.name}</h3>
-              <div className="grid gap-3 sm:grid-cols-2">
-                {vans.map((v) => {
-                  const isSelected = v.id === selectedId;
-                  return (
-                    <button
-                      key={v.id}
-                      onClick={() => onChoose(v.id)}
-                      aria-pressed={isSelected}
-                      className={`text-left bg-white rounded-lg p-5 border-2 transition-all hover:shadow-lg ${
-                        isSelected ? "border-gold shadow-lg" : "border-black/10 hover:border-sky/40"
-                      }`}
-                    >
-                      <p className="text-2xl font-extrabold text-navy leading-none">
-                        {v.wheelbase}&quot;
-                        <span className="ml-2 text-xs font-bold uppercase tracking-widest text-steel">
-                          {v.extended ? "extended" : "wheelbase"}
-                        </span>
-                      </p>
-                      <h4 className="brand-heading text-lg mt-2">{v.name}</h4>
-                      <p className="mt-1 text-sm text-steel">{v.tagline}</p>
-                      <p className="mt-3 text-sm font-semibold text-navy">
-                        {formatPrice(v.vanPrice)} <span className="font-normal text-steel">van, average</span>
-                      </p>
-                    </button>
-                  );
-                })}
-              </div>
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:items-start">
+        {/* One stage, the chosen van's render. Makes without renders yet show
+            their name instead of borrowing another maker's van. */}
+        <div className="relative w-full aspect-[903/576] bg-offwhite rounded-lg overflow-hidden lg:sticky lg:top-44">
+          {catalog.vanLengths.filter((v) => v.image).map((v) => (
+            <Image
+              key={v.id}
+              src={v.image}
+              alt={vanLabel(v)}
+              fill
+              priority={v.id === active?.id}
+              sizes="(max-width: 1024px) 100vw, 680px"
+              /* Inline rather than a Tailwind opacity utility: next/image writes
+               * its own style attribute for `fill`, and that inline style wins
+               * over the class, so the wrong van stayed visible. */
+              style={{ opacity: v.id === active?.id ? 1 : 0 }}
+              className="object-contain transition-opacity duration-500"
+            />
+          ))}
+          {active && !active.image && (
+            <div className="absolute inset-0 grid place-items-center text-center px-6">
+              <p className="brand-heading text-2xl sm:text-3xl text-navy">{vanLabel(active)}</p>
             </div>
-          );
-        })}
-      </div>
+          )}
+        </div>
 
-      <p className="mt-6 text-sm text-steel max-w-3xl">{VAN_NOTE}</p>
+        <div className="space-y-3">
+          {VAN_MAKES.map((make) => {
+            const vans = catalog.vanLengths.filter((v) => v.make === make.id);
+            if (vans.length === 0) return null;
+            const open = chosenMake === make.id;
+            const from = Math.min(...vans.map((v) => v.vanPrice));
+            return (
+              <div
+                key={make.id}
+                className={`bg-white rounded-lg border-2 transition-colors ${open ? "border-gold shadow-lg" : "border-black/10 hover:border-sky/40"}`}
+              >
+                <button
+                  onClick={() => !open && onChoose(vans[0].id)}
+                  aria-expanded={open}
+                  className="w-full text-left px-5 py-4 flex items-baseline justify-between gap-3"
+                >
+                  <span className="brand-heading text-lg text-navy">{make.name}</span>
+                  <span className="text-sm text-steel whitespace-nowrap">from {formatPrice(from)}</span>
+                </button>
+                {open && (
+                  <div role="radiogroup" aria-label={`${make.name} lengths`} className="grid gap-2 px-3 pb-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+                    {vans.map((v) => {
+                      const isSelected = v.id === selectedId;
+                      return (
+                        <button
+                          key={v.id}
+                          role="radio"
+                          aria-checked={isSelected}
+                          onClick={() => onChoose(v.id)}
+                          className={`text-left rounded-md p-3 border transition-colors ${
+                            isSelected ? "border-navy bg-offwhite" : "border-line hover:border-steel/50"
+                          }`}
+                        >
+                          <p className="text-lg font-extrabold text-navy leading-none">
+                            {v.wheelbase}&quot;
+                            <span className="ml-1.5 text-[10px] font-bold uppercase tracking-widest text-steel">
+                              {v.extended ? "extended" : "wheelbase"}
+                            </span>
+                          </p>
+                          <p className="brand-heading text-sm mt-1.5">{v.name}</p>
+                          <p className="mt-0.5 text-xs text-steel leading-snug">{v.tagline}</p>
+                          <p className="mt-2 text-sm font-semibold text-navy">{formatPrice(v.vanPrice)}</p>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          })}
 
-      <div className="mt-8 flex justify-end">
-        <button
-          onClick={onContinue}
-          disabled={!selectedId}
-          className="px-8 py-3 rounded-full bg-gold text-navy text-sm font-semibold hover:bg-gold-deep transition-colors disabled:opacity-40"
-        >
-          Continue →
-        </button>
+          <p className="pt-1 text-xs text-steel">{VAN_NOTE}</p>
+
+          <div className="flex justify-end">
+            <button
+              onClick={onContinue}
+              disabled={!selectedId}
+              className="px-8 py-3 rounded-full bg-gold text-navy text-sm font-semibold hover:bg-gold-deep transition-colors disabled:opacity-40"
+            >
+              Continue →
+            </button>
+          </div>
+        </div>
       </div>
     </section>
   );
