@@ -120,6 +120,21 @@ applies them over the admin's van prices and adds each make's extended body
 picture. The extended Sprinter builds piece by piece like the 170. Base
 options and upgrades follow once management signs off their costs.
 
+### Packages
+
+`/packages` offers the two ways in: build from scratch, or start from one of
+the four packages (McKinley, Zion, Olympus, El Capitan). Each package has its
+own page (`/packages/<slug>`) with two buttons: **Build as Is** opens its
+Build Sheet (`/packages/<slug>/build-sheet`), every line priced, and
+**Customize** opens the builder with the package in it. A package is just a
+build state (van, AWD, upgrades, and a layout code on a Sprinter 170), so
+Customize is an ordinary `?b=` link. Contents and prices come from the
+workbook's Packages tab and its package columns (`lib/packages.ts`).
+
+The builder's Upgrades step lists the workbook's upgrades (`lib/upgrades.ts`),
+grouped by category and filtered to the van's make, each at what the buyer pays
+on top. Ids are the workbook codes (`EL21`, `VO01` for Sprinter AWD).
+
 ### The modular build (Sprinter 170)
 
 The Sprinter 170 is built piece by piece instead of from a floor plan

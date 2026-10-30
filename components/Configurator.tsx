@@ -25,6 +25,7 @@ import {
 import { UPGRADES_CATEGORY_ID } from "@/lib/upgrades";
 import {
   getFloorPlan,
+  fitsVan,
   getOption,
   getPackages,
   optionsFor,
@@ -476,6 +477,7 @@ export default function Configurator({ catalog }: { catalog: Catalog }) {
         {step === UPGRADES_STEP && build.floorPlanId && (
           <StepUpgrades
             selected={build.selected}
+            vanLengthId={build.vanLengthId}
             possessive={possessive}
             onToggle={(id) => setBuild((b) => toggleOption(catalog, b, id))}
           />
@@ -508,7 +510,7 @@ export default function Configurator({ catalog }: { catalog: Catalog }) {
 
 // ---------------------------------------------------------------------------
 
-function Header() {
+export function Header() {
   return (
     <header className="bg-white border-b border-line">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
@@ -595,6 +597,21 @@ function Hero() {
             </div>
           ))}
         </dl>
+      </div>
+      {/* The other way in (owner, 2026-10-30): the four packages. */}
+      <div className="border-t border-line bg-offwhite">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3">
+          <p className="text-sm text-navy">
+            <span className="font-semibold">Two ways to start:</span> build from scratch right here, or start from one of
+            our four packages and change anything you like.
+          </p>
+          <a
+            href="/packages"
+            className="shrink-0 px-5 py-2 rounded-full border-2 border-navy text-navy text-sm font-semibold hover:bg-navy hover:text-white transition-colors"
+          >
+            See the packages →
+          </a>
+        </div>
       </div>
     </section>
   );
@@ -1217,67 +1234,75 @@ const STAGE_ORBIT: Record<number, string> = {
  */
 function StepUpgrades({
   selected,
+  vanLengthId,
   possessive,
   onToggle,
 }: {
   selected: string[];
+  vanLengthId: string | null;
   possessive: string;
   onToggle: (id: string) => void;
 }) {
   const catalog = useCatalog();
-  const upgrades = catalog.options.filter((o) => o.categoryId === UPGRADES_CATEGORY_ID);
+  const van = getVanLength(catalog, vanLengthId ?? "");
+  const upgrades = catalog.options.filter((o) => o.categoryId === UPGRADES_CATEGORY_ID && fitsVan(o, van));
+  /* Grouped the way the workbook groups them, in the order they first appear. */
+  const groups = [...new Set(upgrades.map((o) => o.group ?? "Upgrades"))];
   return (
     <section>
       <StepHeading
         eyebrow={possessive}
         title="Add Upgrades"
-        blurb="All optional. Pick what you want on top of the build; the total updates as you go."
+        blurb="All optional. Pick what you want on top of the build; the total updates as you go. Where an upgrade replaces something in the build, the price is the difference."
       />
       <p className="-mt-4 mb-6 text-xs font-semibold uppercase tracking-widest text-steel">
-        Placeholder prices
+        Estimated prices
       </p>
-      <ul aria-label="Upgrades" className="max-w-3xl divide-y divide-line border-y border-line">
-        {upgrades.map((o) => {
-          const on = selected.includes(o.id);
-          const needs = (o.requires ?? []).map((id) => getOption(catalog, id)?.name).filter(Boolean);
-          return (
-            <li key={o.id}>
-              <button
-                type="button"
-                role="checkbox"
-                aria-checked={on}
-                onClick={() => onToggle(o.id)}
-                className={`group w-full text-left flex gap-4 px-3 py-4 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-gold ${
-                  on ? "bg-white" : "hover:bg-white/60"
-                }`}
-              >
-                <span
-                  aria-hidden="true"
-                  className={`mt-1.5 h-3.5 w-3.5 shrink-0 rounded border transition-colors ${
-                    on ? "border-gold bg-gold" : "border-steel/40 group-hover:border-steel"
-                  }`}
-                />
-                <span className="relative hidden sm:block w-28 aspect-[4/3] shrink-0 rounded-md overflow-hidden bg-offwhite">
-                  {o.thumb && <Image src={o.thumb} alt="" fill sizes="112px" className="object-cover" />}
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="flex items-baseline justify-between gap-3">
-                    <span className="brand-heading text-lg leading-tight">{o.name}</span>
-                    <span className="text-sm font-semibold text-navy shrink-0">+{formatPrice(o.price)}</span>
-                  </span>
-                  {(o.manufacturer || o.model) && (
-                    <span className="block mt-0.5 text-xs text-steel">{[o.manufacturer, o.model].filter(Boolean).join(" ")}</span>
-                  )}
-                  <span className="block mt-1 text-sm text-charcoal">{o.whatItIs}</span>
-                  {needs.length > 0 && (
-                    <span className="block mt-1 text-xs text-steel">Needs the {needs.join(", ")}, added with it</span>
-                  )}
-                </span>
-              </button>
-            </li>
-          );
-        })}
-      </ul>
+      <div className="max-w-3xl space-y-8">
+        {groups.map((g) => (
+          <div key={g}>
+            <h3 className="text-xs font-bold uppercase tracking-widest text-steel mb-2">{g}</h3>
+            <ul aria-label={g} className="divide-y divide-line border-y border-line">
+              {upgrades.filter((o) => (o.group ?? "Upgrades") === g).map((o) => {
+                const on = selected.includes(o.id);
+                const needs = (o.requires ?? []).map((id) => getOption(catalog, id)?.name).filter(Boolean);
+                return (
+                  <li key={o.id}>
+                    <button
+                      type="button"
+                      role="checkbox"
+                      aria-checked={on}
+                      onClick={() => onToggle(o.id)}
+                      className={`group w-full text-left flex gap-4 px-3 py-3 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-gold ${
+                        on ? "bg-white" : "hover:bg-white/60"
+                      }`}
+                    >
+                      <span
+                        aria-hidden="true"
+                        className={`mt-1 h-3.5 w-3.5 shrink-0 rounded border transition-colors ${
+                          on ? "border-gold bg-gold" : "border-steel/40 group-hover:border-steel"
+                        }`}
+                      />
+                      <span className="min-w-0 flex-1">
+                        <span className="flex items-baseline justify-between gap-3">
+                          <span className="font-semibold text-navy leading-snug">{o.name}</span>
+                          <span className="text-sm font-semibold text-navy shrink-0">+{formatPrice(o.price)}</span>
+                        </span>
+                        {(o.manufacturer || o.model) && (
+                          <span className="block mt-0.5 text-xs text-steel">{[o.manufacturer, o.model].filter(Boolean).join(" ")}</span>
+                        )}
+                        {needs.length > 0 && (
+                          <span className="block mt-0.5 text-xs text-steel">Needs the {needs.join(", ")}, added with it</span>
+                        )}
+                      </span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        ))}
+      </div>
     </section>
   );
 }

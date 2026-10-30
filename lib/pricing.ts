@@ -8,6 +8,7 @@ import {
   getVanLength,
   defaultVanLength,
   planFitsLength,
+  fitsVan,
   isAvailable,
   type Catalog,
   type Option,
@@ -270,7 +271,13 @@ export function setVanLength(
   const layout = isModular(vanLengthId) ? layoutCode(parseLayout(null)) : null;
   const keepsPlan =
     state.floorPlanId && planFitsLength(catalog, state.floorPlanId, vanLengthId);
-  if (keepsPlan) return { ...state, vanLengthId, layout };
+  // An upgrade for one make (Sprinter AWD, a ProMaster bug screen) goes when the make does.
+  const van = getVanLength(catalog, vanLengthId);
+  const selected = state.selected.filter((id) => {
+    const o = getOption(catalog, id);
+    return !o || fitsVan(o, van);
+  });
+  if (keepsPlan) return { ...state, vanLengthId, layout, selected };
   return {
     ...state,
     vanLengthId,

@@ -34,8 +34,1450 @@
       "price": 57030
     }
   },
+  "vanOptions": [
+    {
+      "code": "VO01",
+      "name": "All-wheel drive (4MATIC)",
+      "fits": "Sprinter",
+      "price": 8500
+    },
+    {
+      "code": "VO02",
+      "name": "EcoBoost V6 and all-wheel drive",
+      "fits": "Transit",
+      "price": 5750
+    }
+  ],
   "base": {
     "short": 49742,
     "long": 51170
-  }
+  },
+  "baseItems": [
+    {
+      "code": "EL01",
+      "category": "Electrical",
+      "name": "Lithium iron phosphate (LiFePO4) house battery, 200Ah",
+      "manufacturer": "",
+      "model": "",
+      "fits": "All",
+      "qty": 1,
+      "retail": 1162
+    },
+    {
+      "code": "EL02",
+      "category": "Electrical",
+      "name": "2000W pure sine wave inverter/charger",
+      "manufacturer": "",
+      "model": "",
+      "fits": "All",
+      "qty": 1,
+      "retail": 1624
+    },
+    {
+      "code": "EL03",
+      "category": "Electrical",
+      "name": "50A DC-DC battery charger with built-in MPPT solar charger",
+      "manufacturer": "",
+      "model": "",
+      "fits": "All",
+      "qty": 1,
+      "retail": 693
+    },
+    {
+      "code": "EL04",
+      "category": "Electrical",
+      "name": "Battery monitor with shunt",
+      "manufacturer": "",
+      "model": "",
+      "fits": "All",
+      "qty": 1,
+      "retail": 287
+    },
+    {
+      "code": "EL05",
+      "category": "Electrical",
+      "name": "12V fuse block and DC breakers",
+      "manufacturer": "",
+      "model": "",
+      "fits": "All",
+      "qty": 1,
+      "retail": 392
+    },
+    {
+      "code": "EL06",
+      "category": "Electrical",
+      "name": "Main battery disconnect switch",
+      "manufacturer": "",
+      "model": "",
+      "fits": "All",
+      "qty": 1,
+      "retail": 102
+    },
+    {
+      "code": "EL07",
+      "category": "Electrical",
+      "name": "Wiring, cable, fusing and connectors (lot)",
+      "manufacturer": "",
+      "model": "",
+      "fits": "All",
+      "qty": 1,
+      "retail": 2716
+    },
+    {
+      "code": "EL08",
+      "category": "Electrical",
+      "name": "110V outlet with USB-A and USB-C",
+      "manufacturer": "",
+      "model": "",
+      "fits": "All",
+      "qty": 4,
+      "retail": 441
+    },
+    {
+      "code": "EL09",
+      "category": "Electrical",
+      "name": "110V GFCI outlet",
+      "manufacturer": "",
+      "model": "",
+      "fits": "All",
+      "qty": 1,
+      "retail": 103
+    },
+    {
+      "code": "EL10",
+      "category": "Electrical",
+      "name": "30A shore power inlet and 25' cord",
+      "manufacturer": "",
+      "model": "",
+      "fits": "All",
+      "qty": 1,
+      "retail": 434
+    },
+    {
+      "code": "EL12",
+      "category": "Electrical",
+      "name": "110V AC breaker panel",
+      "manufacturer": "",
+      "model": "",
+      "fits": "All",
+      "qty": 1,
+      "retail": 350
+    },
+    {
+      "code": "EL11",
+      "category": "Electrical",
+      "name": "LED strip ceiling lights with lens cover, two full-length runs, dimmable",
+      "manufacturer": "",
+      "model": "",
+      "fits": "All",
+      "qty": 1,
+      "retail": 644
+    },
+    {
+      "code": "SO01",
+      "category": "Solar",
+      "name": "200W rooftop solar",
+      "manufacturer": "",
+      "model": "",
+      "fits": "All",
+      "qty": 1,
+      "retail": 728
+    },
+    {
+      "code": "PL01",
+      "category": "Water",
+      "name": "33-gallon fresh water tank over the wheel well",
+      "manufacturer": "",
+      "model": "",
+      "fits": "All",
+      "qty": 1,
+      "retail": 763
+    },
+    {
+      "code": "PL02",
+      "category": "Water",
+      "name": "12V water pump with accumulator",
+      "manufacturer": "",
+      "model": "",
+      "fits": "All",
+      "qty": 1,
+      "retail": 462
+    },
+    {
+      "code": "PL03",
+      "category": "Water",
+      "name": "Inline water filter",
+      "manufacturer": "",
+      "model": "",
+      "fits": "All",
+      "qty": 1,
+      "retail": 130
+    },
+    {
+      "code": "PL04",
+      "category": "Water",
+      "name": "Fresh and grey tank level sensor",
+      "manufacturer": "",
+      "model": "",
+      "fits": "All",
+      "qty": 1,
+      "retail": 304
+    },
+    {
+      "code": "PL05",
+      "category": "Water",
+      "name": "11-gallon grey water holding tank",
+      "manufacturer": "",
+      "model": "",
+      "fits": "All",
+      "qty": 1,
+      "retail": 553
+    },
+    {
+      "code": "PL06",
+      "category": "Water",
+      "name": "Exterior fill port and drain valves",
+      "manufacturer": "",
+      "model": "",
+      "fits": "All",
+      "qty": 1,
+      "retail": 294
+    },
+    {
+      "code": "PL07",
+      "category": "Water",
+      "name": "Water lines, fittings and winterizing valves (lot)",
+      "manufacturer": "",
+      "model": "",
+      "fits": "All",
+      "qty": 1,
+      "retail": 966
+    },
+    {
+      "code": "PL08",
+      "category": "Water",
+      "name": "4-gallon electric water heater",
+      "manufacturer": "Bosch",
+      "model": "",
+      "fits": "All",
+      "qty": 1,
+      "retail": 805
+    },
+    {
+      "code": "PL09",
+      "category": "Water",
+      "name": "Cassette toilet, 5 gallon",
+      "manufacturer": "",
+      "model": "",
+      "fits": "All",
+      "qty": 1,
+      "retail": 255
+    },
+    {
+      "code": "PL10",
+      "category": "Water",
+      "name": "Rear-door outdoor shower, hot and cold",
+      "manufacturer": "",
+      "model": "",
+      "fits": "All",
+      "qty": 1,
+      "retail": 483
+    },
+    {
+      "code": "HC01",
+      "category": "Heat & A/C",
+      "name": "Standard insulation package",
+      "manufacturer": "",
+      "model": "",
+      "fits": "All",
+      "qty": 1,
+      "retail": 2436
+    },
+    {
+      "code": "HC02",
+      "category": "Heat & A/C",
+      "name": "Sound deadening on floor, walls and doors",
+      "manufacturer": "",
+      "model": "",
+      "fits": "All",
+      "qty": 1,
+      "retail": 966
+    },
+    {
+      "code": "HC03",
+      "category": "Heat & A/C",
+      "name": "Diesel cabin heater",
+      "manufacturer": "Espar",
+      "model": "",
+      "fits": "All",
+      "qty": 1,
+      "retail": 3248
+    },
+    {
+      "code": "HC04",
+      "category": "Heat & A/C",
+      "name": "Roof vent fan, reversible",
+      "manufacturer": "Maxxair",
+      "model": "",
+      "fits": "All",
+      "qty": 1,
+      "retail": 756
+    },
+    {
+      "code": "KT01",
+      "category": "Kitchen",
+      "name": "Butcher block countertop",
+      "manufacturer": "",
+      "model": "",
+      "fits": "All",
+      "qty": 1,
+      "retail": 714
+    },
+    {
+      "code": "KT02",
+      "category": "Kitchen",
+      "name": "Single burner induction cooktop",
+      "manufacturer": "",
+      "model": "",
+      "fits": "All",
+      "qty": 1,
+      "retail": 259
+    },
+    {
+      "code": "KT03",
+      "category": "Kitchen",
+      "name": "Stainless sink with hot and cold faucet",
+      "manufacturer": "",
+      "model": "",
+      "fits": "All",
+      "qty": 1,
+      "retail": 462
+    },
+    {
+      "code": "KT04",
+      "category": "Kitchen",
+      "name": "12V compressor fridge-freezer, about 3 cu ft",
+      "manufacturer": "",
+      "model": "",
+      "fits": "All",
+      "qty": 1,
+      "retail": 1722
+    },
+    {
+      "code": "KT05",
+      "category": "Kitchen",
+      "name": "Fold-down table out of the sliding door",
+      "manufacturer": "",
+      "model": "",
+      "fits": "All",
+      "qty": 1,
+      "retail": 441
+    },
+    {
+      "code": "IN01",
+      "category": "Interior",
+      "name": "Insulated subfloor",
+      "manufacturer": "",
+      "model": "",
+      "fits": "All",
+      "qty": 1,
+      "retail": 1470
+    },
+    {
+      "code": "IN02",
+      "category": "Interior",
+      "name": "Wood-style vinyl flooring",
+      "manufacturer": "",
+      "model": "",
+      "fits": "All",
+      "qty": 1,
+      "retail": 966
+    },
+    {
+      "code": "IN03",
+      "category": "Interior",
+      "name": "CNC-cut wall panels, finished",
+      "manufacturer": "",
+      "model": "",
+      "fits": "All",
+      "qty": 1,
+      "retail": 3080
+    },
+    {
+      "code": "IN04",
+      "category": "Interior",
+      "name": "Stained wood plank ceiling",
+      "manufacturer": "",
+      "model": "",
+      "fits": "All",
+      "qty": 1,
+      "retail": 2296
+    },
+    {
+      "code": "CA01",
+      "category": "Cabinetry",
+      "name": "Cabinetry: CNC-cut, laminated, edge-banded Baltic birch ply",
+      "manufacturer": "",
+      "model": "",
+      "fits": "All",
+      "qty": 1,
+      "retail": 3920
+    },
+    {
+      "code": "CA02",
+      "category": "Cabinetry",
+      "name": "Overhead cabinet with LED strip underneath",
+      "manufacturer": "",
+      "model": "",
+      "fits": "Short",
+      "qty": 3,
+      "retail": 2142
+    },
+    {
+      "code": "CA03",
+      "category": "Cabinetry",
+      "name": "Overhead cabinet with LED strip underneath",
+      "manufacturer": "",
+      "model": "",
+      "fits": "Long",
+      "qty": 5,
+      "retail": 3570
+    },
+    {
+      "code": "CA04",
+      "category": "Cabinetry",
+      "name": "Under-counter double-door cabinet (20x36)",
+      "manufacturer": "",
+      "model": "",
+      "fits": "All",
+      "qty": 1,
+      "retail": 1106
+    },
+    {
+      "code": "CA05",
+      "category": "Cabinetry",
+      "name": "Under-counter drawer cabinet (20x15)",
+      "manufacturer": "",
+      "model": "",
+      "fits": "All",
+      "qty": 1,
+      "retail": 1036
+    },
+    {
+      "code": "CA06",
+      "category": "Cabinetry",
+      "name": "Under-counter storage cabinet (20x15)",
+      "manufacturer": "",
+      "model": "",
+      "fits": "All",
+      "qty": 1,
+      "retail": 714
+    },
+    {
+      "code": "CA07",
+      "category": "Cabinetry",
+      "name": "Floor-to-ceiling closet with shelves and hanging rod (12\" wide)",
+      "manufacturer": "",
+      "model": "",
+      "fits": "All",
+      "qty": 1,
+      "retail": 1288
+    },
+    {
+      "code": "CA08",
+      "category": "Cabinetry",
+      "name": "Rear garage storage under the bed",
+      "manufacturer": "",
+      "model": "",
+      "fits": "All",
+      "qty": 1,
+      "retail": 574
+    },
+    {
+      "code": "MS01",
+      "category": "Sleeping",
+      "name": "Bed platform",
+      "manufacturer": "",
+      "model": "",
+      "fits": "All",
+      "qty": 1,
+      "retail": 1288
+    },
+    {
+      "code": "MS02",
+      "category": "Sleeping",
+      "name": "Queen memory foam mattress, 6\" thick",
+      "manufacturer": "",
+      "model": "",
+      "fits": "All",
+      "qty": 1,
+      "retail": 606
+    },
+    {
+      "code": "SE01",
+      "category": "Seating",
+      "name": "Bench seat with storage inside",
+      "manufacturer": "",
+      "model": "",
+      "fits": "All",
+      "qty": 1,
+      "retail": 1218
+    },
+    {
+      "code": "SE02",
+      "category": "Seating",
+      "name": "Swivel adjustable table",
+      "manufacturer": "Lagun",
+      "model": "",
+      "fits": "All",
+      "qty": 1,
+      "retail": 532
+    },
+    {
+      "code": "WN02",
+      "category": "Windows",
+      "name": "Sliding door T-vent window, passenger side",
+      "manufacturer": "",
+      "model": "",
+      "fits": "All",
+      "qty": 1,
+      "retail": 994
+    },
+    {
+      "code": "WN03",
+      "category": "Windows",
+      "name": "Privacy curtains for the cab and windows",
+      "manufacturer": "",
+      "model": "",
+      "fits": "All",
+      "qty": 1,
+      "retail": 623
+    },
+    {
+      "code": "SA01",
+      "category": "Safety",
+      "name": "Carbon monoxide and smoke detector",
+      "manufacturer": "",
+      "model": "",
+      "fits": "All",
+      "qty": 1,
+      "retail": 115
+    },
+    {
+      "code": "SA02",
+      "category": "Safety",
+      "name": "Fire extinguisher, mounted",
+      "manufacturer": "",
+      "model": "",
+      "fits": "All",
+      "qty": 1,
+      "retail": 79
+    }
+  ],
+  "upgrades": [
+    {
+      "code": "EL29",
+      "category": "Electrical",
+      "name": "3000W pure sine wave inverter/charger, UL rated",
+      "manufacturer": "",
+      "model": "",
+      "replaces": "EL02",
+      "fits": "All",
+      "price": 980
+    },
+    {
+      "code": "PL29",
+      "category": "Water",
+      "name": "Dry flush toilet with black cover, white",
+      "manufacturer": "Laveo",
+      "model": "",
+      "replaces": "PL09",
+      "fits": "All",
+      "price": 1228
+    },
+    {
+      "code": "HC26",
+      "category": "Heat & A/C",
+      "name": "Premium insulation package, all Havelock wool",
+      "manufacturer": "Havelock Wool",
+      "model": "",
+      "replaces": "HC01",
+      "fits": "All",
+      "price": 840
+    },
+    {
+      "code": "HC27",
+      "category": "Heat & A/C",
+      "name": "Deluxe roof vent fan with remote",
+      "manufacturer": "Maxxair",
+      "model": "Deluxe",
+      "replaces": "HC04",
+      "fits": "All",
+      "price": 168
+    },
+    {
+      "code": "KT26",
+      "category": "Kitchen",
+      "name": "Refrigerator with freezer",
+      "manufacturer": "Isotherm",
+      "model": "Freeline 140",
+      "replaces": "KT04",
+      "fits": "All",
+      "price": 980
+    },
+    {
+      "code": "KT27",
+      "category": "Kitchen",
+      "name": "In-counter double burner induction cooktop",
+      "manufacturer": "Empava",
+      "model": "",
+      "replaces": "KT02",
+      "fits": "All",
+      "price": 343
+    },
+    {
+      "code": "IN21",
+      "category": "Interior",
+      "name": "Wood veneer slat panel ceiling",
+      "manufacturer": "Hub",
+      "model": "",
+      "replaces": "IN04",
+      "fits": "All",
+      "price": 1302
+    },
+    {
+      "code": "WN24",
+      "category": "Windows",
+      "name": "Full-size driver side T-vent window",
+      "manufacturer": "",
+      "model": "",
+      "replaces": null,
+      "fits": "All",
+      "price": 1365
+    },
+    {
+      "code": "WN25",
+      "category": "Windows",
+      "name": "Solid glass rear door windows",
+      "manufacturer": "",
+      "model": "",
+      "replaces": null,
+      "fits": "All",
+      "price": 1064
+    },
+    {
+      "code": "EL21",
+      "category": "Electrical",
+      "name": "Lithium house battery bank, 460Ah",
+      "manufacturer": "",
+      "model": "",
+      "replaces": "EL01",
+      "fits": "All",
+      "price": 2331
+    },
+    {
+      "code": "EL22",
+      "category": "Electrical",
+      "name": "Lithium house battery bank, 920Ah",
+      "manufacturer": "",
+      "model": "",
+      "replaces": "EL01",
+      "fits": "All",
+      "price": 5642
+    },
+    {
+      "code": "EL23",
+      "category": "Electrical",
+      "name": "100Ah lithium battery with Bluetooth, added",
+      "manufacturer": "",
+      "model": "",
+      "replaces": null,
+      "fits": "All",
+      "price": 626
+    },
+    {
+      "code": "EL24",
+      "category": "Electrical",
+      "name": "110V outlet with USB-A and USB-C, added",
+      "manufacturer": "",
+      "model": "",
+      "replaces": null,
+      "fits": "All",
+      "price": 110
+    },
+    {
+      "code": "EL25",
+      "category": "Electrical",
+      "name": "Cabinet lighting",
+      "manufacturer": "",
+      "model": "",
+      "replaces": null,
+      "fits": "All",
+      "price": 483
+    },
+    {
+      "code": "EL26",
+      "category": "Electrical",
+      "name": "Cell signal booster",
+      "manufacturer": "weBoost",
+      "model": "Drive X",
+      "replaces": null,
+      "fits": "All",
+      "price": 973
+    },
+    {
+      "code": "EL27",
+      "category": "Electrical",
+      "name": "24\" smart TV with swivel mount and 110V outlet",
+      "manufacturer": "",
+      "model": "",
+      "replaces": null,
+      "fits": "All",
+      "price": 763
+    },
+    {
+      "code": "EL28",
+      "category": "Electrical",
+      "name": "Apple CarPlay and Android Auto head unit",
+      "manufacturer": "",
+      "model": "",
+      "replaces": null,
+      "fits": "Sprinter",
+      "price": 1253
+    },
+    {
+      "code": "SO21",
+      "category": "Solar",
+      "name": "200W rooftop solar, added (400W total)",
+      "manufacturer": "",
+      "model": "",
+      "replaces": null,
+      "fits": "All",
+      "price": 728
+    },
+    {
+      "code": "SO22",
+      "category": "Solar",
+      "name": "100W foldable solar suitcase with 20A MPPT",
+      "manufacturer": "",
+      "model": "",
+      "replaces": null,
+      "fits": "All",
+      "price": 443
+    },
+    {
+      "code": "PL21",
+      "category": "Water",
+      "name": "Indoor shower, not tiled, hot and cold",
+      "manufacturer": "",
+      "model": "",
+      "replaces": null,
+      "fits": "All",
+      "price": 5250
+    },
+    {
+      "code": "PL22",
+      "category": "Water",
+      "name": "Indoor shower, fully tiled, hot and cold",
+      "manufacturer": "",
+      "model": "",
+      "replaces": null,
+      "fits": "All",
+      "price": 8575
+    },
+    {
+      "code": "PL23",
+      "category": "Water",
+      "name": "Tiled kitchen backsplash",
+      "manufacturer": "",
+      "model": "",
+      "replaces": null,
+      "fits": "All",
+      "price": 1288
+    },
+    {
+      "code": "PL24",
+      "category": "Water",
+      "name": "40-gallon fresh water tank",
+      "manufacturer": "",
+      "model": "",
+      "replaces": "PL01",
+      "fits": "All",
+      "price": 140
+    },
+    {
+      "code": "PL25",
+      "category": "Water",
+      "name": "Water purification unit",
+      "manufacturer": "",
+      "model": "",
+      "replaces": "PL03",
+      "fits": "All",
+      "price": 892
+    },
+    {
+      "code": "PL26",
+      "category": "Water",
+      "name": "Quartz sink",
+      "manufacturer": "",
+      "model": "",
+      "replaces": "KT03",
+      "fits": "All",
+      "price": 350
+    },
+    {
+      "code": "PL27",
+      "category": "Water",
+      "name": "Built-in counter soap dispenser",
+      "manufacturer": "",
+      "model": "",
+      "replaces": null,
+      "fits": "All",
+      "price": 115
+    },
+    {
+      "code": "PL28",
+      "category": "Water",
+      "name": "Toilet maintenance kit",
+      "manufacturer": "",
+      "model": "",
+      "replaces": null,
+      "fits": "All",
+      "price": 84
+    },
+    {
+      "code": "HC21",
+      "category": "Heat & A/C",
+      "name": "12V roof-mounted A/C with remote",
+      "manufacturer": "Nomadic Cooling",
+      "model": "X2",
+      "replaces": null,
+      "fits": "All",
+      "price": 5452
+    },
+    {
+      "code": "HC22",
+      "category": "Heat & A/C",
+      "name": "Hydronic heat and hot water",
+      "manufacturer": "Rixens",
+      "model": "",
+      "replaces": "HC03",
+      "fits": "All",
+      "price": 8036
+    },
+    {
+      "code": "HC23",
+      "category": "Heat & A/C",
+      "name": "12V roof-mounted A/C with remote",
+      "manufacturer": "Dometic",
+      "model": "RTX 2000",
+      "replaces": null,
+      "fits": "All",
+      "price": 3948
+    },
+    {
+      "code": "HC24",
+      "category": "Heat & A/C",
+      "name": "12V roof-mounted evaporative cooler with remote",
+      "manufacturer": "Fresair",
+      "model": "",
+      "replaces": null,
+      "fits": "All",
+      "price": 2646
+    },
+    {
+      "code": "HC25",
+      "category": "Heat & A/C",
+      "name": "110V 15K quiet A/C with heat pump",
+      "manufacturer": "",
+      "model": "",
+      "replaces": null,
+      "fits": "All",
+      "price": 1988
+    },
+    {
+      "code": "KT21",
+      "category": "Kitchen",
+      "name": "700W microwave, black, with cabinet enclosure and outlet",
+      "manufacturer": "",
+      "model": "",
+      "replaces": null,
+      "fits": "All",
+      "price": 623
+    },
+    {
+      "code": "KT22",
+      "category": "Kitchen",
+      "name": "Pop-up end counter, black folding bracket",
+      "manufacturer": "",
+      "model": "",
+      "replaces": null,
+      "fits": "All",
+      "price": 483
+    },
+    {
+      "code": "KT23",
+      "category": "Kitchen",
+      "name": "Sink insert cutting board",
+      "manufacturer": "",
+      "model": "",
+      "replaces": null,
+      "fits": "All",
+      "price": 130
+    },
+    {
+      "code": "KT24",
+      "category": "Kitchen",
+      "name": "Oven and range combo",
+      "manufacturer": "",
+      "model": "",
+      "replaces": "KT02",
+      "fits": "All",
+      "price": 1365
+    },
+    {
+      "code": "KT25",
+      "category": "Kitchen",
+      "name": "Pull-out spice rack",
+      "manufacturer": "",
+      "model": "",
+      "replaces": null,
+      "fits": "All",
+      "price": 350
+    },
+    {
+      "code": "CA21",
+      "category": "Cabinetry",
+      "name": "Custom overhead cabinet",
+      "manufacturer": "",
+      "model": "",
+      "replaces": null,
+      "fits": "All",
+      "price": 1106
+    },
+    {
+      "code": "CA22",
+      "category": "Cabinetry",
+      "name": "24\" soft bag overhead",
+      "manufacturer": "",
+      "model": "",
+      "replaces": null,
+      "fits": "All",
+      "price": 301
+    },
+    {
+      "code": "CA23",
+      "category": "Cabinetry",
+      "name": "Bunk bed",
+      "manufacturer": "",
+      "model": "",
+      "replaces": null,
+      "fits": "All",
+      "price": 2716
+    },
+    {
+      "code": "CA24",
+      "category": "Cabinetry",
+      "name": "Raised bed surcharge",
+      "manufacturer": "",
+      "model": "",
+      "replaces": null,
+      "fits": "All",
+      "price": 826
+    },
+    {
+      "code": "WN21",
+      "category": "Windows",
+      "name": "Bunk window",
+      "manufacturer": "",
+      "model": "",
+      "replaces": null,
+      "fits": "All",
+      "price": 994
+    },
+    {
+      "code": "WN22",
+      "category": "Windows",
+      "name": "Rectangular window with slider or T-vent",
+      "manufacturer": "",
+      "model": "",
+      "replaces": null,
+      "fits": "All",
+      "price": 1064
+    },
+    {
+      "code": "WN23",
+      "category": "Windows",
+      "name": "Skylight",
+      "manufacturer": "",
+      "model": "",
+      "replaces": null,
+      "fits": "All",
+      "price": 1386
+    },
+    {
+      "code": "RF21",
+      "category": "Roof",
+      "name": "Roof rack with side ladder",
+      "manufacturer": "Flatline Van Co.",
+      "model": "",
+      "replaces": null,
+      "fits": "All",
+      "price": 3346
+    },
+    {
+      "code": "RF22",
+      "category": "Roof",
+      "name": "Safari roof rack with rooftop deck and side ladder",
+      "manufacturer": "Flatline Van Co.",
+      "model": "Safari",
+      "replaces": null,
+      "fits": "All",
+      "price": 5208
+    },
+    {
+      "code": "RF23",
+      "category": "Roof",
+      "name": "Light bar on the roof rack, basic",
+      "manufacturer": "",
+      "model": "",
+      "replaces": null,
+      "fits": "All",
+      "price": 693
+    },
+    {
+      "code": "RF24",
+      "category": "Roof",
+      "name": "Light bar on the roof rack",
+      "manufacturer": "KC HiLiTES",
+      "model": "",
+      "replaces": null,
+      "fits": "All",
+      "price": 1624
+    },
+    {
+      "code": "RF25",
+      "category": "Roof",
+      "name": "Rooftop tent (roof rack required)",
+      "manufacturer": "",
+      "model": "",
+      "replaces": null,
+      "fits": "All",
+      "price": 5264
+    },
+    {
+      "code": "RF26",
+      "category": "Roof",
+      "name": "Rooftop tent with 300W solar on the tent (roof rack required)",
+      "manufacturer": "",
+      "model": "",
+      "replaces": null,
+      "fits": "All",
+      "price": 8428
+    },
+    {
+      "code": "RF27",
+      "category": "Roof",
+      "name": "50\" forward light bar above the windshield",
+      "manufacturer": "",
+      "model": "",
+      "replaces": null,
+      "fits": "All",
+      "price": 1344
+    },
+    {
+      "code": "SE21",
+      "category": "Seating",
+      "name": "Swivel seat bracket",
+      "manufacturer": "",
+      "model": "",
+      "replaces": null,
+      "fits": "All",
+      "price": 812
+    },
+    {
+      "code": "SE22",
+      "category": "Seating",
+      "name": "Foldaway 2-passenger crew seat",
+      "manufacturer": "",
+      "model": "",
+      "replaces": null,
+      "fits": "All",
+      "price": 2226
+    },
+    {
+      "code": "SE23",
+      "category": "Seating",
+      "name": "Single seat",
+      "manufacturer": "",
+      "model": "",
+      "replaces": null,
+      "fits": "All",
+      "price": 1344
+    },
+    {
+      "code": "SE24",
+      "category": "Seating",
+      "name": "1-point lap belt",
+      "manufacturer": "",
+      "model": "",
+      "replaces": null,
+      "fits": "All",
+      "price": 203
+    },
+    {
+      "code": "EX21",
+      "category": "Exterior",
+      "name": "Front bumper with 12S winch, wireless remote and black D-rings",
+      "manufacturer": "CA Tuned / Warn",
+      "model": "",
+      "replaces": null,
+      "fits": "Sprinter",
+      "price": 7728
+    },
+    {
+      "code": "EX22",
+      "category": "Exterior",
+      "name": "Bumper-mounted lights, pair (bumper required)",
+      "manufacturer": "KC HiLiTES",
+      "model": "",
+      "replaces": null,
+      "fits": "Sprinter",
+      "price": 973
+    },
+    {
+      "code": "EX23",
+      "category": "Exterior",
+      "name": "Body flares, paint matched",
+      "manufacturer": "",
+      "model": "",
+      "replaces": null,
+      "fits": "All",
+      "price": 2968
+    },
+    {
+      "code": "EX24",
+      "category": "Exterior",
+      "name": "No-rub front fender kit",
+      "manufacturer": "",
+      "model": "",
+      "replaces": null,
+      "fits": "Sprinter",
+      "price": 833
+    },
+    {
+      "code": "EX25",
+      "category": "Exterior",
+      "name": "Electric awning with LED light",
+      "manufacturer": "",
+      "model": "",
+      "replaces": null,
+      "fits": "All",
+      "price": 3066
+    },
+    {
+      "code": "EX26",
+      "category": "Exterior",
+      "name": "Tire carrier",
+      "manufacturer": "Lost Saguaro",
+      "model": "",
+      "replaces": null,
+      "fits": "All",
+      "price": 1953
+    },
+    {
+      "code": "EX27",
+      "category": "Exterior",
+      "name": "B2 bike carrier with horizontal bars (trays not included)",
+      "manufacturer": "Owl Vans",
+      "model": "B2",
+      "replaces": null,
+      "fits": "All",
+      "price": 1813
+    },
+    {
+      "code": "EX28",
+      "category": "Exterior",
+      "name": "Monster box, below the bike bars",
+      "manufacturer": "Owl Vans",
+      "model": "",
+      "replaces": null,
+      "fits": "All",
+      "price": 1442
+    },
+    {
+      "code": "EX29",
+      "category": "Exterior",
+      "name": "Power steps",
+      "manufacturer": "AMP Research",
+      "model": "PowerStep",
+      "replaces": null,
+      "fits": "All",
+      "price": 3024
+    },
+    {
+      "code": "EX30",
+      "category": "Exterior",
+      "name": "Sprinter step boards",
+      "manufacturer": "Mercedes-Benz",
+      "model": "",
+      "replaces": null,
+      "fits": "Sprinter",
+      "price": 1162
+    },
+    {
+      "code": "EX31",
+      "category": "Exterior",
+      "name": "2\" trailer hitch receiver, installed",
+      "manufacturer": "",
+      "model": "",
+      "replaces": null,
+      "fits": "All",
+      "price": 812
+    },
+    {
+      "code": "EX32",
+      "category": "Exterior",
+      "name": "Tire carrier",
+      "manufacturer": "Owl Vans",
+      "model": "",
+      "replaces": null,
+      "fits": "All",
+      "price": 1673
+    },
+    {
+      "code": "EX33",
+      "category": "Exterior",
+      "name": "Tire carrier and ladder combo",
+      "manufacturer": "Owl Vans",
+      "model": "",
+      "replaces": null,
+      "fits": "All",
+      "price": 2464
+    },
+    {
+      "code": "EX34",
+      "category": "Exterior",
+      "name": "Sliding door bug screen, magnetic",
+      "manufacturer": "",
+      "model": "",
+      "replaces": null,
+      "fits": "Sprinter",
+      "price": 441
+    },
+    {
+      "code": "EX35",
+      "category": "Exterior",
+      "name": "Rear doors bug screen, magnetic",
+      "manufacturer": "",
+      "model": "",
+      "replaces": null,
+      "fits": "Sprinter",
+      "price": 511
+    },
+    {
+      "code": "EX36",
+      "category": "Exterior",
+      "name": "Sliding door bug screen, magnetic",
+      "manufacturer": "",
+      "model": "",
+      "replaces": null,
+      "fits": "ProMaster",
+      "price": 441
+    },
+    {
+      "code": "EX37",
+      "category": "Exterior",
+      "name": "Rear doors bug screen, magnetic",
+      "manufacturer": "",
+      "model": "",
+      "replaces": null,
+      "fits": "ProMaster",
+      "price": 511
+    },
+    {
+      "code": "MS21",
+      "category": "Misc",
+      "name": "Valuables safe, 0.5 or 0.7 cu ft",
+      "manufacturer": "",
+      "model": "",
+      "replaces": null,
+      "fits": "All",
+      "price": 371
+    },
+    {
+      "code": "BN01",
+      "category": "Bundles",
+      "name": "Four Peaks package: foldable jump seats and an extra bed",
+      "manufacturer": "",
+      "model": "",
+      "replaces": null,
+      "fits": "All",
+      "price": 6020
+    },
+    {
+      "code": "BN02",
+      "category": "Bundles",
+      "name": "Necessities off-road package: side steps, perimeter lights, front light bar",
+      "manufacturer": "",
+      "model": "",
+      "replaces": null,
+      "fits": "All",
+      "price": 4228
+    },
+    {
+      "code": "BN03",
+      "category": "Bundles",
+      "name": "Advanced off-road package: lift kit, rock sliders, bumper, spare tire carrier, lighting",
+      "manufacturer": "",
+      "model": "",
+      "replaces": null,
+      "fits": "All",
+      "price": 14784
+    },
+    {
+      "code": "BN04",
+      "category": "Bundles",
+      "name": "Advanced interior light package",
+      "manufacturer": "",
+      "model": "",
+      "replaces": null,
+      "fits": "All",
+      "price": 1386
+    },
+    {
+      "code": "BN05",
+      "category": "Bundles",
+      "name": "Advanced exterior light package: light bar and perimeter lights",
+      "manufacturer": "",
+      "model": "",
+      "replaces": null,
+      "fits": "All",
+      "price": 2646
+    },
+    {
+      "code": "BN06",
+      "category": "Bundles",
+      "name": "Wheels and tires package: 5 all-terrain wheels and tires",
+      "manufacturer": "",
+      "model": "",
+      "replaces": null,
+      "fits": "All",
+      "price": 5173
+    },
+    {
+      "code": "BN07",
+      "category": "Bundles",
+      "name": "Window cover package",
+      "manufacturer": "Van Essentials",
+      "model": "",
+      "replaces": null,
+      "fits": "All",
+      "price": 1026
+    }
+  ],
+  "packages": [
+    {
+      "slug": "mckinley",
+      "name": "McKinley",
+      "tagline": "The Happy Camper",
+      "van": "sprinter-144",
+      "vanOptions": [],
+      "upgrades": [],
+      "layout": null
+    },
+    {
+      "slug": "zion",
+      "name": "Zion",
+      "tagline": "The Adventure Seeker",
+      "van": "sprinter-170",
+      "vanOptions": [],
+      "upgrades": [
+        "HC27",
+        "EL21",
+        "PL21",
+        "HC21",
+        "KT21"
+      ],
+      "layout": "BD01-BC01-SHY-LRSH01-PI01-PU01"
+    },
+    {
+      "slug": "olympus",
+      "name": "Olympus",
+      "tagline": "The Traveling Nomad",
+      "van": "sprinter-170",
+      "vanOptions": [
+        "VO01"
+      ],
+      "upgrades": [
+        "EL29",
+        "PL29",
+        "HC26",
+        "HC27",
+        "KT26",
+        "KT27",
+        "IN21",
+        "WN24",
+        "WN25",
+        "EL21",
+        "PL21",
+        "HC21",
+        "KT21",
+        "KT22",
+        "KT23",
+        "RF21",
+        "RF23",
+        "EX21",
+        "EX23",
+        "EX24",
+        "EX26",
+        "EX27",
+        "EX28",
+        "EX29"
+      ],
+      "layout": "BD01-BC02-SHY-LRSH02-PI01-PU01+CB01"
+    },
+    {
+      "slug": "el-capitan",
+      "name": "El Capitan",
+      "tagline": "The Luxury Explorer",
+      "van": "sprinter-170x",
+      "vanOptions": [
+        "VO01"
+      ],
+      "upgrades": [
+        "EL29",
+        "PL29",
+        "HC26",
+        "HC27",
+        "KT26",
+        "KT27",
+        "IN21",
+        "WN24",
+        "WN25",
+        "EL22",
+        "EL26",
+        "SO21",
+        "PL22",
+        "HC21",
+        "HC22",
+        "KT21",
+        "KT22",
+        "KT23",
+        "RF22",
+        "RF24",
+        "EX21",
+        "EX22",
+        "EX23",
+        "EX24",
+        "EX25",
+        "EX26",
+        "EX27",
+        "EX28",
+        "EX29",
+        "BN06"
+      ],
+      "layout": "BD01-BC02-SHY-LRSH02-PI02-PU01+CB01+SC01"
+    }
+  ]
 }

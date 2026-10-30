@@ -55,6 +55,10 @@ export interface Option {
   whyYouNeedIt?: string;
   /** Van sizes this comes on. Undefined = every van. */
   sizes?: VanSize[];
+  /** Makes this fits. Undefined = every make. */
+  makes?: VanMake[];
+  /** A heading to list it under within its category, e.g. "Electrical". */
+  group?: string;
   /** The system this is a part of. Parts show in that system's drawer, not as cards. */
   partOf?: string;
 }
@@ -1020,6 +1024,11 @@ export function includedFor(catalog: Catalog, floorPlanId: string, vanLengthId: 
       isAvailable(o, floorPlanId) &&
       (!o.sizes?.length || !size || o.sizes.includes(size)),
   );
+}
+
+/** Whether an option fits a van's make and size. No van yet: everything fits. */
+export function fitsVan(o: Option, van?: VanLength): boolean {
+  return !van || ((!o.makes?.length || o.makes.includes(van.make)) && (!o.sizes?.length || o.sizes.includes(van.size)));
 }
 
 /** The parts of a system that come on this van, in list order. */
