@@ -9,6 +9,12 @@
  * added here, borrowing the regular-length van's picture and floor plan fit,
  * so the shop's database is untouched.
  *
+ * The conversion price comes from the same workbook: the retail of its Base
+ * Options tab, everything every van gets (owner, 2026-10-30). It goes in as
+ * each floor plan's base price (the short-van figure) and each long van's
+ * price delta (the long-van figure less the short), so priceBuild() needs no
+ * change. Every plan costs the same: the base is the same in every van.
+ *
  * ponytail: the extended vans live in code, not /admin. Move them into the
  * Vans collection once someone needs to edit them there.
  */
@@ -16,6 +22,7 @@ import type { Catalog, VanLength } from "./catalog";
 import data from "./pricing-data.json";
 
 const PRICES: Record<string, { price: number }> = data.vans;
+const BASE = data.base;
 
 /* Overall length, inches, from each maker's published spec. */
 const EXTENDED: { id: string; from: string; overallInches: number; name: string; tagline: string }[] = [
@@ -33,12 +40,18 @@ export function withChassis(catalog: Catalog): Catalog {
   const vanLengths = catalog.vanLengths.flatMap((v) => [v, ...added.filter((a) => EXTENDED.find((x) => x.id === a.id)?.from === v.id)]);
   return {
     ...catalog,
-    vanLengths: vanLengths.map((v) => ({ ...v, vanPrice: PRICES[v.id]?.price ?? v.vanPrice })),
+    vanLengths: vanLengths.map((v) => ({
+      ...v,
+      vanPrice: PRICES[v.id]?.price ?? v.vanPrice,
+      priceDelta: v.size === "long" ? BASE.long - BASE.short : 0,
+    })),
     // A floor plan limited to certain vans fits the extended body of any it allows.
-    floorPlans: catalog.floorPlans.map((p) =>
-      p.availableLengths?.length
-        ? { ...p, availableLengths: [...p.availableLengths, ...EXTENDED.filter((x) => p.availableLengths!.includes(x.from)).map((x) => x.id)] }
-        : p,
-    ),
+    floorPlans: catalog.floorPlans.map((p) => ({
+      ...p,
+      basePrice: BASE.short,
+      availableLengths: p.availableLengths?.length
+        ? [...p.availableLengths, ...EXTENDED.filter((x) => p.availableLengths!.includes(x.from)).map((x) => x.id)]
+        : p.availableLengths,
+    })),
   };
 }

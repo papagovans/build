@@ -263,6 +263,21 @@ export default function Configurator({ catalog }: { catalog: Catalog }) {
     }
   }, [build]);
 
+  /* Clears the build, here and in this browser, and goes back to the van
+   * (owner, 2026-10-30). The buyer's name and email stay: they are who is
+   * building, not what. Asks first, since a whole van is a lot to lose. */
+  function startOver() {
+    if (!window.confirm("Clear your whole build and start from scratch?")) return;
+    try {
+      localStorage.removeItem(BUILD_KEY);
+    } catch {
+      // Non-fatal.
+    }
+    setBuild(emptyBuild(catalog));
+    setStep(LENGTH_STEP);
+    window.scrollTo({ top: 0 });
+  }
+
   const plan = build.floorPlanId
     ? getFloorPlan(catalog, build.floorPlanId)
     : undefined;
@@ -371,6 +386,7 @@ export default function Configurator({ catalog }: { catalog: Catalog }) {
           onJump={goTo}
           canReach={canReach}
           skips={skips}
+          onStartOver={build.vanLengthId ? startOver : undefined}
         />
         {/* Part of the pinned header, so it stays on screen the whole way down
             the long included list instead of scrolling away under the bar. */}
@@ -769,11 +785,13 @@ function Stepper({
   onJump,
   canReach,
   skips,
+  onStartOver,
 }: {
   step: number;
   onJump: (n: number) => void;
   canReach: (i: number) => boolean;
   skips: (i: number) => boolean;
+  onStartOver?: () => void;
 }) {
   const labels = [
     "Your Van",
@@ -843,6 +861,14 @@ function Stepper({
             );
           })}
         </ol>
+        {onStartOver && (
+          <button
+            onClick={onStartOver}
+            className="ml-auto shrink-0 py-1.5 text-xs font-medium text-steel underline underline-offset-2 hover:text-navy"
+          >
+            Start over
+          </button>
+        )}
       </div>
     </nav>
   );
