@@ -395,7 +395,7 @@ export default function Configurator({ catalog }: { catalog: Catalog }) {
         )}
       </div>
 
-      <main className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 py-10">
+      <main className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 pt-6 pb-10">
         {step === INTRO_STEP && (
           <StepIntro
             customer={customer}
@@ -571,21 +571,22 @@ const BUILD_FACTS: { value: string; label: string; detail: string }[] = [
 ];
 
 function Hero() {
+  /* Title on the left, the four facts on the right, so the builder starts
+   * higher on the page (owner, 2026-10-30). Stacks on a phone. */
   return (
     <section className="bg-white">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-10 pb-8 sm:pt-12">
-        <div className="text-center max-w-2xl mx-auto">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8 grid gap-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:items-center">
+        <div>
           <h1 className="brand-heading text-4xl sm:text-5xl leading-none">
             Build Your Van
           </h1>
-          <p className="mt-4 text-steel">
-            Three high-roof vans and four floor plans, with everything
-            that comes in the build listed item by item. Your estimated total
-            updates as you go.
+          <p className="mt-3 text-steel max-w-md">
+            A Sprinter, Transit or ProMaster, with everything that comes in the
+            build listed item by item. Your estimated total updates as you go.
           </p>
         </div>
 
-        <dl className="mt-8 grid grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-5 border-t border-line pt-6">
+        <dl className="grid grid-cols-2 gap-x-6 gap-y-4 border-t border-line pt-5 lg:border-t-0 lg:pt-0 lg:border-l lg:pl-8">
           {BUILD_FACTS.map((f) => (
             <div key={f.value}>
               <dt className="text-sm font-semibold text-navy leading-tight">{f.value}</dt>
