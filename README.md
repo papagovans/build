@@ -95,6 +95,25 @@ Not customer-facing yet.
   Transit has none yet: Ford's configurator only serves its high-roof codes
   after a ZIP code is entered. Papago is a dealer for all three.
 
+### Prices come from the master pricing workbook
+
+The single source of truth for every advertised price is
+`papago-master-pricing.xlsx` in Dropbox (`Papago Vans/van build pricing/`,
+owner 2026-10-30): chassis, base options, upgrades and packages, each at cost
+plus markup. Costs and markup never enter this repo, because it is public.
+
+```bash
+python3 scripts/import-pricing.py "<Dropbox>/Papago Vans/van build pricing/papago-master-pricing.xlsx"
+```
+
+That writes `lib/pricing-data.json` (retail only); commit it and deploy. Today
+it carries the van prices: one averaged placeholder per van, camper-ready,
+shown on each card of the van step and in the running total. `lib/chassis.ts`
+applies them over the admin's van prices and adds each make's extended body
+(Sprinter 170, Transit 148, ProMaster 159), borrowing the regular van's
+picture. The extended Sprinter builds piece by piece like the 170. Base
+options and upgrades follow once management signs off their costs.
+
 ### The modular build (Sprinter 170)
 
 The Sprinter 170 is built piece by piece instead of from a floor plan

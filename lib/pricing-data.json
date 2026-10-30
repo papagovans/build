@@ -1,0 +1,37 @@
+{
+  "source": "papago-master-pricing.xlsx",
+  "vans": {
+    "sprinter-144": {
+      "code": "S144",
+      "price": 54670
+    },
+    "sprinter-170": {
+      "code": "S170",
+      "price": 59070
+    },
+    "sprinter-170x": {
+      "code": "S170X",
+      "price": 61550
+    },
+    "transit-148": {
+      "code": "T148",
+      "price": 56950
+    },
+    "transit-148x": {
+      "code": "T148X",
+      "price": 61450
+    },
+    "promaster-136": {
+      "code": "P136",
+      "price": 51615
+    },
+    "promaster-159": {
+      "code": "P159",
+      "price": 52300
+    },
+    "promaster-159x": {
+      "code": "P159X",
+      "price": 57030
+    }
+  }
+}

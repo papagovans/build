@@ -849,9 +849,8 @@ function Stepper({
 }
 
 /**
- * Step one: which van. Three makes, two wheelbases each (owner, 2026-09-28:
- * no extended bodies, and each maker's real wheelbase rather than a Sprinter
- * number on a Ford).
+ * Step one: which van. Three makes, each in its real wheelbases plus its
+ * extended body (owner, 2026-10-30), every card carrying its van price.
  *
  * Choosing sets the van; Continue advances. Those are deliberately separate,
  * so a buyer can click between vans and watch the render change.
@@ -924,10 +923,15 @@ function StepVanLength({
                     >
                       <p className="text-2xl font-extrabold text-navy leading-none">
                         {v.wheelbase}&quot;
-                        <span className="ml-2 text-xs font-bold uppercase tracking-widest text-steel">wheelbase</span>
+                        <span className="ml-2 text-xs font-bold uppercase tracking-widest text-steel">
+                          {v.extended ? "extended" : "wheelbase"}
+                        </span>
                       </p>
                       <h4 className="brand-heading text-lg mt-2">{v.name}</h4>
                       <p className="mt-1 text-sm text-steel">{v.tagline}</p>
+                      <p className="mt-3 text-sm font-semibold text-navy">
+                        {formatPrice(v.vanPrice)} <span className="font-normal text-steel">van, average</span>
+                      </p>
                     </button>
                   );
                 })}

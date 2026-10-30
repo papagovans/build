@@ -128,6 +128,8 @@ export const STANDARD = STANDARD_PIECES.map((p) => p.code);
 /** Van id -> the lineup model. */
 const LINEUPS: Record<string, string> = {
   "sprinter-170": "/models/sprinter-170-lineup-1.glb",
+  /* Same pieces; the extended body only adds length behind the rear wheels. */
+  "sprinter-170x": "/models/sprinter-170-lineup-1.glb",
 };
 export const lineupModelFor = (vanId: string | null) => (vanId ? LINEUPS[vanId] : undefined);
 export const isModular = (vanId: string | null) => Boolean(lineupModelFor(vanId));

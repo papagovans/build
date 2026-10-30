@@ -13,6 +13,7 @@ import "server-only";
 
 import { getPayload } from "payload";
 import config from "@payload-config";
+import { withChassis } from "./chassis";
 import { withUpgrades } from "./upgrades";
 
 import type {
@@ -55,7 +56,7 @@ export async function loadCatalog(): Promise<Catalog> {
       payload.find({ collection: "van-lengths", limit: 50, sort: "order", depth: 1 }),
     ]);
 
-  return withUpgrades({
+  return withChassis(withUpgrades({
     vanLengths: vanLengths.docs.map((v) => ({
       id: v.slug ?? "",
       make: v.make as VanMake,
@@ -137,5 +138,5 @@ export async function loadCatalog(): Promise<Catalog> {
        The groups stay in the admin untouched; loading none keeps them off the
        Build Sheet and out of the price until the step comes back. */
     colorGroups: [],
-  });
+  }));
 }

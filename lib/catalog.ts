@@ -76,7 +76,8 @@ export const VAN_NOTE =
   "To keep your costs down, you buy your van direct through one of our Mercedes-Benz, Ford or Ram dealers. The van price shown is an average, provided as a convenience for pricing only.";
 
 /** "Ford Transit 148"", the label a salesperson and the Build Sheet use. */
-export const vanLabel = (v: Pick<VanLength, "make" | "wheelbase">) => `${makeName(v.make)} ${v.wheelbase}"`;
+export const vanLabel = (v: Pick<VanLength, "make" | "wheelbase" | "extended">) =>
+  `${makeName(v.make)} ${v.wheelbase}"${v.extended ? " Extended" : ""}`;
 
 export interface Category {
   id: string;
@@ -119,6 +120,8 @@ export interface VanLength {
    * the bar states the difference honestly instead of relying on the eye.
    */
   overallInches: number;
+  /** The maker's extended body on this wheelbase (lib/chassis.ts). */
+  extended?: boolean;
 }
 
 export interface FloorPlan {
