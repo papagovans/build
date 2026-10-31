@@ -16,6 +16,7 @@ import {
   layoutCode,
   layoutLines,
   lineupModelFor,
+  hasOwnLineup,
   livingRoomsFor,
   parseLayout,
   pick,
@@ -380,7 +381,7 @@ export default function Configurator({ catalog }: { catalog: Catalog }) {
         {step > LENGTH_STEP && (
           <VanContextBar
             planName={modular ? undefined : plan?.name}
-            buildCode={modular ? fullCode(build.layout) : undefined}
+            buildCode={modular ? fullCode(build.layout, catalog.pricing.vans[build.vanLengthId ?? ""]?.code) : undefined}
             surname={surname}
             van={van}
           />
@@ -899,8 +900,7 @@ function Stepper({
 /**
  * Step one: which van. The render on the left; on the right the three makes,
  * and the chosen make opens to its lengths, each with its van price (owner,
- * 2026-10-30). Picking a make picks its first length, so the render always
- * shows the van the total is priced on.
+ * 2026-10-30). Opening a make picks nothing: the buyer picks the length.
  *
  * Choosing sets the van; Continue advances. Those are deliberately separate,
  * so a buyer can click between vans and watch the render change.
@@ -919,6 +919,7 @@ function StepVanLength({
   const catalog = useCatalog();
   const active = getVanLength(catalog, selectedId ?? "") ?? catalog.vanLengths[0];
   const chosenMake = selectedId ? getVanLength(catalog, selectedId)?.make : undefined;
+  const [openMake, setOpenMake] = useState(chosenMake);
 
   return (
     <section>
@@ -958,7 +959,7 @@ function StepVanLength({
           {VAN_MAKES.map((make) => {
             const vans = catalog.vanLengths.filter((v) => v.make === make.id);
             if (vans.length === 0) return null;
-            const open = chosenMake === make.id;
+            const open = (openMake ?? chosenMake) === make.id;
             const from = Math.min(...vans.map((v) => v.vanPrice));
             return (
               <div
@@ -966,7 +967,7 @@ function StepVanLength({
                 className={`bg-white rounded-lg border-2 transition-colors ${open ? "border-gold shadow-lg" : "border-black/10 hover:border-sky/40"}`}
               >
                 <button
-                  onClick={() => !open && onChoose(vans[0].id)}
+                  onClick={() => setOpenMake(make.id)}
                   aria-expanded={open}
                   className="w-full text-left px-5 py-4 flex items-baseline justify-between gap-3"
                 >
@@ -1406,6 +1407,11 @@ function StepModular({
             })}
           </div>
           <LineupStage vanId={vanId} codes={codes} orbit={STAGE_ORBIT[step]} />
+          {!hasOwnLineup(vanId) && (
+            <p className="mt-2 text-xs text-steel">
+              The 3D view shows a Sprinter 170 until this van is drawn. Your pieces and price are for the van you chose.
+            </p>
+          )}
           <ViewerLegend />
         </div>
 
@@ -2434,7 +2440,7 @@ function StepSummary({
             <h3 className="brand-heading text-2xl">{planName}</h3>
             <p className="text-sm text-steel">
               {van ? vanLabel(van) : ""}
-              {build.layout ? <span className="font-mono"> \u00b7 {fullCode(build.layout)}</span> : null}
+              {build.layout ? <span className="font-mono"> \u00b7 {fullCode(build.layout, catalog.pricing.vans[build.vanLengthId ?? ""]?.code)}</span> : null}
             </p>
           </div>
         </div>

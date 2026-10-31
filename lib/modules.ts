@@ -131,8 +131,14 @@ const LINEUPS: Record<string, string> = {
   /* Same pieces; the extended body only adds length behind the rear wheels. */
   "sprinter-170x": "/models/sprinter-170-lineup-1.glb",
 };
-export const lineupModelFor = (vanId: string | null) => (vanId ? LINEUPS[vanId] : undefined);
-export const isModular = (vanId: string | null) => Boolean(lineupModelFor(vanId));
+/* Every van builds piece by piece: bed, then shower, then living room, then
+ * the passenger side and extras (owner, 2026-10-30). There is no floor plan
+ * picker. A van with no lineup of its own drawn yet shows the Sprinter 170's
+ * as a stand-in. */
+const STAND_IN = LINEUPS["sprinter-170"];
+export const lineupModelFor = (vanId: string | null) => (vanId ? (LINEUPS[vanId] ?? STAND_IN) : undefined);
+export const hasOwnLineup = (vanId: string | null) => Boolean(vanId && LINEUPS[vanId]);
+export const isModular = (vanId: string | null) => Boolean(vanId);
 
 export interface Layout {
   /** slot id -> chosen code */
@@ -204,7 +210,8 @@ export function layoutLines(code: string | null) {
 }
 
 /** The full code as the team writes it, with the chassis in front. */
-export const fullCode = (code: string | null) => (code ? `S170-${code}` : "");
+/** A whole van's code, led by its chassis: S170-BD01-..., S144-BD01-... */
+export const fullCode = (code: string | null, chassis = "S170") => (code ? `${chassis}-${code}` : "");
 
 /* What each piece adds over the standard pick in its slot (owner, 2026-10-30),
  * from the workbook's Beds, Living and Kitchen tabs (catalog.pricing.layout).

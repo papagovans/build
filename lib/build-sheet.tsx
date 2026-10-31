@@ -261,7 +261,7 @@ function BuildSheet({
           <View style={s.planBox}>
             <View>
               <Text style={s.planName}>{planName.toUpperCase()}</Text>
-              <Text style={s.planTag}>{layout ? fullCode(build.layout) : plan.tagline}</Text>
+              <Text style={s.planTag}>{layout ? fullCode(build.layout, catalog.pricing.vans[build.vanLengthId ?? ""]?.code) : plan.tagline}</Text>
               {van ? <Text style={[s.planTag, { marginTop: 6 }]}>On a {vanLabel(van)}</Text> : null}
               {pkg ? (
                 <Text style={[s.planTag, { marginTop: 6 }]}>

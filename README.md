@@ -276,12 +276,11 @@ Two things follow from that and are easy to undo by accident:
 Phase 1 (owner, 2026-09-28), streamlined:
   → Your Van          Sprinter 144/170, Transit 148, ProMaster 136/159, all high roof
   → Your Info         name, email, phone
-  → Bed              Sprinter 170 only, built piece by piece in one 3D view:
-  → Driver Side        bed cap; shower or not, then a living room that fits;
-  → Passenger Side     kitchenette insert and uppers; five yes-or-no extras
-  → Extras             (see "The modular build" above)
-  → Floor Plan        every other van: 4 layouts
-  → Layout            one large 3D model of the chosen plan, drag to rotate
+  → Bed              every van, built piece by piece in one 3D view (owner,
+  → Driver Side        2026-10-30: no floor plan picker): bed and bed cap; shower or
+  → Passenger Side     not, then a living room that fits; kitchenette insert and
+  → Extras             uppers; yes-or-no extras. Only the Sprinter 170 is drawn, so
+                       the other vans show it in 3D as a stand-in
   → What's Included   every included item by system; a card opens the drawer
                       with brand, model, What it is, Why you need it
   → Upgrades          every Exterior item as an optional add-on, placeholder

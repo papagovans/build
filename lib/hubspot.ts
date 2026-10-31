@@ -123,7 +123,7 @@ export async function submitBuildSheetLead(
     { name: "email", value: customer.email },
     { name: "phone", value: customer.phone },
     // A modular van has no floor plan; its build code says what it is instead.
-    { name: "papago_floor_plan", value: build.layout ? fullCode(build.layout) : (plan?.name ?? "") },
+    { name: "papago_floor_plan", value: build.layout ? fullCode(build.layout, catalog.pricing.vans[build.vanLengthId ?? ""]?.code) : (plan?.name ?? "") },
     { name: "papago_trim_package", value: pkg?.name ?? "" },
     { name: "papago_build_total", value: String(price.total) },
     { name: "papago_option_count", value: String(build.selected.length) },

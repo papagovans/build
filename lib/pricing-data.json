@@ -1391,8 +1391,8 @@
     "SHY": 5250,
     "LRSH01": 0,
     "LRSH02": 1022,
-    "LRNSH01": 644,
-    "LRNSH02": 1666,
+    "LRNSH01": 0,
+    "LRNSH02": 1022,
     "OHS1": 714,
     "PK01": 0,
     "FT01": 0,
@@ -1411,7 +1411,7 @@
       "van": "sprinter-144",
       "vanOptions": [],
       "upgrades": [],
-      "layout": null
+      "layout": "BD01-BC01-SHN-LRNSH01-PI02-PU02"
     },
     {
       "slug": "zion",
