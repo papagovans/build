@@ -2719,7 +2719,7 @@ function OptionCard({
  * it, close it and open the next without losing their place on a page that is
  * seven thousand pixels long.
  */
-function Lightbox({
+export function Lightbox({
   option,
   parts = [],
   onClose,

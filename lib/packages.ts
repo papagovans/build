@@ -40,10 +40,10 @@ export interface BillOfMaterials {
   baseTotal: number;
   /** Grouped by the package each upgrade first appears in, lowest first, so a
    * page shows what this package adds over the one below it. */
-  upgrades: { from: string; isNew: boolean; items: { code: string; name: string; category: string; manufacturer?: string; price: number }[] }[];
+  upgrades: { from: string; isNew: boolean; items: { code: string; name: string; category: string; manufacturer?: string; model?: string; price: number; photo?: string; whatItIs?: string; whyYouNeedIt?: string }[] }[];
   upgradesTotal: number;
   /** A Sprinter 170's pieces, each at what it adds over the standard pick. */
-  layout: { label: string; code: string; name: string; price: number }[];
+  layout: { label: string; code: string; name: string; note: string; price: number }[];
   layoutTotal: number;
   total: number;
 }
@@ -65,12 +65,15 @@ export function billOfMaterials(catalog: Catalog, pkg: Package): BillOfMaterials
   const upgrades = pkg.upgrades
     .map((c) => data.upgrades.find((u) => u.code === c)!)
     .filter(Boolean)
-    .map((u) => ({ code: u.code, name: getOption(catalog, u.code)?.name ?? u.name, manufacturer: u.manufacturer, price: u.price, category: u.category }));
+    .map((u) => ({
+      code: u.code, name: getOption(catalog, u.code)?.name ?? u.name, manufacturer: u.manufacturer, model: u.model,
+      price: u.price, category: u.category, photo: u.photo, whatItIs: u.whatItIs, whyYouNeedIt: u.whyYouNeedIt,
+    }));
   const baseTotal = data.base[van.size === "long" ? "long" : "short"];
   const upgradesTotal = upgrades.reduce((s, u) => s + u.price, 0);
   const vanPrice = van.vanPrice + vanOptions.reduce((s, v) => s + v.price, 0);
   const layout = pkg.layout
-    ? layoutLines(pkg.layout).map(({ label, piece }) => ({ label, code: piece.code, name: piece.name, price: piecePrice(data.layout, piece.code) }))
+    ? layoutLines(pkg.layout).map(({ label, piece }) => ({ label, code: piece.code, name: piece.name, note: piece.note, price: piecePrice(data.layout, piece.code) }))
     : [];
   const layoutTotal = layout.reduce((s, l) => s + l.price, 0);
   return {

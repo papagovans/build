@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Eyebrow, LineItems, PackageActions, PackagesShell, PriceSummary } from "@/components/Packages";
+import { Eyebrow, PackageActions, PackagesShell, PriceSummary } from "@/components/Packages";
 import { vanLabel } from "@/lib/catalog";
+import PackageLineItems from "@/components/PackageLineItems";
 import { loadCatalog } from "@/lib/cms";
 import { billOfMaterials, customizeLink, getPackage } from "@/lib/packages";
 
@@ -46,7 +47,7 @@ export default async function PackagePage({ params }: PageProps<"/packages/[slug
           </div>
         </div>
       </div>
-      <LineItems bom={bom} name={pkg.name} />
+      <PackageLineItems bom={bom} name={pkg.name} />
     </PackagesShell>
   );
 }
