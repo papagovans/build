@@ -229,7 +229,7 @@ export function ComparisonTable({ rows }: { rows: { pkg: Package; bom: BillOfMat
     "Kitchen Uppers": "Overhead cabinets, no microwave",
   };
   const cell = "px-3 py-2 text-center";
-  const label = "px-3 py-2 text-left text-navy";
+  const label = "pl-8 pr-3 py-2 text-left text-navy"; // rows sit indented under their section header
   const vanRows: { label: string; value: (r: { bom: BillOfMaterials }) => string }[] = [
     { label: "Van", value: (r) => vanLabel(r.bom.van).replace("Mercedes-Benz ", "") },
     { label: "Wheelbase", value: (r) => `${r.bom.van.wheelbase}"${r.bom.van.extended ? " extended" : ""}` },
