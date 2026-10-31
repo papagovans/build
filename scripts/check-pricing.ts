@@ -8,7 +8,7 @@
  * own included items, and a link shared before any of this still resolves.
  */
 import assert from "node:assert/strict";
-import { includedFor, vanLabel, type Catalog, type Option, type VanLength } from "../lib/catalog.ts";
+import { HARDCODED_CATALOG, includedFor, vanLabel, type Catalog, type Option, type VanLength } from "../lib/catalog.ts";
 import { decodeBuild, emptyBuild, encodeBuild, priceBuild, setFloorPlan, setVanLength } from "../lib/pricing.ts";
 
 const van = (id: string, make: VanLength["make"], size: VanLength["size"], wheelbase: number): VanLength => ({
@@ -18,6 +18,7 @@ const van = (id: string, make: VanLength["make"], size: VanLength["size"], wheel
 const item = (id: string, sizes?: Option["sizes"]): Option => ({ id, categoryId: "electrical", name: id, type: "included", price: 0, sizes });
 
 const C: Catalog = {
+  pricing: HARDCODED_CATALOG.pricing,
   categories: [{ id: "electrical", name: "Electrical", blurb: "" }],
   vanLengths: [van("sprinter-144", "sprinter", "short", 144), van("sprinter-170", "sprinter", "long", 170), van("transit-148", "transit", "long", 148)],
   floorPlans: [{ id: "el-capitan", name: "El Capitan", tagline: "", basePrice: 162_000, image: "", gallery: [], specs: [] }],

@@ -1,8 +1,8 @@
 /**
  * The Upgrades step, from the master pricing workbook (owner, 2026-10-30).
  *
- * scripts/import-pricing.py copies the workbook's Upgrades tab and its AWD
- * options into pricing-data.json, each at what the buyer pays on top: an
+ * The published prices carry the workbook's Upgrades tab and its AWD options
+ * (lib/pricing-store.ts), each at what the buyer pays on top: an
  * upgrade that replaces a base item (lithium for AGM) is priced at the
  * difference. They go in as `upgrade` options carrying `replaces`, so the
  * ordinary engine prices them and keeps two upgrades of the same base item
@@ -13,7 +13,6 @@
  * workbook replaced them. The shop's database is untouched.
  */
 import type { Catalog, Option, VanMake, VanSize } from "./catalog";
-import data from "./pricing-data.json";
 
 export const UPGRADES_CATEGORY_ID = "exterior";
 
@@ -44,12 +43,12 @@ function toOption(u: { code: string; category: string; name: string; manufacture
   };
 }
 
-export const WORKBOOK_UPGRADES: Option[] = [
-  ...data.vanOptions.map((v) => toOption({ ...v, category: "Van" })),
-  ...data.upgrades.map(toOption),
-];
-
 export function withUpgrades(catalog: Catalog): Catalog {
+  const data = catalog.pricing;
+  const WORKBOOK_UPGRADES: Option[] = [
+    ...data.vanOptions.map((v) => toOption({ ...v, category: "Van" })),
+    ...data.upgrades.map(toOption),
+  ];
   return {
     ...catalog,
     categories: catalog.categories.map((c) =>

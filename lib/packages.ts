@@ -1,6 +1,6 @@
 /**
  * The four pre-priced packages (owner, 2026-10-30), from the master pricing
- * workbook via pricing-data.json. A package is not a separate kind of build:
+ * workbook, as published (lib/pricing-store.ts). A package is not a separate kind of build:
  * it is an ordinary build state (a van, its AWD, its upgrades, and on a
  * Sprinter 170 its layout code), so "Customize" is just a ?b= link into the
  * builder and the builder prices it the same way it prices anything else.
@@ -8,13 +8,14 @@
 import { getOption, getVanLength, planFitsLength, type Catalog, type VanLength } from "./catalog";
 import { isModular, layoutCode, layoutLines, parseLayout, piecePrice } from "./modules";
 import { emptyBuild, encodeBuild, type BuildState } from "./pricing";
-import data from "./pricing-data.json";
+import type { PricingData } from "./workbook";
 
-export type Package = (typeof data.packages)[number];
-export type BaseItem = (typeof data.baseItems)[number];
+export type Package = PricingData["packages"][number];
+export type BaseItem = PricingData["baseItems"][number];
 
-export const PACKAGES: Package[] = data.packages;
-export const getPackage = (slug: string) => PACKAGES.find((p) => p.slug === slug);
+/** The packages in the published prices, cheapest first. */
+export const packagesOf = (catalog: Catalog) => catalog.pricing.packages;
+export const getPackage = (catalog: Catalog, slug: string) => packagesOf(catalog).find((p) => p.slug === slug);
 
 export function packageBuild(catalog: Catalog, pkg: Package): BuildState {
   // The conversion price lives on the floor plan and every plan costs the same,
@@ -47,11 +48,13 @@ export interface BillOfMaterials {
   total: number;
 }
 
-/** The lowest package carrying an upgrade. PACKAGES runs cheapest first. */
-const firstIn = (code: string) => PACKAGES.find((p) => (p.upgrades as string[]).includes(code))?.name;
 
 /** Every line of a package with its price, grouped the way the workbook groups it. */
 export function billOfMaterials(catalog: Catalog, pkg: Package): BillOfMaterials | undefined {
+  const data = catalog.pricing;
+  const PACKAGES = packagesOf(catalog);
+  // The lowest package carrying an upgrade. Packages run cheapest first.
+  const firstIn = (code: string) => PACKAGES.find((p) => p.upgrades.includes(code))?.name;
   const van = getVanLength(catalog, pkg.van);
   if (!van) return undefined;
   const size = van.size === "long" ? "Long" : "Short";
@@ -67,7 +70,7 @@ export function billOfMaterials(catalog: Catalog, pkg: Package): BillOfMaterials
   const upgradesTotal = upgrades.reduce((s, u) => s + u.price, 0);
   const vanPrice = van.vanPrice + vanOptions.reduce((s, v) => s + v.price, 0);
   const layout = pkg.layout
-    ? layoutLines(pkg.layout).map(({ label, piece }) => ({ label, code: piece.code, name: piece.name, price: piecePrice(piece.code) }))
+    ? layoutLines(pkg.layout).map(({ label, piece }) => ({ label, code: piece.code, name: piece.name, price: piecePrice(data.layout, piece.code) }))
     : [];
   const layoutTotal = layout.reduce((s, l) => s + l.price, 0);
   return {

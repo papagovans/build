@@ -10,14 +10,14 @@ import { billOfMaterials, customizeLink, getPackage } from "@/lib/packages";
 export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: PageProps<"/packages/[slug]">): Promise<Metadata> {
-  const pkg = getPackage((await params).slug);
+  const pkg = getPackage(await loadCatalog(), (await params).slug);
   return { title: pkg ? `The ${pkg.name} | Papago Vans` : "Package | Papago Vans" };
 }
 
 export default async function PackagePage({ params }: PageProps<"/packages/[slug]">) {
-  const pkg = getPackage((await params).slug);
-  if (!pkg) notFound();
   const catalog = await loadCatalog();
+  const pkg = getPackage(catalog, (await params).slug);
+  if (!pkg) notFound();
   const bom = billOfMaterials(catalog, pkg);
   if (!bom) notFound();
   return (

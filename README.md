@@ -99,26 +99,31 @@ Not customer-facing yet.
 
 The single source of truth for every advertised price is
 `papago-master-pricing.xlsx` in Dropbox (`Papago Vans/van build pricing/`,
-owner 2026-10-30): chassis, base options, upgrades and packages, each at cost
-plus markup. Costs and markup never enter this repo, because it is public.
+owner 2026-10-30): chassis, included options, upgrades, the Sprinter 170
+layout pieces (Beds, Living, Kitchen tabs) and the four packages, each at cost
+plus markup.
 
-```bash
-python3 scripts/import-pricing.py "<Dropbox>/Papago Vans/van build pricing/papago-master-pricing.xlsx"
-```
+**To change prices:** edit the workbook, then go to
+**build.papagovans.com/pricing** (admin login), upload it, read what changes,
+and click Publish. The builder and the package pages use the new prices within
+30 seconds. No deploy. Every publish is kept, newest live
+(`pricing/versions/` in the Blob store, `lib/pricing-store.ts`).
 
-That writes `lib/pricing-data.json` (retail only); commit it and deploy. It
-carries the van prices (one averaged placeholder per van, camper-ready, shown
-on each card of the van step) and the Base Options retail for a short and a
-long van. The live total is now van + base options retail, so a Sprinter 144
-starts at $54,670 + $49,742 = $104,412. The base retail replaces the old flat
-$162,000 / $170,000 conversion: it goes in as every floor plan's base price and
-each long van's price delta, so `priceBuild()` is unchanged.
+Only retail prices are published. `lib/workbook.ts` reads costs, hours and
+markup to work out each retail price, then drops them: the published file is
+public, and this repo is public.
+
+`lib/pricing-data.json` is the copy the builder ships with and falls back to
+when nothing is published or the store is unreachable. Refresh it with
+`npm run import-pricing -- "<path to the workbook>"`; same reader.
+
+The prices reach the code as `catalog.pricing`: `lib/chassis.ts` sets the van
+prices and adds each make's extended body (Sprinter 170, Transit 148,
+ProMaster 159) borrowing the regular van's picture; the included-options retail
+goes in as every floor plan's base price and each long van's price delta, so
+`priceBuild()` is unchanged. A Sprinter 144 starts at van + included options.
 `scripts/check-pricing.ts` still tests the engine against the old hardcoded
-catalog, which is why it keeps printing $237,000. `lib/chassis.ts`
-applies them over the admin's van prices and adds each make's extended body
-(Sprinter 170, Transit 148, ProMaster 159), borrowing the regular van's
-picture. The extended Sprinter builds piece by piece like the 170. Base
-options and upgrades follow once management signs off their costs.
+catalog, which is why it keeps printing $237,000.
 
 ### Packages
 

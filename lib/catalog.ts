@@ -1,3 +1,5 @@
+import type { PricingData } from "./workbook";
+import bundledPricing from "./pricing-data.json";
 /**
  * CATALOG TYPES, HELPERS, AND THE SEED'S SOURCE DATA.
  *
@@ -269,6 +271,8 @@ export interface Catalog {
   options: Option[];
   colorGroups: ColorGroup[];
   packages: BuildPackage[];
+  /** Retail prices from the master pricing workbook (lib/pricing-store.ts). */
+  pricing: PricingData;
 }
 
 export function getVanLength(catalog: Catalog, id: string): VanLength | undefined {
@@ -1109,6 +1113,7 @@ const VAN_LENGTHS: VanLength[] = [
 ];
 
 export const HARDCODED_CATALOG: Catalog = {
+  pricing: bundledPricing as PricingData,
   categories: CATEGORIES,
   vanLengths: VAN_LENGTHS,
   floorPlans: FLOOR_PLANS,

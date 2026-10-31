@@ -1,7 +1,7 @@
 /**
  * Van prices come from the master pricing workbook (owner, 2026-10-30), not
  * the admin: scripts/import-pricing.py copies its Chassis tab into
- * pricing-data.json. Each is an averaged placeholder for a camper-ready van
+ * the published prices (lib/pricing-store.ts). Each is an averaged placeholder for a camper-ready van
  * (swivel seats and upfitter electrical included) so a buyer sees a realistic
  * total; Papago does not sell the van, and it stays out of the margin.
  *
@@ -19,10 +19,6 @@
  * Vans collection once someone needs to edit them there.
  */
 import type { Catalog, VanLength } from "./catalog";
-import data from "./pricing-data.json";
-
-const PRICES: Record<string, { price: number }> = data.vans;
-const BASE = data.base;
 
 /* Overall length, inches, from each maker's published spec. */
 const EXTENDED: { id: string; from: string; overallInches: number; name: string; tagline: string }[] = [
@@ -32,6 +28,8 @@ const EXTENDED: { id: string; from: string; overallInches: number; name: string;
 ];
 
 export function withChassis(catalog: Catalog): Catalog {
+  const PRICES = catalog.pricing.vans;
+  const BASE = catalog.pricing.base;
   const added: VanLength[] = EXTENDED.flatMap((x) => {
     const base = catalog.vanLengths.find((v) => v.id === x.from);
     return base ? [{ ...base, id: x.id, extended: true, overallInches: x.overallInches, name: x.name, tagline: x.tagline, priceDelta: base.priceDelta }] : [];

@@ -1,14 +1,14 @@
 import type { Metadata } from "next";
 import { ComparisonTable, PackageCard, PackagesShell, TwoWays } from "@/components/Packages";
 import { loadCatalog } from "@/lib/cms";
-import { PACKAGES, billOfMaterials } from "@/lib/packages";
+import { billOfMaterials, packagesOf } from "@/lib/packages";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Van Packages | Papago Vans" };
 
 export default async function PackagesPage() {
   const catalog = await loadCatalog();
-  const rows = PACKAGES.flatMap((pkg) => {
+  const rows = packagesOf(catalog).flatMap((pkg) => {
     const bom = billOfMaterials(catalog, pkg);
     return bom ? [{ pkg, bom }] : [];
   });

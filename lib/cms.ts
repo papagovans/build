@@ -14,6 +14,8 @@ import "server-only";
 import { getPayload } from "payload";
 import config from "@payload-config";
 import { withChassis } from "./chassis";
+import { loadPricing } from "./pricing-store";
+import type { PricingData } from "./workbook";
 import { withUpgrades } from "./upgrades";
 
 import type {
@@ -42,8 +44,10 @@ function mediaUrl(value: MediaLike): string | undefined {
   return value && typeof value === "object" && value.url ? value.url : undefined;
 }
 
-export async function loadCatalog(): Promise<Catalog> {
+/** `pricing` previews an upload before it is published; normally it is the live one. */
+export async function loadCatalog(pricing?: PricingData): Promise<Catalog> {
   const payload = await getPayload({ config });
+  const prices = pricing ?? (await loadPricing()).data;
 
   // depth 1 populates the relationships we read slugs from. Floor plans need 2
   // so their gallery rows carry the uploaded image, not just its id.
@@ -57,6 +61,7 @@ export async function loadCatalog(): Promise<Catalog> {
     ]);
 
   return withChassis(withUpgrades({
+    pricing: prices,
     vanLengths: vanLengths.docs.map((v) => ({
       id: v.slug ?? "",
       make: v.make as VanMake,

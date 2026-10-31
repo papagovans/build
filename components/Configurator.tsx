@@ -1501,6 +1501,7 @@ function ChoiceRow({
   role: "radio" | "checkbox";
   onClick: () => void;
 }) {
+  const catalog = useCatalog();
   return (
     <button
       type="button"
@@ -1522,7 +1523,7 @@ function ChoiceRow({
           <span className="brand-heading text-lg leading-tight">{piece.name}</span>
           <span className="shrink-0 text-right">
             <span className="block text-sm font-semibold text-navy">
-              {piecePrice(piece.code) > 0 ? `+${formatPrice(piecePrice(piece.code))}` : "Included"}
+              {piecePrice(catalog.pricing.layout, piece.code) > 0 ? `+${formatPrice(piecePrice(catalog.pricing.layout, piece.code))}` : "Included"}
             </span>
             <span className="block font-mono text-[11px] text-steel">{piece.code}</span>
           </span>
@@ -2444,7 +2445,7 @@ function StepSummary({
                   {label}: <span className="font-semibold">{piece.name}</span>
                 </span>
                 <span className="text-xs text-steel whitespace-nowrap">
-                  {piecePrice(piece.code) > 0 ? `+${formatPrice(piecePrice(piece.code))}` : "Included"}
+                  {piecePrice(catalog.pricing.layout, piece.code) > 0 ? `+${formatPrice(piecePrice(catalog.pricing.layout, piece.code))}` : "Included"}
                   <span className="ml-2 font-mono">{piece.code}</span>
                 </span>
               </div>

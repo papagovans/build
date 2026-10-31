@@ -133,7 +133,7 @@ export function priceBuild(catalog: Catalog, state: BuildState): PriceBreakdown 
   }
 
   // Like the long-van extra, part of the conversion: counts once there is one.
-  const layout = plan ? layoutPrice(state.layout) : 0;
+  const layout = plan ? layoutPrice(catalog.pricing.layout, state.layout) : 0;
 
   const extras = [...upgrades, ...addons, ...colors].reduce(
     (sum, e) => sum + e.price,

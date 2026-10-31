@@ -15,8 +15,6 @@
  * names. The names here are descriptive placeholders until the owner names
  * them; no prices yet, so the conversion price is unchanged.
  */
-import pricing from "./pricing-data.json";
-
 export interface Piece {
   code: string;
   name: string;
@@ -209,14 +207,13 @@ export function layoutLines(code: string | null) {
 export const fullCode = (code: string | null) => (code ? `S170-${code}` : "");
 
 /* What each piece adds over the standard pick in its slot (owner, 2026-10-30),
- * from the workbook's Beds, Living and Kitchen tabs via pricing-data.json.
+ * from the workbook's Beds, Living and Kitchen tabs (catalog.pricing.layout).
  * The standard pick is $0: its cost sits in the included options. */
-const PIECE_PRICES: Record<string, number> = pricing.layout;
-export const piecePrice = (code: string) => PIECE_PRICES[code] ?? 0;
+export const piecePrice = (prices: Record<string, number>, code: string) => prices[code] ?? 0;
 
 /** Everything a layout adds to the price: its picks and its extras. */
-export function layoutPrice(code: string | null): number {
+export function layoutPrice(prices: Record<string, number>, code: string | null): number {
   if (!code) return 0;
   const l = parseLayout(code);
-  return [...Object.values(l.picks), ...l.extras].reduce((sum, c) => sum + piecePrice(c ?? ""), 0);
+  return [...Object.values(l.picks), ...l.extras].reduce((sum, c) => sum + piecePrice(prices, c ?? ""), 0);
 }

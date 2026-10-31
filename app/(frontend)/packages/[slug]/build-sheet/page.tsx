@@ -9,15 +9,15 @@ import { billOfMaterials, customizeLink, getPackage } from "@/lib/packages";
 export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: PageProps<"/packages/[slug]/build-sheet">): Promise<Metadata> {
-  const pkg = getPackage((await params).slug);
+  const pkg = getPackage(await loadCatalog(), (await params).slug);
   return { title: pkg ? `${pkg.name} Build Sheet | Papago Vans` : "Build Sheet | Papago Vans" };
 }
 
 /** Build as Is: the package's bill of materials, every line priced. */
 export default async function PackageBuildSheet({ params }: PageProps<"/packages/[slug]/build-sheet">) {
-  const pkg = getPackage((await params).slug);
-  if (!pkg) notFound();
   const catalog = await loadCatalog();
+  const pkg = getPackage(catalog, (await params).slug);
+  if (!pkg) notFound();
   const bom = billOfMaterials(catalog, pkg);
   if (!bom) notFound();
   return (
