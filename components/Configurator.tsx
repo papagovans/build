@@ -609,19 +609,35 @@ function Hero() {
           ))}
         </dl>
       </div>
-      {/* The other way in (owner, 2026-10-30): the four packages. */}
-      <div className="border-t border-line bg-offwhite">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3">
-          <p className="text-sm text-navy">
-            <span className="font-semibold">Two ways to start:</span> build from scratch right here, or start from one of
-            our four packages and change anything you like.
-          </p>
-          <Link
-            href="/packages"
-            className="shrink-0 px-5 py-2 rounded-full border-2 border-navy text-navy text-sm font-semibold hover:bg-navy hover:text-white transition-colors"
-          >
-            See the packages →
-          </Link>
+      {/* The two ways in (owner, 2026-10-30), with some presence: a big gold 2
+          on navy, then the two choices side by side. */}
+      <div className="bg-navy text-white">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 grid gap-5 md:grid-cols-[auto_1fr] md:items-center">
+          <div className="flex items-center gap-4">
+            <span aria-hidden="true" className="brand-heading text-gold text-[88px] sm:text-[104px] leading-[0.8]">2</span>
+            <p className="brand-heading text-2xl sm:text-3xl leading-[0.95]">
+              Ways
+              <br />
+              to Start
+            </p>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="rounded-lg border-2 border-gold bg-white/5 px-4 py-3">
+              <p className="text-[11px] font-bold uppercase tracking-widest text-gold">You&rsquo;re here</p>
+              <p className="brand-heading text-lg leading-tight mt-0.5">Build From Scratch</p>
+              <p className="text-sm text-white/75 mt-1">Pick the van, then every piece: bed, shower, living room, kitchen and upgrades.</p>
+            </div>
+            <Link
+              href="/packages"
+              className="group rounded-lg border-2 border-white/20 bg-white/5 px-4 py-3 hover:border-gold hover:bg-white/10 transition-colors"
+            >
+              <p className="text-[11px] font-bold uppercase tracking-widest text-sky">Or</p>
+              <p className="brand-heading text-lg leading-tight mt-0.5">
+                Start From a Package <span className="text-gold transition-transform inline-block group-hover:translate-x-1">→</span>
+              </p>
+              <p className="text-sm text-white/75 mt-1">Four pre-priced builds. Keep one as it is, or change anything you like.</p>
+            </Link>
+          </div>
         </div>
       </div>
     </section>
