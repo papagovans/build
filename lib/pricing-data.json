@@ -62,6 +62,7 @@
       "fits": "All",
       "qty": 1,
       "retail": 1162,
+      "photo": "/products/el01.webp",
       "whatItIs": "A 200Ah lithium iron phosphate battery that stores the power for everything in the van.",
       "whyYouNeedIt": "Runs the fridge, lights, fan and outlets for a day or more off the grid, and lasts thousands of charge cycles."
     },
@@ -100,6 +101,7 @@
       "fits": "All",
       "qty": 1,
       "retail": 287,
+      "photo": "/products/el04.webp",
       "whatItIs": "A battery monitor with a shunt that measures every amp going in and out.",
       "whyYouNeedIt": "Shows exactly how much power you have left, so you never guess and never run the battery flat."
     },
@@ -112,6 +114,7 @@
       "fits": "All",
       "qty": 1,
       "retail": 392,
+      "photo": "/products/el05.webp",
       "whatItIs": "The 12V fuse block and DC breakers every circuit in the van runs through.",
       "whyYouNeedIt": "Protects the wiring and every device on it, and makes any circuit easy to switch off or trace."
     },
@@ -124,6 +127,7 @@
       "fits": "All",
       "qty": 1,
       "retail": 102,
+      "photo": "/products/el06.webp",
       "whatItIs": "A main switch that disconnects the house battery from everything.",
       "whyYouNeedIt": "One turn shuts the whole system down for storage, service or an emergency."
     },
@@ -136,6 +140,7 @@
       "fits": "All",
       "qty": 1,
       "retail": 2716,
+      "photo": "/products/el07.webp",
       "whatItIs": "All the cable, fuses, terminals and connectors that wire the van, sized and labeled.",
       "whyYouNeedIt": "Correctly sized, protected wiring is what keeps a van electrical system safe for years."
     },
@@ -187,6 +192,7 @@
       "fits": "All",
       "qty": 1,
       "retail": 350,
+      "photo": "/products/el12.webp",
       "whatItIs": "A 110V breaker panel for the household outlets.",
       "whyYouNeedIt": "Each 110V circuit is protected and can be switched off on its own, the same as in a house."
     },
@@ -238,6 +244,7 @@
       "fits": "All",
       "qty": 1,
       "retail": 462,
+      "photo": "/products/pl02.webp",
       "whatItIs": "A 12V water pump with an accumulator tank.",
       "whyYouNeedIt": "Steady water pressure at the faucet and shower, without the pump cycling on and off."
     },
@@ -250,6 +257,7 @@
       "fits": "All",
       "qty": 1,
       "retail": 130,
+      "photo": "/products/pl03.webp",
       "whatItIs": "An inline filter on the fresh water line.",
       "whyYouNeedIt": "Catches sediment and improves taste from whatever water source you fill up at."
     },
@@ -288,6 +296,7 @@
       "fits": "All",
       "qty": 1,
       "retail": 294,
+      "photo": "/products/pl06.webp",
       "whatItIs": "An outside fill port for the fresh tank and drain valves for both tanks.",
       "whyYouNeedIt": "Fill up from a hose without opening the van, and drain the tanks for winter or a clean-out."
     },
@@ -325,6 +334,7 @@
       "fits": "All",
       "qty": 1,
       "retail": 255,
+      "photo": "/products/pl09.webp",
       "whatItIs": "A 5-gallon portable cassette toilet.",
       "whyYouNeedIt": "A real toilet on board for nights away from facilities; the cassette lifts out to empty."
     },
@@ -350,6 +360,7 @@
       "fits": "All",
       "qty": 1,
       "retail": 2436,
+      "photo": "/products/climate-insulation.webp",
       "whatItIs": "Insulation in the walls, ceiling and doors.",
       "whyYouNeedIt": "Keeps the van cooler in summer and warmer in winter, and makes the heater and fan work less."
     },
@@ -362,6 +373,7 @@
       "fits": "All",
       "qty": 1,
       "retail": 966,
+      "photo": "/products/hc02.webp",
       "whatItIs": "Sound-deadening material on the floor, walls and doors.",
       "whyYouNeedIt": "Cuts road noise and rattles, so the van is quieter to drive and to sleep in."
     },
@@ -374,6 +386,7 @@
       "fits": "All",
       "qty": 1,
       "retail": 3248,
+      "photo": "/products/hc03.webp",
       "whatItIs": "An Espar diesel heater that runs off the van's own fuel tank.",
       "whyYouNeedIt": "Warm, dry heat on a cold night, using very little fuel and battery."
     },
@@ -386,6 +399,7 @@
       "fits": "All",
       "qty": 1,
       "retail": 756,
+      "photo": "/products/climate-fan.webp",
       "whatItIs": "A Maxxair roof fan that pulls air in or pushes it out, and stays open in the rain.",
       "whyYouNeedIt": "Moves fresh air through the van, clears cooking steam and keeps condensation down."
     },
@@ -398,6 +412,7 @@
       "fits": "All",
       "qty": 1,
       "retail": 714,
+      "photo": "/products/kitchen-counter.webp",
       "whatItIs": "A solid butcher block countertop, finished to resist water.",
       "whyYouNeedIt": "A warm, durable work surface for cooking and everyday use."
     },
@@ -410,6 +425,7 @@
       "fits": "All",
       "qty": 1,
       "retail": 259,
+      "photo": "/products/kitchen-cooktop-single.webp",
       "whatItIs": "A single-burner induction cooktop.",
       "whyYouNeedIt": "Cooks fast on battery power with no propane on board, and stays cool to the touch around the pan."
     },
@@ -435,6 +451,7 @@
       "fits": "All",
       "qty": 1,
       "retail": 1722,
+      "photo": "/products/kitchen-fridge-small.webp",
       "whatItIs": "A 12V compressor fridge with a freezer, about 3 cubic feet.",
       "whyYouNeedIt": "Keeps food cold and frozen on battery power for days, without ice."
     },
@@ -485,6 +502,7 @@
       "fits": "All",
       "qty": 1,
       "retail": 3080,
+      "photo": "/products/in03.webp",
       "whatItIs": "CNC-cut wall panels, fitted and finished.",
       "whyYouNeedIt": "Clean, tight-fitting walls that cover the insulation and wiring and stand up to daily use."
     },
@@ -497,6 +515,7 @@
       "fits": "All",
       "qty": 1,
       "retail": 2296,
+      "photo": "/products/in04.webp",
       "whatItIs": "A stained wood plank ceiling.",
       "whyYouNeedIt": "A warm finished look overhead that hides the insulation and wiring."
     },
@@ -600,6 +619,7 @@
       "fits": "All",
       "qty": 1,
       "retail": 574,
+      "photo": "/products/ca08.webp",
       "whatItIs": "A garage storage area under the bed, open from the rear doors.",
       "whyYouNeedIt": "Room for bikes, chairs, coolers and gear you reach from outside."
     },
@@ -612,6 +632,7 @@
       "fits": "All",
       "qty": 1,
       "retail": 1288,
+      "photo": "/products/sleep-fixed-bed.webp",
       "whatItIs": "The bed platform the mattress sits on.",
       "whyYouNeedIt": "A solid, level bed with the garage space underneath it."
     },
@@ -859,6 +880,7 @@
       "replaces": null,
       "fits": "All",
       "price": 627,
+      "photo": "/products/el23.webp",
       "whatItIs": "An extra 100Ah lithium battery with Bluetooth monitoring.",
       "whyYouNeedIt": "More stored power for longer stays without sun or shore power."
     },
@@ -884,6 +906,7 @@
       "replaces": null,
       "fits": "All",
       "price": 483,
+      "photo": "/products/el25.webp",
       "whatItIs": "LED lighting inside the cabinets.",
       "whyYouNeedIt": "See what is in the cabinets at night without a headlamp."
     },
@@ -909,6 +932,7 @@
       "replaces": null,
       "fits": "All",
       "price": 763,
+      "photo": "/products/el27.webp",
       "whatItIs": "A 24-inch smart TV on a swivel mount, with its own 110V outlet.",
       "whyYouNeedIt": "Movies and streaming on a rainy day, turned toward the bed or the bench."
     },
@@ -921,6 +945,7 @@
       "replaces": null,
       "fits": "Sprinter",
       "price": 1253,
+      "photo": "/products/el28.webp",
       "whatItIs": "A dash head unit with Apple CarPlay and Android Auto.",
       "whyYouNeedIt": "Navigation, music and calls from your phone on the dash screen."
     },
@@ -946,6 +971,7 @@
       "replaces": null,
       "fits": "All",
       "price": 443,
+      "photo": "/products/so22.webp",
       "whatItIs": "A 100W folding solar panel with a 20A charge controller.",
       "whyYouNeedIt": "Park in the shade and set the panel in the sun to keep charging."
     },
@@ -958,6 +984,7 @@
       "replaces": null,
       "fits": "All",
       "price": 5250,
+      "photo": "/products/pl21.webp",
       "whatItIs": "An indoor shower with a pan, walls and hot and cold water.",
       "whyYouNeedIt": "A hot shower inside the van, whatever the weather."
     },
@@ -983,6 +1010,7 @@
       "replaces": null,
       "fits": "All",
       "price": 1288,
+      "photo": "/products/pl23.webp",
       "whatItIs": "A tiled backsplash behind the kitchen.",
       "whyYouNeedIt": "A finished look that wipes clean and protects the wall."
     },
@@ -995,6 +1023,7 @@
       "replaces": "PL01",
       "fits": "All",
       "price": 140,
+      "photo": "/products/plumb-fresh-33.webp",
       "whatItIs": "A 40-gallon fresh water tank in place of the 33-gallon.",
       "whyYouNeedIt": "More days between fill-ups."
     },
@@ -1007,6 +1036,7 @@
       "replaces": "PL03",
       "fits": "All",
       "price": 892,
+      "photo": "/products/pl25.webp",
       "whatItIs": "A water purification unit on the drinking water line.",
       "whyYouNeedIt": "Drink and cook with water you trust from any source."
     },
@@ -1019,6 +1049,7 @@
       "replaces": "KT03",
       "fits": "All",
       "price": 350,
+      "photo": "/products/pl26.webp",
       "whatItIs": "A quartz composite sink in place of the stainless one.",
       "whyYouNeedIt": "A quieter, stain-resistant sink with a richer look."
     },
@@ -1031,6 +1062,7 @@
       "replaces": null,
       "fits": "All",
       "price": 115,
+      "photo": "/products/pl27.webp",
       "whatItIs": "A soap dispenser built into the counter.",
       "whyYouNeedIt": "Soap at the sink without a bottle on the counter."
     },
@@ -1043,6 +1075,7 @@
       "replaces": null,
       "fits": "All",
       "price": 84,
+      "photo": "/products/pl28.webp",
       "whatItIs": "A maintenance kit for the toilet.",
       "whyYouNeedIt": "The supplies to keep the toilet clean and odor-free."
     },
@@ -1081,6 +1114,7 @@
       "replaces": null,
       "fits": "All",
       "price": 3948,
+      "photo": "/products/hc23.webp",
       "whatItIs": "A Dometic RTX 2000 12V roof air conditioner with remote.",
       "whyYouNeedIt": "Cool air on battery power, quiet enough to sleep with."
     },
@@ -1093,6 +1127,7 @@
       "replaces": null,
       "fits": "All",
       "price": 2646,
+      "photo": "/products/hc24.webp",
       "whatItIs": "A Fresair 12V evaporative cooler on the roof.",
       "whyYouNeedIt": "Low-power cooling that works well in dry climates like Arizona."
     },
@@ -1105,6 +1140,7 @@
       "replaces": null,
       "fits": "All",
       "price": 1988,
+      "photo": "/products/hc25.webp",
       "whatItIs": "A 110V 15,000 BTU air conditioner with a heat pump.",
       "whyYouNeedIt": "Strong cooling and heating when you are plugged in at a campground."
     },
@@ -1156,6 +1192,7 @@
       "replaces": "KT02",
       "fits": "All",
       "price": 1365,
+      "photo": "/products/kt24.webp",
       "whatItIs": "An oven and range combo in place of the induction cooktop.",
       "whyYouNeedIt": "Bake and roast on the road, not just cook on a burner."
     },
@@ -1168,6 +1205,7 @@
       "replaces": null,
       "fits": "All",
       "price": 350,
+      "photo": "/products/kt25.webp",
       "whatItIs": "A pull-out spice rack.",
       "whyYouNeedIt": "Spices and small jars organized and in reach."
     },
@@ -1180,6 +1218,7 @@
       "replaces": null,
       "fits": "All",
       "price": 1106,
+      "photo": "/products/storage-overhead.webp",
       "whatItIs": "An overhead cabinet built to your layout.",
       "whyYouNeedIt": "Storage exactly where your build needs it."
     },
@@ -1192,6 +1231,7 @@
       "replaces": null,
       "fits": "All",
       "price": 301,
+      "photo": "/products/ca22.webp",
       "whatItIs": "A 24-inch soft-sided overhead storage bag.",
       "whyYouNeedIt": "Light, quiet storage for clothes and soft gear."
     },
@@ -1228,6 +1268,7 @@
       "replaces": null,
       "fits": "All",
       "price": 994,
+      "photo": "/products/wn21.webp",
       "whatItIs": "A small window by the bed.",
       "whyYouNeedIt": "Light and a breeze where you sleep."
     },
@@ -1240,6 +1281,7 @@
       "replaces": null,
       "fits": "All",
       "price": 1064,
+      "photo": "/products/misc-windows.webp",
       "whatItIs": "A rectangular window with a slider or T-vent.",
       "whyYouNeedIt": "More light and airflow where you want it."
     },
@@ -1252,6 +1294,7 @@
       "replaces": null,
       "fits": "All",
       "price": 1386,
+      "photo": "/products/wn23.webp",
       "whatItIs": "A skylight in the roof.",
       "whyYouNeedIt": "Daylight overhead and a view of the stars."
     },
@@ -1316,6 +1359,7 @@
       "replaces": null,
       "fits": "All",
       "price": 5264,
+      "photo": "/products/rf25.webp",
       "whatItIs": "A tent that mounts on the roof rack.",
       "whyYouNeedIt": "Extra sleeping space up top. Needs a roof rack."
     },
@@ -1328,6 +1372,7 @@
       "replaces": null,
       "fits": "All",
       "price": 8428,
+      "photo": "/products/rf26.webp",
       "whatItIs": "A rooftop tent with 300W of solar on its lid.",
       "whyYouNeedIt": "Extra sleeping space plus extra solar charging. Needs a roof rack."
     },
@@ -1340,6 +1385,7 @@
       "replaces": null,
       "fits": "All",
       "price": 1344,
+      "photo": "/products/ext-lights.webp",
       "whatItIs": "A 50-inch light bar above the windshield.",
       "whyYouNeedIt": "Bright forward light for back roads at night."
     },
@@ -1352,6 +1398,7 @@
       "replaces": null,
       "fits": "All",
       "price": 812,
+      "photo": "/products/sleep-swivel.webp",
       "whatItIs": "A swivel bracket for a front seat.",
       "whyYouNeedIt": "Turns the seat around to face the living area."
     },
@@ -1364,6 +1411,7 @@
       "replaces": null,
       "fits": "All",
       "price": 2226,
+      "photo": "/products/se22.webp",
       "whatItIs": "A foldaway two-passenger crew seat with seat belts.",
       "whyYouNeedIt": "Two more seats for travel that fold away at camp."
     },
@@ -1376,6 +1424,7 @@
       "replaces": null,
       "fits": "All",
       "price": 1344,
+      "photo": "/products/se23.webp",
       "whatItIs": "A single passenger seat.",
       "whyYouNeedIt": "One more seat for travel."
     },
@@ -1388,6 +1437,7 @@
       "replaces": null,
       "fits": "All",
       "price": 203,
+      "photo": "/products/se24.webp",
       "whatItIs": "A lap belt for a seat.",
       "whyYouNeedIt": "A belted seating position for a passenger."
     },
@@ -1504,6 +1554,7 @@
       "replaces": null,
       "fits": "All",
       "price": 3024,
+      "photo": "/products/ex29.webp",
       "whatItIs": "Electric running boards that drop down when a door opens and tuck away when it closes.",
       "whyYouNeedIt": "An easy step into a lifted van, with nothing hanging low to catch on rocks when you drive."
     },
@@ -1528,6 +1579,7 @@
       "replaces": null,
       "fits": "All",
       "price": 812,
+      "photo": "/products/ex31.webp",
       "whatItIs": "A 2-inch trailer hitch receiver, installed.",
       "whyYouNeedIt": "Tow a small trailer or carry a hitch rack."
     },
@@ -1540,6 +1592,7 @@
       "replaces": null,
       "fits": "All",
       "price": 1673,
+      "photo": "/products/ex32.webp",
       "whatItIs": "An Owl Vans spare tire carrier on the rear door.",
       "whyYouNeedIt": "Moves the spare off the underside, where it is easy to reach."
     },
@@ -1552,6 +1605,7 @@
       "replaces": null,
       "fits": "All",
       "price": 2464,
+      "photo": "/products/ex33.webp",
       "whatItIs": "An Owl Vans tire carrier with a ladder.",
       "whyYouNeedIt": "The spare on the rear door plus a ladder to the roof."
     },
@@ -1564,6 +1618,7 @@
       "replaces": null,
       "fits": "Sprinter",
       "price": 441,
+      "photo": "/products/misc-screen.webp",
       "whatItIs": "A magnetic bug screen for the sliding door.",
       "whyYouNeedIt": "Leave the door open for air without letting bugs in."
     },
@@ -1576,6 +1631,7 @@
       "replaces": null,
       "fits": "Sprinter",
       "price": 511,
+      "photo": "/products/misc-screen.webp",
       "whatItIs": "A magnetic bug screen for the rear doors.",
       "whyYouNeedIt": "Open the back doors for air without letting bugs in."
     },
@@ -1588,6 +1644,7 @@
       "replaces": null,
       "fits": "ProMaster",
       "price": 441,
+      "photo": "/products/misc-screen.webp",
       "whatItIs": "A magnetic bug screen for the sliding door, sized for the ProMaster.",
       "whyYouNeedIt": "Leave the door open for air without letting bugs in."
     },
@@ -1600,6 +1657,7 @@
       "replaces": null,
       "fits": "ProMaster",
       "price": 511,
+      "photo": "/products/misc-screen.webp",
       "whatItIs": "A magnetic bug screen for the rear doors, sized for the ProMaster.",
       "whyYouNeedIt": "Open the back doors for air without letting bugs in."
     },
@@ -1612,6 +1670,7 @@
       "replaces": null,
       "fits": "All",
       "price": 371,
+      "photo": "/products/ms21.webp",
       "whatItIs": "A small safe, 0.5 or 0.7 cubic feet, bolted in.",
       "whyYouNeedIt": "Keeps passports, cash and small valuables locked away."
     },
@@ -1636,6 +1695,7 @@
       "replaces": null,
       "fits": "All",
       "price": 4228,
+      "photo": "/products/bn02.webp",
       "whatItIs": "The Necessities off-road package: side steps, perimeter lights and a front light bar.",
       "whyYouNeedIt": "Safer, easier off-road travel and camp setup after dark."
     },
@@ -1648,6 +1708,7 @@
       "replaces": null,
       "fits": "All",
       "price": 14784,
+      "photo": "/products/bn03.webp",
       "whatItIs": "The Advanced off-road package: lift kit, rock sliders, bumper, spare tire carrier and lighting.",
       "whyYouNeedIt": "Built for rough trails and backcountry camps."
     },
@@ -1672,6 +1733,7 @@
       "replaces": null,
       "fits": "All",
       "price": 2646,
+      "photo": "/products/ext-lights.webp",
       "whatItIs": "The Advanced exterior light package: a light bar and perimeter lights.",
       "whyYouNeedIt": "Lights up the road and the whole campsite."
     },
@@ -1697,6 +1759,7 @@
       "replaces": null,
       "fits": "All",
       "price": 1026,
+      "photo": "/products/misc-blackout.webp",
       "whatItIs": "Van Essentials window covers for every window.",
       "whyYouNeedIt": "Privacy, shade and insulation at night or in the sun."
     }

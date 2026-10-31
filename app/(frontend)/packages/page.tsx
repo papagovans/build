@@ -14,13 +14,7 @@ export default async function PackagesPage() {
   });
   return (
     <PackagesShell>
-      <h1 className="brand-heading text-4xl sm:text-5xl leading-none">Two Ways to Start</h1>
-      <p className="mt-3 text-steel max-w-2xl">
-        Build your van piece by piece from scratch, or start from one of our four packages and change whatever you like.
-      </p>
-      <div className="mt-8">
-        <TwoWays />
-      </div>
+      <TwoWays />
       <h2 id="packages" className="brand-heading text-2xl text-navy mt-14 scroll-mt-6">The Packages</h2>
       <p className="mt-1 text-sm text-steel">All four are built on the Mercedes-Benz Sprinter. Every package has the same included options; each step up adds a bigger or all-wheel-drive van and more upgrades.</p>
       <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">

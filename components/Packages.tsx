@@ -25,25 +25,49 @@ export function Eyebrow({ children }: { children: React.ReactNode }) {
   return <p className="text-xs font-bold uppercase tracking-widest text-sky">{children}</p>;
 }
 
-/** The two ways to start, side by side. Shown on /packages. */
+/**
+ * The top of /packages (owner, 2026-10-30): a big gold 2 on navy, the same
+ * look as the builder's band, with the two ways in as cards beside it.
+ */
 export function TwoWays() {
   return (
-    <div className="grid gap-4 md:grid-cols-2">
-      <Link href="/" className="group bg-white rounded-lg border-2 border-black/10 hover:border-sky/40 p-6 transition-colors">
-        <p className="brand-heading text-xl text-navy">Build From Scratch</p>
-        <p className="mt-2 text-sm text-steel">
-          Start with the van and everything every Papago van gets, then add only the upgrades you want.
+    <section className="rounded-2xl bg-navy text-white px-6 sm:px-10 py-8 sm:py-10 grid gap-8 lg:grid-cols-[auto_1fr] lg:items-center">
+      <div>
+        <div className="flex items-center gap-5">
+          <span aria-hidden="true" className="brand-heading text-gold! text-[120px] sm:text-[150px] leading-[0.8]">2</span>
+          <h1 className="brand-heading text-white! text-4xl sm:text-5xl leading-[0.95]">
+            Ways
+            <br />
+            to Start
+          </h1>
+        </div>
+        <p className="mt-5 max-w-sm text-white/75">
+          Build your van piece by piece, or start from one of our four packages and change whatever you like.
         </p>
-        <p className="mt-4 text-sm font-semibold text-navy group-hover:underline">Start building →</p>
-      </Link>
-      <a href="#packages" className="group bg-white rounded-lg border-2 border-gold p-6">
-        <p className="brand-heading text-xl text-navy">Start From a Package</p>
-        <p className="mt-2 text-sm text-steel">
-          Four proven builds with the price worked out. Take one as it is, or use it as your starting point and change anything.
-        </p>
-        <p className="mt-4 text-sm font-semibold text-navy group-hover:underline">See the packages ↓</p>
-      </a>
-    </div>
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Link href="/" className="group rounded-xl border-2 border-white/20 bg-white/5 p-6 hover:border-gold hover:bg-white/10 transition-colors">
+          <p className="text-[11px] font-bold uppercase tracking-widest text-sky">One</p>
+          <p className="brand-heading text-white! text-2xl mt-1">Build From Scratch</p>
+          <p className="mt-2 text-sm text-white/75">
+            Start with the van and everything every Papago van gets, then pick your bed, shower, living room and upgrades.
+          </p>
+          <p className="mt-5 text-sm font-semibold text-gold">
+            Start building <span className="inline-block transition-transform group-hover:translate-x-1">→</span>
+          </p>
+        </Link>
+        <a href="#packages" className="group rounded-xl border-2 border-gold bg-white/5 p-6 hover:bg-white/10 transition-colors">
+          <p className="text-[11px] font-bold uppercase tracking-widest text-gold">Two</p>
+          <p className="brand-heading text-white! text-2xl mt-1">Start From a Package</p>
+          <p className="mt-2 text-sm text-white/75">
+            Four pre-priced builds. Keep one as it is, or use it as your starting point and change anything.
+          </p>
+          <p className="mt-5 text-sm font-semibold text-gold">
+            See the packages <span className="inline-block transition-transform group-hover:translate-y-0.5">↓</span>
+          </p>
+        </a>
+      </div>
+    </section>
   );
 }
 
