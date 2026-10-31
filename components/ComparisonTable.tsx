@@ -43,9 +43,9 @@ export default function ComparisonTable({ rows }: { rows: { pkg: Package; bom: B
 
   const Section = ({ title, sub }: { title: string; sub?: string }) => (
     <tr className="bg-offwhite">
-      <th colSpan={cols} className="px-3 pt-6 pb-2 text-left border-t-2 border-navy">
-        <span className="brand-heading text-2xl text-navy">{title}</span>
-        {sub && <span className="ml-3 text-sm font-normal text-steel">{sub}</span>}
+      <th colSpan={cols} className="px-4 pt-8 pb-3 text-left border-t-4 border-navy">
+        <span className="brand-heading text-4xl sm:text-5xl text-navy leading-none">{title}</span>
+        {sub && <span className="block sm:inline sm:ml-4 mt-1 sm:mt-0 text-base font-normal text-steel">{sub}</span>}
       </th>
     </tr>
   );
