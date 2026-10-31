@@ -4,7 +4,6 @@
  * Build Sheet with every line priced. All of it reads the master pricing
  * workbook through lib/packages.ts, so these prices are the builder's prices.
  */
-import { Fragment } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { vanLabel } from "@/lib/catalog";
@@ -129,115 +128,6 @@ export function PriceSummary({ bom }: { bom: BillOfMaterials }) {
         <dd className="text-2xl font-extrabold text-navy whitespace-nowrap">{formatPrice(bom.total)}</dd>
       </div>
     </dl>
-  );
-}
-
-/**
- * All four packages side by side (owner, 2026-10-30): the van first, since
- * that is where they differ before a single upgrade, then the included
- * options as one row, then every upgrade any package carries.
- */
-export function ComparisonTable({ rows }: { rows: { pkg: Package; bom: BillOfMaterials }[] }) {
-  const has = (r: { pkg: Package }, code: string) => (r.pkg.upgrades as string[]).includes(code);
-  // Every upgrade any package carries, in the order packages add them.
-  const seen = new Map<string, { name: string; category: string }>();
-  for (const r of rows) for (const g of r.bom.upgrades) for (const i of g.items) if (!seen.has(i.code)) seen.set(i.code, i);
-  const categories = [...new Set([...seen.values()].map((u) => u.category))];
-  // Layout rows, in the builder's slot order, standard pieces left out.
-  const layoutLabels = [...new Set(rows.flatMap((r) => r.bom.layout.filter((l) => l.label !== "Standard").map((l) => l.label)))];
-  /* A van built from a floor plan (the 144) has no pieces; its plan is the
-   * included options. ponytail: written out here; give the 144 its own rows on
-   * the Beds/Living/Kitchen tabs if it ever builds piece by piece. */
-  const FROM_INCLUDED: Record<string, string> = {
-    Bed: "Fixed platform bed",
-    Shower: "No shower (outdoor shower)",
-    "Living Room": "Bench seat with storage",
-    "Kitchenette Insert": "Under-counter cabinets",
-    "Kitchen Uppers": "Overhead cabinets, no microwave",
-  };
-  const cell = "px-3 py-2 text-center";
-  const label = "pl-8 pr-3 py-2 text-left text-navy"; // rows sit indented under their section header
-  const vanRows: { label: string; value: (r: { bom: BillOfMaterials }) => string }[] = [
-    { label: "Van", value: (r) => vanLabel(r.bom.van).replace("Mercedes-Benz ", "") },
-    { label: "Wheelbase", value: (r) => `${r.bom.van.wheelbase}"${r.bom.van.extended ? " extended" : ""}` },
-    { label: "Overall length", value: (r) => `${Math.floor(r.bom.van.overallInches / 12)}' ${Math.round(r.bom.van.overallInches % 12)}"` },
-    { label: "Drive", value: (r) => (r.bom.vanOptions.length ? "All-wheel drive" : "Rear-wheel drive") },
-    { label: "Van price, average", value: (r) => formatPrice(r.bom.vanPrice) },
-  ];
-  return (
-    <div className="overflow-x-auto rounded-lg border border-line bg-white">
-      <table className="w-full min-w-[720px] text-sm">
-        <thead>
-          <tr className="bg-navy text-white">
-            <th className="px-3 py-3 text-left font-semibold w-[34%]">Compare</th>
-            {rows.map((r) => (
-              <th key={r.pkg.slug} className="px-3 py-3 font-semibold">
-                <Link href={`/packages/${r.pkg.slug}`} className="brand-heading text-lg hover:underline">{r.pkg.name}</Link>
-              </th>
-            ))}
-          </tr>
-          <tr className="bg-offwhite border-b border-line">
-            <th className="px-3 py-3 text-left font-semibold text-navy">Total, van + conversion</th>
-            {rows.map((r) => (
-              <td key={r.pkg.slug} className={`${cell} text-lg font-extrabold text-navy`}>{formatPrice(r.bom.total)}</td>
-            ))}
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-line">
-          <tr><th colSpan={rows.length + 1} className="px-3 pt-4 pb-1 text-left text-xs font-bold uppercase tracking-widest text-steel">Mercedes-Benz Sprinter</th></tr>
-          {vanRows.map((v) => (
-            <tr key={v.label}>
-              <th className={`${label} font-normal`}>{v.label}</th>
-              {rows.map((r) => <td key={r.pkg.slug} className={`${cell} text-navy`}>{v.value(r)}</td>)}
-            </tr>
-          ))}
-          <tr><th colSpan={rows.length + 1} className="px-3 pt-4 pb-1 text-left text-xs font-bold uppercase tracking-widest text-steel">Floor Plan</th></tr>
-          {layoutLabels.map((lab) => (
-            <tr key={lab}>
-              <th className={`${label} font-normal`}>{lab === "Add-on" ? "Extras" : lab}</th>
-              {rows.map((r) => {
-                const picks = r.bom.layout.filter((l) => l.label === lab);
-                return (
-                  <td key={r.pkg.slug} className={`${cell} text-navy`}>
-                    {r.bom.layout.length === 0 ? (
-                      FROM_INCLUDED[lab] ?? <span className="text-black/20">–</span>
-                    ) : picks.length ? (
-                      picks.map((p) => p.name).join(", ")
-                    ) : (
-                      <span className="text-black/20">–</span>
-                    )}
-                  </td>
-                );
-              })}
-            </tr>
-          ))}
-          <tr><th colSpan={rows.length + 1} className="px-3 pt-4 pb-1 text-left text-xs font-bold uppercase tracking-widest text-steel">Included options</th></tr>
-          <tr>
-            <th className={`${label} font-normal`}>The same in every package</th>
-            {rows.map((r) => (
-              <td key={r.pkg.slug} className={`${cell} text-navy`}>
-                {r.bom.base.reduce((n, g) => n + g.items.length, 0)} items<span className="block text-xs text-steel">{formatPrice(r.bom.baseTotal)}</span>
-              </td>
-            ))}
-          </tr>
-          {categories.map((c) => (
-            <Fragment key={c}>
-              <tr><th colSpan={rows.length + 1} className="px-3 pt-4 pb-1 text-left text-xs font-bold uppercase tracking-widest text-steel">Upgrades: {c}</th></tr>
-              {[...seen].filter(([, u]) => u.category === c).map(([code, u]) => (
-                <tr key={code}>
-                  <th className={`${label} font-normal`}>{u.name}</th>
-                  {rows.map((r) => (
-                    <td key={r.pkg.slug} className={cell}>
-                      {has(r, code) ? <span aria-label="Included" className="text-navy font-bold">✓</span> : <span aria-label="Not included" className="text-black/20">–</span>}
-                    </td>
-                  ))}
-                </tr>
-              ))}
-            </Fragment>
-          ))}
-        </tbody>
-      </table>
-    </div>
   );
 }
 

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { ComparisonTable, PackageCard, PackagesShell, TwoWays } from "@/components/Packages";
+import ComparisonTable from "@/components/ComparisonTable";
+import { PackageCard, PackagesShell, TwoWays } from "@/components/Packages";
 import { loadCatalog } from "@/lib/cms";
 import { billOfMaterials, packagesOf } from "@/lib/packages";
 
