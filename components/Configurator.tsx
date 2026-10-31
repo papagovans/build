@@ -1324,6 +1324,7 @@ function StepModular({
   onChange: (change: (l: Layout) => Layout) => void;
   nav: React.ReactNode;
 }) {
+  const catalog = useCatalog();
   const choose = (id: Slot["id"]) => (code: string) => onChange((l) => pick(l, id, code));
   const heading = {
     [BED_STEP]: {
@@ -1416,7 +1417,7 @@ function StepModular({
                         <span className="brand-heading text-lg leading-tight">{piece.name}</span>
                         <span className="font-mono text-[11px] text-steel">{piece.code}</span>
                       </span>
-                      <span className="block mt-1 text-sm text-charcoal">{piece.note}</span>
+                      <span className="block mt-1 text-sm text-charcoal">{catalog.pricing.layoutInfo?.[piece.code]?.whatItIs ?? piece.note}</span>
                     </li>
                   ))}
                 </ul>
@@ -1507,7 +1508,7 @@ function ChoiceRow({
             <span className="block font-mono text-[11px] text-steel">{piece.code}</span>
           </span>
         </span>
-        <span className="block mt-1 text-sm text-charcoal">{piece.note}</span>
+        <span className="block mt-1 text-sm text-charcoal">{catalog.pricing.layoutInfo?.[piece.code]?.whatItIs ?? piece.note}</span>
       </span>
     </button>
   );

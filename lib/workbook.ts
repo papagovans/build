@@ -44,6 +44,8 @@ export interface PricingData {
   baseItems: ({ code: string; category: string; name: string; manufacturer: string; model: string; fits: string; qty: number; retail: number } & Media)[];
   upgrades: ({ code: string; category: string; name: string; manufacturer: string; model: string; replaces: string | null; fits: string; price: number } & Media)[];
   layout: Record<string, number>;
+  /** What a buyer reads about each layout piece (Beds, Living, Kitchen tabs). */
+  layoutInfo: Record<string, Media>;
   packages: { slug: string; name: string; tagline: string; van: string; vanOptions: string[]; upgrades: string[]; layout: string | null }[];
 }
 
@@ -192,6 +194,7 @@ export async function parseWorkbook(buffer: ArrayBuffer, source: string): Promis
   // Layout pieces (Beds, Living, Kitchen): what each adds over the standard
   // pick, and the pieces each package ticks, which become its layout code.
   const layout: Record<string, number> = {};
+  const layoutInfo: Record<string, Media> = {};
   const packagePieces: Record<string, string[]> = Object.fromEntries(TIERS.map((t) => [t, []]));
   for (const ws of layoutWs) {
     const lc = table(ws!, 4, problems, ["Code", "Unit Cost", "Install Hrs", "Markup %", ...TIERS]);
@@ -201,6 +204,7 @@ export async function parseWorkbook(buffer: ArrayBuffer, source: string): Promis
       if (!full) return;
       const code = full.split("-").slice(1).join("-"); // S170-BD01 -> BD01
       layout[code] = Math.round(retailOf(1, num(row.getCell(lc["Unit Cost"]).value), num(row.getCell(lc["Install Hrs"]).value), row.getCell(lc["Markup %"]).value));
+      layoutInfo[code] = mediaOf(row, lc);
       for (const t of TIERS) if (num(row.getCell(lc[t]).value)) packagePieces[t].push(code);
     });
   }
@@ -231,5 +235,5 @@ export async function parseWorkbook(buffer: ArrayBuffer, source: string): Promis
   });
 
   if (problems.length) throw new WorkbookError([...new Set(problems)]);
-  return { source, vans, vanOptions, base, baseItems, upgrades, layout, packages };
+  return { source, vans, vanOptions, base, baseItems, upgrades, layout, layoutInfo, packages };
 }

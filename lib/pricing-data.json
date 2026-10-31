@@ -1728,6 +1728,108 @@
     "ST01": 602,
     "CB01": 130
   },
+  "layoutInfo": {
+    "BD01": {
+      "whatItIs": "A fixed bed that's always made, with garage storage underneath.",
+      "whyYouNeedIt": "No setting up or packing away at night, and room under the bed for the gear you use every day."
+    },
+    "BD02": {
+      "whatItIs": "The full-size fixed bed.",
+      "whyYouNeedIt": "More room to stretch out, with the big gear stowed below."
+    },
+    "BD03": {
+      "whatItIs": "A fixed bed plus a two-seat nook and table by the window.",
+      "whyYouNeedIt": "A place to sit for coffee, maps or work without making up the bed."
+    },
+    "BD04": {
+      "whatItIs": "A dinette with facing benches and a table that converts into the bed.",
+      "whyYouNeedIt": "Eat and hang out at a real table, then make it the bed at night. The whole van works as one room."
+    },
+    "BD05": {
+      "whatItIs": "An electric lift bed that rises to the ceiling over the dinette.",
+      "whyYouNeedIt": "Dinner at the table, then bring the bed down; the living room stays set up underneath."
+    },
+    "BC01": {
+      "whatItIs": "An open panel across the front of the bed.",
+      "whyYouNeedIt": "Closes off the bed frame with easy reach into the space below."
+    },
+    "BC02": {
+      "whatItIs": "A panel across the front of the bed with a door.",
+      "whyYouNeedIt": "Closes off the bed frame and turns the space below into a cabinet you reach from inside."
+    },
+    "SC01": {
+      "whatItIs": "A pair of reading lights above the bed.",
+      "whyYouNeedIt": "Read in bed without lighting up the whole van."
+    },
+    "OC01": {
+      "whatItIs": "Soft-sided overhead cabinets above the bed, driver side.",
+      "whyYouNeedIt": "Storage for clothes and light gear right where you sleep."
+    },
+    "SS01": {
+      "whatItIs": "A slide-out tray in the rear garage that pulls out the back doors. Two trays side by side.",
+      "whyYouNeedIt": "Reach heavy gear at the back of the garage without climbing in."
+    },
+    "SHN": {
+      "whatItIs": "A tall cabinet where the shower would go.",
+      "whyYouNeedIt": "More storage and a longer bench if you shower outside or at campgrounds."
+    },
+    "SHY": {
+      "whatItIs": "An enclosed indoor shower with a toilet, hot and cold water.",
+      "whyYouNeedIt": "A hot shower and a private bathroom inside the van, whatever the weather."
+    },
+    "LRSH01": {
+      "whatItIs": "The living room that fits beside the shower: a bench seat, fold-out table and an under-counter fridge.",
+      "whyYouNeedIt": "A place to sit and eat, with the fridge tucked away under the counter."
+    },
+    "LRSH02": {
+      "whatItIs": "The living room beside the shower with a tall fridge.",
+      "whyYouNeedIt": "A bigger fridge for longer trips away from a store."
+    },
+    "LRNSH01": {
+      "whatItIs": "The living room without a shower: a longer bench, fold-out table and an under-counter fridge.",
+      "whyYouNeedIt": "More seating where the shower would be."
+    },
+    "LRNSH02": {
+      "whatItIs": "The living room without a shower, with the tall fridge.",
+      "whyYouNeedIt": "More seating and a bigger fridge."
+    },
+    "OHS1": {
+      "whatItIs": "A shelf over the driver and passenger seats, in the headliner.",
+      "whyYouNeedIt": "Uses the space over the cab for jackets, hats and small gear."
+    },
+    "PK01": {
+      "whatItIs": "The full kitchenette counter with the sink. The insert you pick fits under it.",
+      "whyYouNeedIt": "Every Papago van gets a real kitchen: counter space, a sink and storage."
+    },
+    "FT01": {
+      "whatItIs": "A table hinged to the end of the counter that folds out when you need it.",
+      "whyYouNeedIt": "Extra counter or table space that folds away when you don't."
+    },
+    "PI02": {
+      "whatItIs": "A double-door cupboard under the counter.",
+      "whyYouNeedIt": "Open storage for pots, pans and bigger items."
+    },
+    "PI01": {
+      "whatItIs": "Three drawers and a door under the counter.",
+      "whyYouNeedIt": "Drawers keep utensils and small things organized and easy to reach."
+    },
+    "PU02": {
+      "whatItIs": "Overhead cabinets above the kitchen, all storage.",
+      "whyYouNeedIt": "The most cabinet space above the counter."
+    },
+    "PU01": {
+      "whatItIs": "Overhead cabinets above the kitchen with a built-in 700W microwave.",
+      "whyYouNeedIt": "Reheat and cook quickly without a second appliance on the counter."
+    },
+    "ST01": {
+      "whatItIs": "A two-burner induction cooktop set into the counter, in place of the single burner.",
+      "whyYouNeedIt": "Cook two things at once, on battery power."
+    },
+    "CB01": {
+      "whatItIs": "A cutting board that fits over the sink.",
+      "whyYouNeedIt": "Adds counter space when you need it and covers the sink when you don't."
+    }
+  },
   "packages": [
     {
       "slug": "mckinley",

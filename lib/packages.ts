@@ -43,7 +43,7 @@ export interface BillOfMaterials {
   upgrades: { from: string; isNew: boolean; items: { code: string; name: string; category: string; manufacturer?: string; model?: string; price: number; photo?: string; whatItIs?: string; whyYouNeedIt?: string }[] }[];
   upgradesTotal: number;
   /** A Sprinter 170's pieces, each at what it adds over the standard pick. */
-  layout: { label: string; code: string; name: string; note: string; price: number }[];
+  layout: { label: string; code: string; name: string; note: string; price: number; photo?: string; whatItIs?: string; whyYouNeedIt?: string }[];
   layoutTotal: number;
   total: number;
 }
@@ -73,7 +73,10 @@ export function billOfMaterials(catalog: Catalog, pkg: Package): BillOfMaterials
   const upgradesTotal = upgrades.reduce((s, u) => s + u.price, 0);
   const vanPrice = van.vanPrice + vanOptions.reduce((s, v) => s + v.price, 0);
   const layout = pkg.layout
-    ? layoutLines(pkg.layout).map(({ label, piece }) => ({ label, code: piece.code, name: piece.name, note: piece.note, price: piecePrice(data.layout, piece.code) }))
+    ? layoutLines(pkg.layout).map(({ label, piece }) => ({
+        label, code: piece.code, name: piece.name, note: piece.note, price: piecePrice(data.layout, piece.code),
+        ...data.layoutInfo?.[piece.code],
+      }))
     : [];
   const layoutTotal = layout.reduce((s, l) => s + l.price, 0);
   return {
