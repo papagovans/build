@@ -53,7 +53,7 @@ function Changes({ title, rows }: { title: string; rows: Change[] }) {
   );
 }
 
-export default function PricingUpload() {
+export default function PricingUpload({ canPublish }: { canPublish: boolean }) {
   const [file, setFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
   const [preview, setPreview] = useState<Preview | null>(null);
@@ -130,8 +130,14 @@ export default function PricingUpload() {
               <Changes title="Layout pieces" rows={preview.layout} />
             </>
           )}
-          <div className="mt-8 flex gap-3">
+          <div className="mt-8 flex flex-wrap items-center gap-3">
+            {!canPublish && (
+              <p className="w-full text-sm text-steel">
+                Preview only. To publish, <a href="/admin/login?redirect=%2Fpricing" className="font-semibold text-navy underline">log in to the admin</a> and come back.
+              </p>
+            )}
             <button
+              hidden={!canPublish}
               onClick={publish}
               disabled={busy}
               className="px-8 py-3 rounded-full bg-gold text-navy text-sm font-semibold hover:bg-gold-deep transition-colors disabled:opacity-40"

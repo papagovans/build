@@ -2,7 +2,8 @@
  * The Pricing page's endpoint (owner, 2026-10-30). POST the master pricing
  * workbook as `file`: with no `publish` it returns what would change; with
  * `publish=1` it publishes the prices and the builder uses them at once.
- * Admin accounts only (the same login as /admin).
+ * Anyone may preview (owner, 2026-10-30: test without logging in); only an
+ * admin account (the /admin login) may publish.
  */
 import { getPayload } from "payload";
 import config from "@payload-config";
@@ -53,14 +54,16 @@ async function compare(next: PricingData) {
 }
 
 export async function POST(req: Request) {
+  const form = await req.formData();
+  const publish = form.get("publish") === "1";
   const payload = await getPayload({ config });
   const { user } = await payload.auth({ headers: req.headers });
-  if (!user) return Response.json({ error: "Log in to /admin first." }, { status: 401 });
+  if (publish && !user) return Response.json({ error: "Log in to /admin to publish." }, { status: 401 });
 
-  const form = await req.formData();
   const file = form.get("file");
   if (!(file instanceof File)) return Response.json({ error: "No workbook attached." }, { status: 400 });
   if (!file.name.toLowerCase().endsWith(".xlsx")) return Response.json({ error: "That is not an .xlsx workbook." }, { status: 400 });
+  if (file.size > 5_000_000) return Response.json({ error: "That file is too big to be the pricing workbook." }, { status: 400 });
 
   let data: PricingData;
   try {
@@ -70,7 +73,7 @@ export async function POST(req: Request) {
     return Response.json({ error: `Could not read the workbook: ${(e as Error).message}` }, { status: 422 });
   }
 
-  if (form.get("publish") === "1") {
+  if (publish && user) {
     await publishPricing(data, String(user.email ?? "admin"));
     return Response.json({ published: true });
   }

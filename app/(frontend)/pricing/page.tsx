@@ -11,22 +11,12 @@ export const metadata: Metadata = { title: "Pricing | Papago Vans", robots: { in
 
 /**
  * Where staff publish the master pricing workbook to the builder (owner,
- * 2026-10-30): upload, see what changes, publish. Admin accounts only.
+ * 2026-10-30): upload, see what changes, publish. Anyone can preview; only
+ * an admin account can publish.
  */
 export default async function PricingPage() {
   const payload = await getPayload({ config });
   const { user } = await payload.auth({ headers: await headers() });
-  if (!user) {
-    return (
-      <PackagesShell>
-        <h1 className="brand-heading text-4xl leading-none">Pricing</h1>
-        <p className="mt-4 text-steel">
-          This page is for Papago staff.{" "}
-          <a href="/admin/login?redirect=%2Fpricing" className="font-semibold text-navy underline">Log in to the admin</a>, then come back here.
-        </p>
-      </PackagesShell>
-    );
-  }
   const versions = await listVersions().catch(() => []);
   return (
     <PackagesShell>
@@ -36,7 +26,7 @@ export default async function PricingPage() {
         anything goes live. Publish, and the builder and the package pages use the new prices right away.
       </p>
       <div className="mt-8">
-        <PricingUpload />
+        <PricingUpload canPublish={Boolean(user)} />
       </div>
       <h2 className="brand-heading text-xl text-navy mt-14">Published Versions</h2>
       <p className="mt-1 text-sm text-steel">Newest first. The top one is live.</p>
