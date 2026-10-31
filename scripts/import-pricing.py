@@ -119,6 +119,34 @@ for row in ws.iter_rows(min_row=vo_head[0].row + 1, values_only=True):
         if row[vcols[t]]:
             package_vo[t].append(row[vcols["Code"]])
 
+# Sprinter 170 layout pieces (Beds, Living, Kitchen tabs): what each adds over
+# the standard pick, and the pieces each package ticks, which become its
+# builder layout code in slot order (lib/modules.ts).
+SLOT_ORDER = ["BD", "BC", "SH", "LR", "PI", "PU"]
+EXTRA_ORDER = ["SC01", "OC01", "SS01", "ST01", "CB01", "OHS1"]
+layout, package_pieces = {}, {t: [] for t in TIERS}
+for tab in ("Beds", "Living", "Kitchen"):
+    lt = wb[tab]
+    lcols = {c.value: c.column - 1 for c in lt[4] if c.value}
+    for row in lt.iter_rows(min_row=5, values_only=True):
+        full = row[lcols["Code"]]
+        if not full:
+            continue
+        code = full.split("-", 1)[1]  # S170-BD01 -> BD01, the builder's code
+        layout[code] = round(retail_of(1, row[lcols["Unit Cost"]], row[lcols["Install Hrs"]], row[lcols["Markup %"]]))
+        for t in TIERS:
+            if row[lcols[t]]:
+                package_pieces[t].append(code)
+
+
+def layout_code(pieces):
+    """Pick-one pieces in slot order joined by "-", then each extra by "+"."""
+    if not pieces:
+        return None
+    picks = [p for slot in SLOT_ORDER for p in pieces if p.startswith(slot)]
+    return "-".join(picks) + "".join("+" + e for e in EXTRA_ORDER if e in pieces)
+
+
 pk = wb["Packages"]
 labels = {r[0].value: r for r in pk.iter_rows(min_row=5) if r[0].value}
 packages = []
@@ -129,7 +157,7 @@ for i, t in enumerate(TIERS):
     packages.append({
         "slug": t.lower().replace(" ", "-"), "name": t, "tagline": labels["Tagline"][1 + i].value,
         "van": VAN_IDS[chassis], "vanOptions": package_vo[t], "upgrades": package_upgrades[t],
-        "layout": labels["Builder layout code"][1 + i].value or None,
+        "layout": layout_code(package_pieces[t]),
     })
 if not base["short"]:
     sys.exit("Base Options retail came to $0: fill in the costs first")
@@ -137,7 +165,7 @@ if not base["short"]:
 out = Path(__file__).resolve().parent.parent / "lib" / "pricing-data.json"
 out.write_text(json.dumps({
     "source": Path(sys.argv[1]).name, "vans": vans, "vanOptions": van_options, "base": base,
-    "baseItems": base_items, "upgrades": upgrades, "packages": packages,
+    "baseItems": base_items, "upgrades": upgrades, "layout": layout, "packages": packages,
 }, indent=2) + "\n")
 for vid, v in vans.items():
     print(f"{v['code']:6} {vid:15} ${v['price']:,}")

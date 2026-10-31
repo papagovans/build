@@ -778,12 +778,12 @@
     {
       "code": "PL22",
       "category": "Water",
-      "name": "Indoor shower, fully tiled, hot and cold",
+      "name": "Tile the indoor shower",
       "manufacturer": "",
       "model": "",
       "replaces": null,
       "fits": "All",
-      "price": 8575
+      "price": 3325
     },
     {
       "code": "PL23",
@@ -1376,6 +1376,33 @@
       "price": 1026
     }
   ],
+  "layout": {
+    "BD01": 0,
+    "BD02": 966,
+    "BD03": 2716,
+    "BD04": 4284,
+    "BD05": 9240,
+    "BC01": 0,
+    "BC02": 392,
+    "SC01": 392,
+    "OC01": 1428,
+    "SS01": 1988,
+    "SHN": 0,
+    "SHY": 5250,
+    "LRSH01": 0,
+    "LRSH02": 1022,
+    "LRNSH01": 644,
+    "LRNSH02": 1666,
+    "OHS1": 714,
+    "PK01": 0,
+    "FT01": 0,
+    "PI02": 0,
+    "PI01": 574,
+    "PU02": 0,
+    "PU01": 623,
+    "ST01": 602,
+    "CB01": 130
+  },
   "packages": [
     {
       "slug": "mckinley",
@@ -1395,9 +1422,7 @@
       "upgrades": [
         "HC27",
         "EL21",
-        "PL21",
-        "HC21",
-        "KT21"
+        "HC21"
       ],
       "layout": "BD01-BC01-SHY-LRSH01-PI01-PU01"
     },
@@ -1420,11 +1445,8 @@
         "WN24",
         "WN25",
         "EL21",
-        "PL21",
         "HC21",
-        "KT21",
         "KT22",
-        "KT23",
         "RF21",
         "RF23",
         "EX21",
@@ -1461,9 +1483,7 @@
         "PL22",
         "HC21",
         "HC22",
-        "KT21",
         "KT22",
-        "KT23",
         "RF22",
         "RF24",
         "EX21",
@@ -1477,7 +1497,7 @@
         "EX29",
         "BN06"
       ],
-      "layout": "BD01-BC02-SHY-LRSH02-PI02-PU01+CB01+SC01"
+      "layout": "BD01-BC02-SHY-LRSH02-PI02-PU01+SC01+CB01"
     }
   ]
 }

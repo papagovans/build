@@ -212,7 +212,7 @@ function BuildSheet({
   const breakdown = priceBuild(catalog, build);
   const van = build.vanLengthId ? getVanLength(catalog, build.vanLengthId) : undefined;
   const optionsTotal =
-    breakdown.total - breakdown.vanPrice - breakdown.base - breakdown.lengthDelta - breakdown.packageDelta;
+    breakdown.total - breakdown.vanPrice - breakdown.base - breakdown.lengthDelta - breakdown.packageDelta - breakdown.layout;
 
   const name = [customer.firstName, customer.lastName]
     .map((v) => v.trim())
@@ -324,6 +324,12 @@ function BuildSheet({
               <Text>{planName} conversion</Text>
               <Text>{formatPrice(breakdown.base + breakdown.lengthDelta)}</Text>
             </View>
+            {breakdown.layout > 0 ? (
+              <View style={s.totalRow}>
+                <Text>Layout choices</Text>
+                <Text>{formatPrice(breakdown.layout)}</Text>
+              </View>
+            ) : null}
             {pkg && breakdown.packageDelta > 0 ? (
               <View style={s.totalRow}>
                 <Text>{pkg.name} trim package</Text>

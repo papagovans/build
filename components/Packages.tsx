@@ -86,6 +86,7 @@ export function PriceSummary({ bom }: { bom: BillOfMaterials }) {
   const rows = [
     { label: `Van: ${vanLabel(bom.van)}${bom.vanOptions.length ? ` with ${bom.vanOptions.map((v) => v.name).join(", ")}` : ""}`, value: bom.vanPrice, note: "Average price; you buy the van from the dealer" },
     { label: "Included options: the same in every Papago van", value: bom.baseTotal },
+    ...(bom.layout.length ? [{ label: "Layout choices: bed, shower, living room, kitchen", value: bom.layoutTotal }] : []),
     { label: "Upgrades in this package", value: bom.upgradesTotal },
   ];
   return (
@@ -156,6 +157,27 @@ export function LineItems({ bom, priced, name }: { bom: BillOfMaterials; priced?
           </div>
         </details>
       </section>
+      {bom.layout.length > 0 && (
+        <section className="mt-12">
+          {heading("Layout", `The ${name}'s Sprinter 170 layout, each choice at what it adds over the standard pick`, bom.layoutTotal)}
+          <ul className="mt-3 divide-y divide-line md:columns-2 md:gap-10 md:divide-y-0">
+            {bom.layout.map((l) => (
+              <li key={l.code} className="flex items-baseline justify-between gap-3 py-1.5 text-sm break-inside-avoid md:border-b md:border-line">
+                <span className="text-navy">
+                  {l.name}
+                  <span className="block text-xs text-steel">{l.label}</span>
+                </span>
+                {priced ? (
+                  <span className="text-navy whitespace-nowrap">{l.price ? formatPrice(l.price) : "Standard"}</span>
+                ) : (
+                  <span className="text-xs text-steel whitespace-nowrap">{l.price ? `+${formatPrice(l.price)}` : "Standard"}</span>
+                )}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       <section className="mt-12">
         {heading("Upgrades", upgradeCount ? `What the ${name} adds on top of the included options` : `None: the ${name} is the included options, nothing added`, bom.upgradesTotal)}
         {bom.upgrades.map((g) => (
@@ -194,6 +216,8 @@ export function ComparisonTable({ rows }: { rows: { pkg: Package; bom: BillOfMat
   const seen = new Map<string, { name: string; category: string }>();
   for (const r of rows) for (const g of r.bom.upgrades) for (const i of g.items) if (!seen.has(i.code)) seen.set(i.code, i);
   const categories = [...new Set([...seen.values()].map((u) => u.category))];
+  // Layout rows, in the builder's slot order, standard pieces left out.
+  const layoutLabels = [...new Set(rows.flatMap((r) => r.bom.layout.filter((l) => l.label !== "Standard").map((l) => l.label)))];
   const cell = "px-3 py-2 text-center";
   const label = "px-3 py-2 text-left text-navy";
   const vanRows: { label: string; value: (r: { bom: BillOfMaterials }) => string }[] = [
@@ -228,6 +252,20 @@ export function ComparisonTable({ rows }: { rows: { pkg: Package; bom: BillOfMat
             <tr key={v.label}>
               <th className={`${label} font-normal`}>{v.label}</th>
               {rows.map((r) => <td key={r.pkg.slug} className={`${cell} text-navy`}>{v.value(r)}</td>)}
+            </tr>
+          ))}
+          <tr><th colSpan={rows.length + 1} className="px-3 pt-4 pb-1 text-left text-xs font-bold uppercase tracking-widest text-steel">Layout</th></tr>
+          {layoutLabels.map((lab) => (
+            <tr key={lab}>
+              <th className={`${label} font-normal`}>{lab === "Add-on" ? "Extras" : lab}</th>
+              {rows.map((r) => {
+                const picks = r.bom.layout.filter((l) => l.label === lab);
+                return (
+                  <td key={r.pkg.slug} className={`${cell} text-navy`}>
+                    {r.bom.layout.length === 0 ? (lab === layoutLabels[0] ? <span className="text-steel">Floor plan</span> : "") : picks.length ? picks.map((p) => p.name).join(", ") : <span className="text-black/20">–</span>}
+                  </td>
+                );
+              })}
             </tr>
           ))}
           <tr><th colSpan={rows.length + 1} className="px-3 pt-4 pb-1 text-left text-xs font-bold uppercase tracking-widest text-steel">Included options</th></tr>

@@ -6,7 +6,7 @@
  * builder and the builder prices it the same way it prices anything else.
  */
 import { getOption, getVanLength, planFitsLength, type Catalog, type VanLength } from "./catalog";
-import { isModular, layoutCode, parseLayout } from "./modules";
+import { isModular, layoutCode, layoutLines, parseLayout, piecePrice } from "./modules";
 import { emptyBuild, encodeBuild, type BuildState } from "./pricing";
 import data from "./pricing-data.json";
 
@@ -41,6 +41,9 @@ export interface BillOfMaterials {
    * page shows what this package adds over the one below it. */
   upgrades: { from: string; isNew: boolean; items: { code: string; name: string; category: string; manufacturer?: string; price: number }[] }[];
   upgradesTotal: number;
+  /** A Sprinter 170's pieces, each at what it adds over the standard pick. */
+  layout: { label: string; code: string; name: string; price: number }[];
+  layoutTotal: number;
   total: number;
 }
 
@@ -63,6 +66,10 @@ export function billOfMaterials(catalog: Catalog, pkg: Package): BillOfMaterials
   const baseTotal = data.base[van.size === "long" ? "long" : "short"];
   const upgradesTotal = upgrades.reduce((s, u) => s + u.price, 0);
   const vanPrice = van.vanPrice + vanOptions.reduce((s, v) => s + v.price, 0);
+  const layout = pkg.layout
+    ? layoutLines(pkg.layout).map(({ label, piece }) => ({ label, code: piece.code, name: piece.name, price: piecePrice(piece.code) }))
+    : [];
+  const layoutTotal = layout.reduce((s, l) => s + l.price, 0);
   return {
     van,
     vanPrice,
@@ -75,6 +82,8 @@ export function billOfMaterials(catalog: Catalog, pkg: Package): BillOfMaterials
       items: upgrades.filter((u) => firstIn(u.code) === p.name),
     })),
     upgradesTotal,
-    total: vanPrice + baseTotal + upgradesTotal,
+    layout,
+    layoutTotal,
+    total: vanPrice + baseTotal + layoutTotal + upgradesTotal,
   };
 }

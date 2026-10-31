@@ -131,6 +131,17 @@ build state (van, AWD, upgrades, and a layout code on a Sprinter 170), so
 Customize is an ordinary `?b=` link. Contents and prices come from the
 workbook's Packages tab and its package columns (`lib/packages.ts`).
 
+Layout choices cost money too (owner, 2026-10-30): a shower, a lift bed over
+the dinette, a tall fridge. The workbook's Beds, Living and Kitchen tabs price
+each Sprinter 170 piece as what it adds over the standard pick in its slot
+(standard = $0, its cost already in the included options). The importer copies
+those into `pricing-data.json` (`layout`), each choice in the builder shows
+"+$X" or "Included", `priceBuild()` adds the layout to the conversion, and the
+Build Sheet shows it as "Layout choices". Package layout codes are built from
+the package ticks on those tabs. On the 170 the shower, microwave and cutting
+board are layout pieces, so the matching upgrades (PL21, KT21, KT23) are for
+vans built from a floor plan.
+
 The builder's Upgrades step lists the workbook's upgrades (`lib/upgrades.ts`),
 grouped by category and filtered to the van's make, each at what the buyer pays
 on top. Ids are the workbook codes (`EL21`, `VO01` for Sprinter AWD).

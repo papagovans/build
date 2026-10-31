@@ -1,4 +1,4 @@
-import { isModular, layoutCode, parseLayout } from "./modules";
+import { isModular, layoutCode, layoutPrice, parseLayout } from "./modules";
 import {
   defaultColors,
   getColorChoice,
@@ -86,6 +86,8 @@ export interface PriceBreakdown {
   /** What the chassis adds over the shortest van. Zero on a 144. */
   lengthDelta: number;
   packageDelta: number;
+  /** What a Sprinter 170's layout pieces add over the standard picks. */
+  layout: number;
   upgrades: { option: Option; price: number }[];
   addons: { option: Option; price: number }[];
   colors: { group: string; choice: string; price: number }[];
@@ -130,6 +132,9 @@ export function priceBuild(catalog: Catalog, state: BuildState): PriceBreakdown 
     }
   }
 
+  // Like the long-van extra, part of the conversion: counts once there is one.
+  const layout = plan ? layoutPrice(state.layout) : 0;
+
   const extras = [...upgrades, ...addons, ...colors].reduce(
     (sum, e) => sum + e.price,
     0,
@@ -140,10 +145,11 @@ export function priceBuild(catalog: Catalog, state: BuildState): PriceBreakdown 
     base,
     lengthDelta,
     packageDelta,
+    layout,
     upgrades,
     addons,
     colors,
-    total: vanPrice + base + lengthDelta + packageDelta + extras,
+    total: vanPrice + base + lengthDelta + packageDelta + layout + extras,
   };
 }
 

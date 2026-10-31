@@ -19,6 +19,7 @@ import {
   livingRoomsFor,
   parseLayout,
   pick,
+  piecePrice,
   slot,
   toggleExtra,
 } from "@/lib/modules";
@@ -1519,7 +1520,12 @@ function ChoiceRow({
       <span className="min-w-0 flex-1">
         <span className="flex items-baseline justify-between gap-3">
           <span className="brand-heading text-lg leading-tight">{piece.name}</span>
-          <span className="font-mono text-[11px] text-steel">{piece.code}</span>
+          <span className="shrink-0 text-right">
+            <span className="block text-sm font-semibold text-navy">
+              {piecePrice(piece.code) > 0 ? `+${formatPrice(piecePrice(piece.code))}` : "Included"}
+            </span>
+            <span className="block font-mono text-[11px] text-steel">{piece.code}</span>
+          </span>
         </span>
         <span className="block mt-1 text-sm text-charcoal">{piece.note}</span>
       </span>
@@ -2437,7 +2443,10 @@ function StepSummary({
                 <span>
                   {label}: <span className="font-semibold">{piece.name}</span>
                 </span>
-                <span className="font-mono text-xs text-steel">{piece.code}</span>
+                <span className="text-xs text-steel whitespace-nowrap">
+                  {piecePrice(piece.code) > 0 ? `+${formatPrice(piecePrice(piece.code))}` : "Included"}
+                  <span className="ml-2 font-mono">{piece.code}</span>
+                </span>
               </div>
             ))}
           </SummaryGroup>
@@ -2445,6 +2454,7 @@ function StepSummary({
 
         <LineItem label={van ? `${vanLabel(van)} (average price)` : "Van"} price={breakdown.vanPrice} />
         <LineItem label={`${planName} conversion`} price={breakdown.base + breakdown.lengthDelta} />
+        {breakdown.layout > 0 && <LineItem label="Layout choices" price={breakdown.layout} />}
 
         {breakdown.upgrades.length > 0 && (
           <SummaryGroup title="Upgrades">
