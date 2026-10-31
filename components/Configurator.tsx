@@ -1365,6 +1365,8 @@ function StepModular({
    * the van on its own (owner, 2026-10-26). View only: the build keeps them. */
   const [hidden, setHidden] = useState<string[]>([]);
   const codes = stageCodes(layout, step).filter((c) => !hidden.includes(PHASE_OF[c] ?? ""));
+  const [detail, setDetail] = useState<Option | null>(null);
+  const details = (piece: Piece) => setDetail(pieceOption(piece, catalog));
 
   return (
     <section>
@@ -1405,18 +1407,18 @@ function StepModular({
         <div className="space-y-8">
           {step === BED_STEP && (
             <>
-              <Choices label="Bed" pieces={slot("BD").pieces} selected={layout.picks.BD} onSelect={choose("BD")} />
+              <Choices onDetails={details} label="Bed" pieces={slot("BD").pieces} selected={layout.picks.BD} onSelect={choose("BD")} />
               {layout.picks.BD !== "BD01" && (
                 <p className="text-sm text-steel">The 3D view shows The Trailhead until this bed is drawn.</p>
               )}
-              <Choices label="Bed Cap" pieces={slot("BC").pieces} selected={layout.picks.BC} onSelect={choose("BC")} />
+              <Choices onDetails={details} label="Bed Cap" pieces={slot("BC").pieces} selected={layout.picks.BC} onSelect={choose("BC")} />
             </>
           )}
           {step === DRIVER_STEP && (
             <>
-              <Choices label="Shower" pieces={slot("SH").pieces} selected={layout.picks.SH} onSelect={choose("SH")} />
+              <Choices onDetails={details} label="Shower" pieces={slot("SH").pieces} selected={layout.picks.SH} onSelect={choose("SH")} />
               {living.length ? (
-                <Choices label="Living Room" pieces={living} selected={layout.picks.LR} onSelect={choose("LR")} />
+                <Choices onDetails={details} label="Living Room" pieces={living} selected={layout.picks.LR} onSelect={choose("LR")} />
               ) : (
                 <p className="text-sm text-steel">Choose shower or no shower to see the living rooms that fit.</p>
               )}
@@ -1430,7 +1432,9 @@ function StepModular({
                   {STANDARD_PIECES.map((piece) => (
                     <li key={piece.code} className="px-3 py-4 bg-white">
                       <span className="flex items-baseline justify-between gap-3">
-                        <span className="brand-heading text-lg leading-tight">{piece.name}</span>
+                        <button type="button" onClick={() => details(piece)} className="brand-heading text-lg leading-tight text-left underline decoration-gold decoration-2 underline-offset-4 hover:text-steel">
+                          {piece.name}
+                        </button>
                         <span className="font-mono text-[11px] text-steel">{piece.code}</span>
                       </span>
                       <span className="block mt-1 text-sm text-charcoal">{catalog.pricing.layoutInfo?.[piece.code]?.whatItIs ?? piece.note}</span>
@@ -1438,8 +1442,8 @@ function StepModular({
                   ))}
                 </ul>
               </div>
-              <Choices label="Kitchenette Insert" pieces={slot("PI").pieces} selected={layout.picks.PI} onSelect={choose("PI")} />
-              <Choices label="Kitchen Uppers" pieces={slot("PU").pieces} selected={layout.picks.PU} onSelect={choose("PU")} />
+              <Choices onDetails={details} label="Kitchenette Insert" pieces={slot("PI").pieces} selected={layout.picks.PI} onSelect={choose("PI")} />
+              <Choices onDetails={details} label="Kitchen Uppers" pieces={slot("PU").pieces} selected={layout.picks.PU} onSelect={choose("PU")} />
             </>
           )}
           {step === EXTRAS_STEP && (
@@ -1448,7 +1452,7 @@ function StepModular({
                 const on = layout.extras.includes(piece.code);
                 return (
                   <li key={piece.code}>
-                    <ChoiceRow piece={piece} on={on} role="checkbox" onClick={() => onChange((l) => toggleExtra(l, piece.code))} />
+                    <ChoiceRow piece={piece} on={on} role="checkbox" onDetails={details} onClick={() => onChange((l) => toggleExtra(l, piece.code))} />
                   </li>
                 );
               })}
@@ -1456,8 +1460,23 @@ function StepModular({
           )}
         </div>
       </div>
+      {detail && <Lightbox option={detail} onClose={() => setDetail(null)} />}
     </section>
   );
+}
+
+/** A floor plan piece as the details drawer shows it, from the workbook's Beds, Living and Kitchen tabs. */
+function pieceOption(piece: Piece, catalog: Catalog): Option {
+  const info = catalog.pricing.layoutInfo?.[piece.code];
+  return {
+    id: piece.code,
+    categoryId: "",
+    name: piece.name,
+    type: "addon",
+    price: piecePrice(catalog.pricing.layout, piece.code),
+    whatItIs: info?.whatItIs ?? piece.note,
+    whyYouNeedIt: info?.whyYouNeedIt,
+  };
 }
 
 /** A pick-one list under a small heading. */
@@ -1466,11 +1485,13 @@ function Choices({
   pieces,
   selected,
   onSelect,
+  onDetails,
 }: {
   label: string;
   pieces: Piece[];
   selected?: string;
   onSelect: (code: string) => void;
+  onDetails: (piece: Piece) => void;
 }) {
   return (
     <div>
@@ -1478,7 +1499,7 @@ function Choices({
       <ul role="radiogroup" aria-label={label} className="divide-y divide-line border-y border-line">
         {pieces.map((piece) => (
           <li key={piece.code}>
-            <ChoiceRow piece={piece} on={piece.code === selected} role="radio" onClick={() => onSelect(piece.code)} />
+            <ChoiceRow piece={piece} on={piece.code === selected} role="radio" onDetails={onDetails} onClick={() => onSelect(piece.code)} />
           </li>
         ))}
       </ul>
@@ -1491,14 +1512,18 @@ function ChoiceRow({
   on,
   role,
   onClick,
+  onDetails,
 }: {
   piece: Piece;
   on: boolean;
   role: "radio" | "checkbox";
   onClick: () => void;
+  onDetails: (piece: Piece) => void;
 }) {
   const catalog = useCatalog();
+  // Details sits beside the choice, not inside it: a button cannot hold a button.
   return (
+    <div className="relative">
     <button
       type="button"
       role={role}
@@ -1524,9 +1549,18 @@ function ChoiceRow({
             <span className="block font-mono text-[11px] text-steel">{piece.code}</span>
           </span>
         </span>
-        <span className="block mt-1 text-sm text-charcoal">{catalog.pricing.layoutInfo?.[piece.code]?.whatItIs ?? piece.note}</span>
+        <span className="block mt-1 pr-20 text-sm text-charcoal">{catalog.pricing.layoutInfo?.[piece.code]?.whatItIs ?? piece.note}</span>
       </span>
     </button>
+    <button
+      type="button"
+      onClick={() => onDetails(piece)}
+      aria-label={`Details: ${piece.name}`}
+      className="absolute right-3 bottom-4 text-sm font-semibold text-navy underline decoration-gold decoration-2 underline-offset-4 hover:text-steel focus-visible:outline focus-visible:outline-2 focus-visible:outline-gold"
+    >
+      Details
+    </button>
+    </div>
   );
 }
 
