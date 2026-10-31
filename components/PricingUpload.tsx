@@ -59,6 +59,7 @@ export default function PricingUpload({ canPublish }: { canPublish: boolean }) {
   const [preview, setPreview] = useState<Preview | null>(null);
   const [problems, setProblems] = useState<string[]>([]);
   const [done, setDone] = useState(false);
+  const [over, setOver] = useState(false);
 
   async function check(f: File) {
     setFile(f);
@@ -87,14 +88,27 @@ export default function PricingUpload({ canPublish }: { canPublish: boolean }) {
 
   return (
     <div>
-      <label className="block max-w-3xl rounded-lg border-2 border-dashed border-steel/40 bg-white p-8 text-center cursor-pointer hover:border-navy transition-colors">
+      <label
+        onDragOver={(e) => {
+          e.preventDefault();
+          setOver(true);
+        }}
+        onDragLeave={() => setOver(false)}
+        onDrop={(e) => {
+          e.preventDefault();
+          setOver(false);
+          const f = e.dataTransfer.files?.[0];
+          if (f) check(f);
+        }}
+        className={`block max-w-3xl rounded-lg border-2 border-dashed bg-white p-8 text-center cursor-pointer hover:border-navy transition-colors ${over ? "border-navy bg-offwhite" : "border-steel/40"}`}
+      >
         <input
           type="file"
           accept=".xlsx"
           className="sr-only"
           onChange={(e) => e.target.files?.[0] && check(e.target.files[0])}
         />
-        <span className="block brand-heading text-lg text-navy">{file ? file.name : "Choose the workbook"}</span>
+        <span className="block brand-heading text-lg text-navy">{file ? file.name : "Drop the workbook here, or click to choose it"}</span>
         <span className="block mt-1 text-sm text-steel">{busy ? "Reading it…" : "papago-master-pricing.xlsx, from Dropbox"}</span>
       </label>
 
