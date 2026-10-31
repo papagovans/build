@@ -12,6 +12,7 @@
     "restore": "tsx scripts/restore.ts",
     "seed": "tsx scripts/seed.ts",
     "import-pricing": "tsx scripts/import-pricing.ts",
+    "set-password": "tsx scripts/set-password.ts",
     "backup:all": "bash scripts/backup-all.sh",
     "van-model": "tsx scripts/van-model.ts",
     "modular-models": "tsx scripts/modular-models.ts"
