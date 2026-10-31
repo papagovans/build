@@ -503,6 +503,7 @@ export default function Configurator({ catalog }: { catalog: Catalog }) {
         onGetBuildSheet={() => goTo(SUMMARY_STEP)}
         canFinish={canReach(SUMMARY_STEP)}
         atSummary={step === SUMMARY_STEP}
+        vanOnly={step === LENGTH_STEP}
       />
     </div>
     </CatalogContext.Provider>
@@ -2921,12 +2922,16 @@ function SummaryBar({
   onGetBuildSheet,
   canFinish,
   atSummary,
+  vanOnly,
 }: {
   breakdown: ReturnType<typeof priceBuild>;
   planName?: string;
   onGetBuildSheet: () => void;
   canFinish: boolean;
   atSummary: boolean;
+  /** The van step shows the van's price alone (owner, 2026-10-30); the
+   * included options and everything else join from the next step. */
+  vanOnly: boolean;
 }) {
   // Shows from the moment a van is picked: the van alone, then van plus
   // conversion once there is a floor plan.
@@ -2940,12 +2945,12 @@ function SummaryBar({
         <div className="min-w-0">
           <p className="text-[11px] uppercase tracking-widest text-white/60 truncate">
             {planName}
-            {extras > 0 && ` · ${extras} option${extras === 1 ? "" : "s"} added`}
+            {!vanOnly && extras > 0 && ` · ${extras} option${extras === 1 ? "" : "s"} added`}
           </p>
           <p className="text-2xl font-extrabold leading-tight">
-            {formatPrice(breakdown.total)}
+            {formatPrice(vanOnly ? breakdown.vanPrice : breakdown.total)}
             <span className="ml-2 text-[11px] font-semibold uppercase tracking-widest text-gold align-middle">
-              {breakdown.base > 0 ? "Van + conversion" : "Van, average price"}
+              {!vanOnly && breakdown.base > 0 ? "Van + conversion" : "Van, average price"}
             </span>
           </p>
         </div>
