@@ -1030,6 +1030,16 @@ export function includedFor(catalog: Catalog, floorPlanId: string, vanLengthId: 
   );
 }
 
+/** The workbook's base options that come on this van (owner, 2026-10-30):
+ * every "All" line plus the lines for its size. No van yet: the long van. */
+export function baseItemsFor(catalog: Catalog, vanLengthId: string | null) {
+  const size = (vanLengthId ? getVanLength(catalog, vanLengthId)?.size : undefined) ?? "long";
+  return catalog.pricing.baseItems.filter((b) => b.fits === "All" || b.fits.toLowerCase() === size);
+}
+
+/** A heading's anchor id: "Heat & A/C" -> "heat-a-c". */
+export const anchorOf = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+
 /** Whether an option fits a van's make and size. No van yet: everything fits. */
 export function fitsVan(o: Option, van?: VanLength): boolean {
   return !van || ((!o.makes?.length || o.makes.includes(van.make)) && (!o.sizes?.length || o.sizes.includes(van.size)));

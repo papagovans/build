@@ -27,6 +27,8 @@ import { UPGRADES_CATEGORY_ID } from "@/lib/upgrades";
 import {
   getFloorPlan,
   fitsVan,
+  baseItemsFor,
+  anchorOf,
   getOption,
   getPackages,
   optionsFor,
@@ -503,7 +505,7 @@ export default function Configurator({ catalog }: { catalog: Catalog }) {
         onGetBuildSheet={() => goTo(SUMMARY_STEP)}
         canFinish={canReach(SUMMARY_STEP)}
         atSummary={step === SUMMARY_STEP}
-        vanOnly={step === LENGTH_STEP}
+        vanLengthId={build.vanLengthId}
       />
     </div>
     </CatalogContext.Provider>
@@ -2306,20 +2308,19 @@ function StepOptions({
  * 1 has no upgrades, so this is the whole van: a card opens the drawer with
  * the brand, model, what it is and why it is there.
  */
-function IncludedNav({ floorPlanId, vanLengthId }: { floorPlanId: string; vanLengthId: string | null }) {
+function IncludedNav({ vanLengthId }: { floorPlanId: string; vanLengthId: string | null }) {
   const catalog = useCatalog();
-  const items = includedFor(catalog, floorPlanId, vanLengthId);
-  const cats = catalog.categories.filter((c) => items.some((o) => o.categoryId === c.id));
+  const cats = [...new Set(baseItemsFor(catalog, vanLengthId).map((b) => b.category))];
   return (
-    <nav aria-label="Systems" className="bg-white/95 backdrop-blur border-b border-black/10">
+    <nav aria-label="Categories" className="bg-white/95 backdrop-blur border-b border-black/10">
       <ul className="max-w-6xl mx-auto px-4 sm:px-6 py-2 flex gap-1 overflow-x-auto text-xs">
         {cats.map((c) => (
-          <li key={c.id} className="shrink-0">
+          <li key={c} className="shrink-0">
             <a
-              href={`#${c.id}`}
+              href={`#${anchorOf(c)}`}
               className="block px-3 py-1.5 rounded-full whitespace-nowrap font-semibold uppercase tracking-wide text-steel hover:bg-offwhite"
             >
-              {c.name}
+              {c}
             </a>
           </li>
         ))}
@@ -2328,45 +2329,45 @@ function IncludedNav({ floorPlanId, vanLengthId }: { floorPlanId: string; vanLen
   );
 }
 
-function StepIncluded({
-  floorPlanId,
-  vanLengthId,
-}: {
-  floorPlanId: string;
-  vanLengthId: string | null;
-}) {
+/**
+ * The base options, from the master pricing workbook (owner, 2026-10-30): the
+ * same list in every van, grouped the way the workbook groups it, with the
+ * lines for this van's size.
+ */
+function StepIncluded({ vanLengthId }: { floorPlanId: string; vanLengthId: string | null }) {
   const catalog = useCatalog();
-  const [expanded, setExpanded] = useState<Option | null>(null);
-  const all = includedFor(catalog, floorPlanId, vanLengthId);
-  const items = topLevel(all);
-  const sections = catalog.categories
-    .map((c) => ({ category: c, items: items.filter((o) => o.categoryId === c.id) }))
-    .filter((x) => x.items.length > 0);
+  const items = baseItemsFor(catalog, vanLengthId);
+  const van = getVanLength(catalog, vanLengthId ?? "");
+  const total = catalog.pricing.base[van?.size === "short" ? "short" : "long"];
+  const cats = [...new Set(items.map((b) => b.category))];
 
   return (
     <section>
       <StepHeading
         eyebrow="Included in the price"
-        title="What’s In Your Van"
-        blurb={`Everything below comes in every build, on every floor plan, ${all.filter((o) => partsOf(all, o.id).length === 0).length} parts in all. Tap a system to see every part in it, with the brand, the model and why it is there.`}
+        title="Base Options Included In All Vans"
+        blurb={`Every Papago van comes with these ${items.length} items, whichever layout or package you choose. Together they are ${formatPrice(total)} of the price.`}
       />
-
-
-      {sections.map(({ category, items }) => (
-        <section key={category.id} id={category.id} className="scroll-mt-[260px] pt-10">
-          <div className="border-b border-black/10 pb-3 mb-6">
-            <h2 className="brand-heading text-2xl">{category.name}</h2>
-            <p className="mt-1 text-sm text-steel">{category.blurb}</p>
-          </div>
-          <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-            {items.map((o) => (
-              <OptionCard key={o.id} option={o} state="included" selected={[]} onToggle={() => {}} onExpand={setExpanded} partCount={partsOf(all, o.id).length} />
-            ))}
-          </div>
-        </section>
-      ))}
-
-      {expanded && <Lightbox option={expanded} parts={partsOf(all, expanded.id)} onClose={() => setExpanded(null)} />}
+      <div className="grid gap-x-10 gap-y-8 md:grid-cols-2">
+        {cats.map((c) => (
+          <section key={c} id={anchorOf(c)} className="scroll-mt-[260px]">
+            <h2 className="brand-heading text-xl text-navy border-b-2 border-navy pb-1">{c}</h2>
+            <ul className="divide-y divide-line">
+              {items.filter((b) => b.category === c).map((b) => (
+                <li key={b.code} className="py-2 text-sm">
+                  <span className="text-navy">
+                    {b.qty > 1 ? `${b.qty}x ` : ""}
+                    {b.name}
+                  </span>
+                  {(b.manufacturer || b.model) && (
+                    <span className="block text-xs text-steel">{[b.manufacturer, b.model].filter(Boolean).join(" ")}</span>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </section>
+        ))}
+      </div>
     </section>
   );
 }
@@ -2919,39 +2920,44 @@ function LineItem({ label, price }: { label: string; price: number }) {
 function SummaryBar({
   breakdown,
   planName,
+  vanLengthId,
   onGetBuildSheet,
   canFinish,
   atSummary,
-  vanOnly,
 }: {
   breakdown: ReturnType<typeof priceBuild>;
   planName?: string;
+  vanLengthId: string | null;
   onGetBuildSheet: () => void;
   canFinish: boolean;
   atSummary: boolean;
-  /** The van step shows the van's price alone (owner, 2026-10-30); the
-   * included options and everything else join from the next step. */
-  vanOnly: boolean;
 }) {
-  // Shows from the moment a van is picked: the van alone, then van plus
-  // conversion once there is a floor plan.
+  const catalog = useCatalog();
+  // Shows from the moment a van is picked.
   if (!planName) return null;
 
-  const extras = breakdown.upgrades.length + breakdown.addons.length;
+  /* The sum, spelled out (owner, 2026-10-30): van + base options [+ the
+   * buyer's choices] = total. The base options are in every van, so they
+   * show from the van step on, even before a floor plan is picked. */
+  const size = getVanLength(catalog, vanLengthId ?? "")?.size === "short" ? "short" : "long";
+  const base = breakdown.base > 0 ? breakdown.base + breakdown.lengthDelta : catalog.pricing.base[size];
+  const choices = breakdown.base > 0 ? breakdown.total - breakdown.vanPrice - breakdown.base - breakdown.lengthDelta : 0;
+  const total = breakdown.vanPrice + base + choices;
+  const parts = [
+    `Van ${formatPrice(breakdown.vanPrice)}`,
+    `Base options ${formatPrice(base)}`,
+    ...(choices > 0 ? [`Your choices ${formatPrice(choices)}`] : []),
+  ];
 
   return (
     <div className="fixed bottom-0 inset-x-0 z-30 bg-navy text-white shadow-[0_-4px_20px_rgba(0,0,0,0.25)]">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-4">
         <div className="min-w-0">
-          <p className="text-[11px] uppercase tracking-widest text-white/60 truncate">
-            {planName}
-            {!vanOnly && extras > 0 && ` · ${extras} option${extras === 1 ? "" : "s"} added`}
-          </p>
-          <p className="text-2xl font-extrabold leading-tight">
-            {formatPrice(vanOnly ? breakdown.vanPrice : breakdown.total)}
-            <span className="ml-2 text-[11px] font-semibold uppercase tracking-widest text-gold align-middle">
-              {!vanOnly && breakdown.base > 0 ? "Van + conversion" : "Van, average price"}
-            </span>
+          <p className="text-[11px] uppercase tracking-widest text-white/60 truncate">{planName}</p>
+          <p className="leading-tight">
+            <span className="hidden sm:inline text-sm text-white/80">{parts.join(" + ")} = </span>
+            <span className="text-2xl font-extrabold">{formatPrice(total)}</span>
+            <span className="ml-2 text-[11px] font-semibold uppercase tracking-widest text-gold align-middle">Total</span>
           </p>
         </div>
         {!atSummary && (
