@@ -9,7 +9,7 @@
  * The pricing math still comes from `priceBuild()`, so the PDF total and the
  * on-screen total can never drift.
  */
-import { fullCode, layoutLines } from "./modules";
+import { fullCode, layoutLines, piecePrice } from "./modules";
 import {
   Document,
   Page,
@@ -19,20 +19,17 @@ import {
   renderToBuffer,
 } from "@react-pdf/renderer";
 import {
-  getColorChoice,
   getFloorPlan,
   getPackages,
   getVanLength,
-  optionsFor,
+  getOption,
+  baseItemsFor,
   vanLabel,
   VAN_NOTE,
-  topLevel,
-  partsOf,
   type Catalog,
 } from "./catalog";
 import {
   formatPrice,
-  isSuperseded,
   priceBuild,
   type BuildState,
   type Customer,
@@ -139,59 +136,6 @@ interface Line {
   price: number | null; // null renders as "Included"
 }
 
-/** Everything in one category: included items still in force, then what was added. */
-function linesFor(
-  catalog: Catalog,
-  categoryId: string,
-  build: BuildState,
-): Line[] {
-  const planId = build.floorPlanId!;
-  const lines: Line[] = [];
-
-  const size = build.vanLengthId ? getVanLength(catalog, build.vanLengthId)?.size : undefined;
-  // Systems print with their parts right under them; a part is never printed
-  // on its own when its system is in the build.
-  const inCat = optionsFor(catalog, categoryId, planId);
-  const ids = new Set(inCat.map((o) => o.id));
-  const ordered = topLevel(inCat).flatMap((o) => [o, ...partsOf(inCat, o.id)]);
-  for (const option of ordered) {
-    const picked = build.selected.includes(option.id);
-    if (option.type === "included") {
-      // Only what comes on this van's size: 200W solar on a short van, 400W on a long one.
-      const fits = !option.sizes?.length || !size || option.sizes.includes(size);
-      if (fits && !isSuperseded(catalog, option.id, build.selected)) {
-        const brand = [option.manufacturer, option.model].filter(Boolean).join(" ");
-        const isPart = Boolean(option.partOf && ids.has(option.partOf));
-        lines.push({ name: isPart ? `\u00b7  ${option.name}` : option.name, note: brand || option.description, price: null });
-      }
-    } else if (picked) {
-      lines.push({
-        name: option.name,
-        note: option.description,
-        price: option.price,
-      });
-    }
-  }
-
-  for (const group of catalog.colorGroups.filter(
-    (g) => g.categoryId === categoryId,
-  )) {
-    const choice = getColorChoice(
-      catalog,
-      group.id,
-      build.colors?.[group.id] ?? "",
-    );
-    if (choice) {
-      lines.push({
-        name: `${group.name}: ${choice.name}`,
-        price: choice.price || null,
-      });
-    }
-  }
-
-  return lines;
-}
-
 function BuildSheet({
   catalog,
   build,
@@ -211,6 +155,19 @@ function BuildSheet({
   );
   const breakdown = priceBuild(catalog, build);
   const van = build.vanLengthId ? getVanLength(catalog, build.vanLengthId) : undefined;
+  const replaced = new Set(build.selected.map((id) => getOption(catalog, id)?.replaces).filter(Boolean));
+  const base = baseItemsFor(catalog, build.vanLengthId).filter((b) => !replaced.has(b.code));
+  const brand = (x: { manufacturer?: string; model?: string }) => [x.manufacturer, x.model].filter(Boolean).join(" ") || undefined;
+  const sections: { title: string; lines: Line[] }[] = [
+    ...[...new Set(base.map((b) => b.category))].map((c) => ({
+      title: `Base options: ${c}`,
+      lines: base.filter((b) => b.category === c).map((b) => ({ name: `${b.qty > 1 ? `${b.qty}x ` : ""}${b.name}`, note: brand(b), price: null })),
+    })),
+    ...[...new Set(breakdown.upgrades.map((u) => u.option.group ?? "Upgrades"))].map((g) => ({
+      title: `Upgrades: ${g}`,
+      lines: breakdown.upgrades.filter((u) => (u.option.group ?? "Upgrades") === g).map((u) => ({ name: u.option.name, note: brand(u.option), price: u.price })),
+    })),
+  ];
   const optionsTotal =
     breakdown.total - breakdown.vanPrice - breakdown.base - breakdown.lengthDelta - breakdown.packageDelta - breakdown.layout;
 
@@ -284,36 +241,32 @@ function BuildSheet({
                     <Text>{label}: {piece.name}</Text>
                     <Text style={s.rowNote}>{piece.note}</Text>
                   </View>
-                  <Text style={s.rowPrice}>{piece.code}</Text>
+                  <Text style={s.rowPrice}>
+                    {piecePrice(catalog.pricing.layout, piece.code) > 0 ? `+${formatPrice(piecePrice(catalog.pricing.layout, piece.code))}` : "Standard"}
+                  </Text>
                 </View>
               ))}
             </View>
           ) : null}
 
-          {catalog.categories.map((category) => {
-            const lines = linesFor(catalog, category.id, build);
-            if (lines.length === 0) return null;
-            return (
-              <View key={category.id} style={s.section} wrap={false}>
-                <Text style={s.sectionTitle}>{category.name.toUpperCase()}</Text>
-                {lines.map((line, i) => (
-                  <View key={`${line.name}-${i}`} style={s.row}>
-                    <View style={s.rowName}>
-                      <Text>{line.name}</Text>
-                      {line.note ? <Text style={s.rowNote}>{line.note}</Text> : null}
-                    </View>
-                    <Text style={s.rowPrice}>
-                      {line.price === null ? (
-                        <Text style={s.included}>Included</Text>
-                      ) : (
-                        formatPrice(line.price)
-                      )}
-                    </Text>
+          {/* The base options from the workbook by category, less any an
+              upgrade replaces, then the upgrades by group (owner, 2026-10-30). */}
+          {sections.map((sec) => (
+            <View key={sec.title} style={s.section} wrap={false}>
+              <Text style={s.sectionTitle}>{sec.title.toUpperCase()}</Text>
+              {sec.lines.map((line, i) => (
+                <View key={`${line.name}-${i}`} style={s.row}>
+                  <View style={s.rowName}>
+                    <Text>{line.name}</Text>
+                    {line.note ? <Text style={s.rowNote}>{line.note}</Text> : null}
                   </View>
-                ))}
-              </View>
-            );
-          })}
+                  <Text style={s.rowPrice}>
+                    {line.price === null ? <Text style={s.included}>Included</Text> : formatPrice(line.price)}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          ))}
 
           <View style={s.totals} wrap={false}>
             <View style={s.totalRow}>

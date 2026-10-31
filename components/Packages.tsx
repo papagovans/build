@@ -317,6 +317,13 @@ export function ComparisonTable({ rows }: { rows: { pkg: Package; bom: BillOfMat
 export function PackageActions({ pkg, customize, showSheet = true }: { pkg: Package; customize: string; showSheet?: boolean }) {
   return (
     <div className="flex flex-wrap gap-3">
+      {!showSheet && (
+        /* The builder's own Build Sheet, with this package in it: the PDF, and
+           the buyer's details to HubSpot (owner, 2026-10-30). */
+        <Link href={`${customize}&sheet=1`} className="px-7 py-3 rounded-full bg-gold text-navy text-sm font-semibold hover:bg-gold-deep transition-colors">
+          Get Build Sheet
+        </Link>
+      )}
       {showSheet && (
         <Link href={`/packages/${pkg.slug}/build-sheet`} className="px-7 py-3 rounded-full bg-gold text-navy text-sm font-semibold hover:bg-gold-deep transition-colors">
           Build as Is

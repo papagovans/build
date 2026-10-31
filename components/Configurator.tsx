@@ -2,6 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import Script from "next/script";
 import {
   EXTRAS,
@@ -46,9 +47,6 @@ import {
   type VanLength,
   VAN_MAKES,
   VAN_NOTE,
-  includedFor,
-  partsOf,
-  topLevel,
   vanLabel,
 } from "@/lib/catalog";
 import {
@@ -212,6 +210,9 @@ export default function Configurator({ catalog }: { catalog: Catalog }) {
   /* One lead per visit. Stepping back to the details and forward again is
    * navigation, not a second person, and HubSpot would happily log both. */
   const leadSent = useRef(false);
+  /* A package's Get Build Sheet link (?sheet=1) goes to the Build Sheet; a
+   * buyer with no details yet gives them first, then lands there. */
+  const sheetAfterDetails = useRef(false);
 
   // Restore a shared build from the URL, else the last build on this device,
   // and the customer from this device.
@@ -240,7 +241,11 @@ export default function Configurator({ catalog }: { catalog: Catalog }) {
        form first, the same gate the Van Length step applies. */
     if (restored.floorPlanId || restored.vanLengthId) {
       setBuild(restored);
-      setStep(isValidCustomer(known) ? (isModular(restored.vanLengthId) ? BED_STEP : PLAN_STEP) : INTRO_STEP);
+      const wantsSheet = new URLSearchParams(window.location.search).get("sheet") === "1";
+      sheetAfterDetails.current = wantsSheet;
+      setStep(
+        !isValidCustomer(known) ? INTRO_STEP : wantsSheet ? SUMMARY_STEP : isModular(restored.vanLengthId) ? BED_STEP : PLAN_STEP,
+      );
     }
   }, [catalog]);
 
@@ -422,7 +427,8 @@ export default function Configurator({ catalog }: { catalog: Catalog }) {
                   }),
                 }).catch(() => {});
               }
-              goTo(afterDetails);
+              goTo(sheetAfterDetails.current ? SUMMARY_STEP : afterDetails);
+              sheetAfterDetails.current = false;
             }}
           />
         )}
@@ -610,12 +616,12 @@ function Hero() {
             <span className="font-semibold">Two ways to start:</span> build from scratch right here, or start from one of
             our four packages and change anything you like.
           </p>
-          <a
+          <Link
             href="/packages"
             className="shrink-0 px-5 py-2 rounded-full border-2 border-navy text-navy text-sm font-semibold hover:bg-navy hover:text-white transition-colors"
           >
             See the packages →
-          </a>
+          </Link>
         </div>
       </div>
     </section>
@@ -2364,7 +2370,9 @@ function StepSummary({
    * carries the conversion price. */
   const planName = build.layout ? "Custom Layout" : plan?.name;
   const van = build.vanLengthId ? getVanLength(catalog, build.vanLengthId) : undefined;
-  const included = includedFor(catalog, build.floorPlanId!, build.vanLengthId);
+  // Base options still in force: an upgrade that replaces one takes its place.
+  const replaced = new Set(build.selected.map((id) => getOption(catalog, id)?.replaces).filter(Boolean));
+  const base = baseItemsFor(catalog, build.vanLengthId).filter((b) => !replaced.has(b.code));
   const [pdfState, setPdfState] = useState<"idle" | "working" | "error">("idle");
 
   async function downloadBuildSheet() {
@@ -2491,49 +2499,28 @@ function StepSummary({
             </p>
           )}
         </div>
-        {/* Everything the price buys, by category, each system with its parts
-            under it: buyers should see exactly what they are paying for. */}
+        {/* Everything the price buys: the base options from the workbook, by
+            category, less any an upgrade replaces (owner, 2026-10-30). */}
         <div className="mt-8">
-          <h3 className="brand-heading text-xl">What&rsquo;s Included</h3>
-          <p className="mt-1 text-sm text-steel">
-            Every item below comes in the price, {included.filter((o) => partsOf(included, o.id).length === 0).length} parts in all.
-          </p>
-          {catalog.categories.map((c) => {
-            const items = topLevel(included).filter((o) => o.categoryId === c.id);
-            if (items.length === 0) return null;
-            return (
-              <div key={c.id} className="mt-6">
-                <h4 className="text-xs font-bold uppercase tracking-widest text-navy border-b border-black/10 pb-1.5">{c.name}</h4>
-                <ul className="mt-2 divide-y divide-black/5">
-                  {items.map((o) => {
-                    const sub = partsOf(included, o.id);
-                    const brand = (x: Option) => [x.manufacturer, x.model].filter(Boolean).join(" ");
-                    return (
-                      <li key={o.id} className="py-2">
-                        <div className="flex justify-between gap-4 text-sm">
-                          <span className="font-semibold text-charcoal">
-                            {o.name}
-                            {brand(o) && <span className="font-normal text-steel"> &middot; {brand(o)}</span>}
-                          </span>
-                          <span className="text-xs text-steel shrink-0">Included</span>
-                        </div>
-                        {sub.length > 0 && (
-                          <ul className="mt-1.5 ml-4 grid gap-x-8 gap-y-1 sm:grid-cols-2 text-[13px] text-steel">
-                            {sub.map((p) => (
-                              <li key={p.id} className="list-disc">
-                                <span className="text-charcoal">{p.name}</span>
-                                {brand(p) && <span> &middot; {brand(p)}</span>}
-                              </li>
-                            ))}
-                          </ul>
-                        )}
-                      </li>
-                    );
-                  })}
-                </ul>
-              </div>
-            );
-          })}
+          <h3 className="brand-heading text-xl">Base Options Included In All Vans</h3>
+          <p className="mt-1 text-sm text-steel">Every item below comes in the price, {base.length} in all.</p>
+          {[...new Set(base.map((b) => b.category))].map((c) => (
+            <div key={c} className="mt-6">
+              <h4 className="text-xs font-bold uppercase tracking-widest text-navy border-b border-black/10 pb-1.5">{c}</h4>
+              <ul className="mt-2 divide-y divide-black/5">
+                {base.filter((b) => b.category === c).map((b) => (
+                  <li key={b.code} className="py-2 flex justify-between gap-4 text-sm">
+                    <span className="font-semibold text-charcoal">
+                      {b.qty > 1 ? `${b.qty}x ` : ""}
+                      {b.name}
+                      {(b.manufacturer || b.model) && <span className="font-normal text-steel"> &middot; {[b.manufacturer, b.model].filter(Boolean).join(" ")}</span>}
+                    </span>
+                    <span className="text-xs text-steel shrink-0">Included</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
         </div>
 
       </div>
