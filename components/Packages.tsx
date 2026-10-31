@@ -84,7 +84,7 @@ export function PackageCard({ pkg, bom }: { pkg: Package; bom: BillOfMaterials }
 export function PriceSummary({ bom }: { bom: BillOfMaterials }) {
   const rows = [
     { label: `Van: ${vanLabel(bom.van)}${bom.vanOptions.length ? ` with ${bom.vanOptions.map((v) => v.name).join(", ")}` : ""}`, value: bom.vanPrice, note: "Average price; you buy the van from the dealer" },
-    { label: "Base build: everything every Papago van gets", value: bom.baseTotal },
+    { label: "Included options: the same in every Papago van", value: bom.baseTotal },
     { label: "Upgrades in this package", value: bom.upgradesTotal },
   ];
   return (
@@ -107,42 +107,77 @@ export function PriceSummary({ bom }: { bom: BillOfMaterials }) {
 }
 
 /**
- * Every line, grouped. With `priced`, each line carries its price: the Build
- * Sheet. Without, it is the what's-included list on the package page.
+ * Every line, in two parts (owner, 2026-10-30): the Included Options, the
+ * same in every package, then the Upgrades, grouped by the package each first
+ * appears in so the step up from one package to the next is plain. With
+ * `priced`, every line carries its price and the included list starts open:
+ * the Build Sheet. Without, it is the package page.
  */
-export function LineItems({ bom, priced }: { bom: BillOfMaterials; priced?: boolean }) {
-  const section = (title: string, total: number, groups: { category: string; items: { code: string; name: string; manufacturer?: string; retail?: number; price?: number; qty?: number }[] }[]) =>
-    groups.length > 0 && (
-      <section className="mt-10">
-        <div className="flex items-baseline justify-between gap-4 border-b-2 border-navy pb-2">
-          <h2 className="brand-heading text-xl text-navy">{title}</h2>
-          {priced && <p className="text-sm font-semibold text-navy">{formatPrice(total)}</p>}
-        </div>
-        <div className="mt-4 grid gap-x-10 gap-y-6 md:grid-cols-2">
-          {groups.map((g) => (
-            <div key={g.category}>
-              <h3 className="text-xs font-bold uppercase tracking-widest text-steel mb-1">{g.category}</h3>
-              <ul className="divide-y divide-line">
-                {g.items.map((i) => (
-                  <li key={i.code} className="flex items-baseline justify-between gap-3 py-1.5 text-sm">
-                    <span className="text-navy">
-                      {i.qty && i.qty > 1 ? `${i.qty}x ` : ""}
-                      {i.name}
-                      {i.manufacturer && <span className="text-steel">, {i.manufacturer}</span>}
-                    </span>
-                    {priced && <span className="text-navy whitespace-nowrap">{formatPrice(i.retail ?? i.price ?? 0)}</span>}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
-        </div>
-      </section>
-    );
+export function LineItems({ bom, priced, name }: { bom: BillOfMaterials; priced?: boolean; name: string }) {
+  const count = bom.base.reduce((n, g) => n + g.items.length, 0);
+  const upgradeCount = bom.upgrades.reduce((n, g) => n + g.items.length, 0);
+  const heading = (title: string, sub: string, total?: number) => (
+    <div className="flex items-end justify-between gap-4 border-b-2 border-navy pb-2">
+      <div>
+        <h2 className="brand-heading text-2xl text-navy">{title}</h2>
+        <p className="text-sm text-steel">{sub}</p>
+      </div>
+      {priced && total !== undefined && <p className="text-lg font-bold text-navy whitespace-nowrap">{formatPrice(total)}</p>}
+    </div>
+  );
   return (
     <>
-      {section("The Base Build", bom.baseTotal, bom.base)}
-      {section("Upgrades in This Package", bom.upgradesTotal, bom.upgrades)}
+      <section className="mt-12">
+        {heading("Upgrades", upgradeCount ? `What the ${name} adds on top of the included options` : `None: the ${name} is the included options, nothing added`, bom.upgradesTotal)}
+        {bom.upgrades.map((g) => (
+          <div key={g.from} className="mt-5">
+            <h3 className={`text-xs font-bold uppercase tracking-widest mb-1 ${g.isNew ? "text-sky" : "text-steel"}`}>
+              {g.isNew ? `New in the ${g.from}` : `From the ${g.from}`} ({g.items.length})
+            </h3>
+            <ul className="divide-y divide-line md:columns-2 md:gap-10 md:divide-y-0">
+              {g.items.map((i) => (
+                <li key={i.code} className="flex items-baseline justify-between gap-3 py-1.5 text-sm break-inside-avoid md:border-b md:border-line">
+                  <span className="text-navy">
+                    {i.name}
+                    {i.manufacturer && <span className="text-steel">, {i.manufacturer}</span>}
+                    <span className="block text-xs text-steel">{i.category}</span>
+                  </span>
+                  {priced && <span className="text-navy whitespace-nowrap">{formatPrice(i.price)}</span>}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </section>
+
+      <section className="mt-12">
+        {heading("Included Options", `The same ${count} items in every Papago van, whichever package or none`, bom.baseTotal)}
+        <details open={priced} className="group mt-3">
+          <summary className="cursor-pointer list-none text-sm font-semibold text-navy hover:underline">
+            <span className="group-open:hidden">Show all {count} included options ↓</span>
+            <span className="hidden group-open:inline">Hide the list ↑</span>
+          </summary>
+          <div className="mt-4 grid gap-x-10 gap-y-6 md:grid-cols-2">
+            {bom.base.map((g) => (
+              <div key={g.category}>
+                <h3 className="text-xs font-bold uppercase tracking-widest text-steel mb-1">{g.category}</h3>
+                <ul className="divide-y divide-line">
+                  {g.items.map((i) => (
+                    <li key={i.code} className="flex items-baseline justify-between gap-3 py-1.5 text-sm">
+                      <span className="text-navy">
+                        {i.qty && i.qty > 1 ? `${i.qty}x ` : ""}
+                        {i.name}
+                        {i.manufacturer && <span className="text-steel">, {i.manufacturer}</span>}
+                      </span>
+                      {priced && <span className="text-navy whitespace-nowrap">{formatPrice(i.retail)}</span>}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        </details>
+      </section>
     </>
   );
 }

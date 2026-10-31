@@ -34,7 +34,7 @@ export default async function PackageBuildSheet({ params }: PageProps<"/packages
         <PriceSummary bom={bom} />
         <p className="mt-2 text-xs text-steel">{VAN_NOTE} Estimated prices, round one.</p>
       </div>
-      <LineItems bom={bom} priced />
+      <LineItems bom={bom} priced name={pkg.name} />
       <div className="mt-12 flex flex-wrap items-center justify-between gap-4 border-t border-line pt-6">
         <p className="text-sm text-steel">Questions about this build? Call us at <a href="tel:+14807617175" className="font-semibold text-navy">(480) 761-7175</a>.</p>
         <PackageActions pkg={pkg} customize={customizeLink(catalog, pkg)} showSheet={false} />

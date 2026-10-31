@@ -46,7 +46,7 @@ export default async function PackagePage({ params }: PageProps<"/packages/[slug
           </div>
         </div>
       </div>
-      <LineItems bom={bom} />
+      <LineItems bom={bom} name={pkg.name} />
     </PackagesShell>
   );
 }

@@ -37,10 +37,15 @@ export interface BillOfMaterials {
   vanOptions: { name: string; price: number }[];
   base: { category: string; items: BaseItem[] }[];
   baseTotal: number;
-  upgrades: { category: string; items: { code: string; name: string; manufacturer?: string; price: number }[] }[];
+  /** Grouped by the package each upgrade first appears in, lowest first, so a
+   * page shows what this package adds over the one below it. */
+  upgrades: { from: string; isNew: boolean; items: { code: string; name: string; category: string; manufacturer?: string; price: number }[] }[];
   upgradesTotal: number;
   total: number;
 }
+
+/** The lowest package carrying an upgrade. PACKAGES runs cheapest first. */
+const firstIn = (code: string) => PACKAGES.find((p) => (p.upgrades as string[]).includes(code))?.name;
 
 /** Every line of a package with its price, grouped the way the workbook groups it. */
 export function billOfMaterials(catalog: Catalog, pkg: Package): BillOfMaterials | undefined {
@@ -64,7 +69,11 @@ export function billOfMaterials(catalog: Catalog, pkg: Package): BillOfMaterials
     vanOptions,
     base: group(items),
     baseTotal,
-    upgrades: group(upgrades),
+    upgrades: PACKAGES.filter((p) => upgrades.some((u) => firstIn(u.code) === p.name)).map((p) => ({
+      from: p.name,
+      isNew: p.name === pkg.name,
+      items: upgrades.filter((u) => firstIn(u.code) === p.name),
+    })),
     upgradesTotal,
     total: vanPrice + baseTotal + upgradesTotal,
   };
