@@ -52,8 +52,16 @@ export function PackageCard({ pkg, bom }: { pkg: Package; bom: BillOfMaterials }
       href={`/packages/${pkg.slug}`}
       className="group flex flex-col bg-white rounded-lg border-2 border-black/10 hover:border-sky/40 hover:shadow-lg overflow-hidden transition-all"
     >
-      <div className="relative aspect-[903/576] bg-offwhite">
-        {bom.van.image && <Image src={bom.van.image} alt={vanLabel(bom.van)} fill sizes="(max-width: 768px) 100vw, 300px" className="object-contain" />}
+      {/* A real Papago build in this package, from its page on papagovans.com
+          (owner, 2026-10-30). 800px webp in public/packages. */}
+      <div className="relative aspect-[3/2] bg-offwhite overflow-hidden">
+        <Image
+          src={`/packages/${pkg.slug}.webp`}
+          alt={`A Papago ${pkg.name} build`}
+          fill
+          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 300px"
+          className="object-cover transition-transform duration-500 group-hover:scale-105"
+        />
       </div>
       <div className="p-5 flex flex-col flex-1">
         <Eyebrow>{pkg.tagline}</Eyebrow>
