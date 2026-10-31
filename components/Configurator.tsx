@@ -1249,6 +1249,7 @@ function StepUpgrades({
   onToggle: (id: string) => void;
 }) {
   const catalog = useCatalog();
+  const [expanded, setExpanded] = useState<Option | null>(null);
   const van = getVanLength(catalog, vanLengthId ?? "");
   const upgrades = catalog.options.filter((o) => o.categoryId === UPGRADES_CATEGORY_ID && fitsVan(o, van));
   /* Grouped the way the workbook groups them, in the order they first appear. */
@@ -1258,56 +1259,19 @@ function StepUpgrades({
       <StepHeading
         eyebrow={possessive}
         title="Add Upgrades"
-        blurb="All optional. Pick what you want on top of the build; the total updates as you go. Where an upgrade replaces something in the build, the price is the difference."
+        blurb="All optional. Tap a photo for the details, Add to put it in your build; the total updates as you go. Where an upgrade replaces something in the build, the price is the difference."
       />
-      <p className="-mt-4 mb-6 text-xs font-semibold uppercase tracking-widest text-steel">
-        Estimated prices
-      </p>
-      <div className="max-w-3xl space-y-8">
-        {groups.map((g) => (
-          <div key={g}>
-            <h3 className="text-xs font-bold uppercase tracking-widest text-steel mb-2">{g}</h3>
-            <ul aria-label={g} className="divide-y divide-line border-y border-line">
-              {upgrades.filter((o) => (o.group ?? "Upgrades") === g).map((o) => {
-                const on = selected.includes(o.id);
-                const needs = (o.requires ?? []).map((id) => getOption(catalog, id)?.name).filter(Boolean);
-                return (
-                  <li key={o.id}>
-                    <button
-                      type="button"
-                      role="checkbox"
-                      aria-checked={on}
-                      onClick={() => onToggle(o.id)}
-                      className={`group w-full text-left flex gap-4 px-3 py-3 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-gold ${
-                        on ? "bg-white" : "hover:bg-white/60"
-                      }`}
-                    >
-                      <span
-                        aria-hidden="true"
-                        className={`mt-1 h-3.5 w-3.5 shrink-0 rounded border transition-colors ${
-                          on ? "border-gold bg-gold" : "border-steel/40 group-hover:border-steel"
-                        }`}
-                      />
-                      <span className="min-w-0 flex-1">
-                        <span className="flex items-baseline justify-between gap-3">
-                          <span className="font-semibold text-navy leading-snug">{o.name}</span>
-                          <span className="text-sm font-semibold text-navy shrink-0">+{formatPrice(o.price)}</span>
-                        </span>
-                        {(o.manufacturer || o.model) && (
-                          <span className="block mt-0.5 text-xs text-steel">{[o.manufacturer, o.model].filter(Boolean).join(" ")}</span>
-                        )}
-                        {needs.length > 0 && (
-                          <span className="block mt-0.5 text-xs text-steel">Needs the {needs.join(", ")}, added with it</span>
-                        )}
-                      </span>
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
+      {groups.map((g) => (
+        <section key={g} id={anchorOf(g)} className="scroll-mt-[220px] pt-6">
+          <h2 className="brand-heading text-xl text-navy border-b border-black/10 pb-2 mb-4">{g}</h2>
+          <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+            {upgrades.filter((o) => (o.group ?? "Upgrades") === g).map((o) => (
+              <OptionCard key={o.id} option={o} state="choosable" selected={selected} onToggle={onToggle} onExpand={setExpanded} />
+            ))}
           </div>
-        ))}
-      </div>
+        </section>
+      ))}
+      {expanded && <Lightbox option={expanded} onClose={() => setExpanded(null)} />}
     </section>
   );
 }
@@ -2342,38 +2306,41 @@ function IncludedNav({ vanLengthId }: { floorPlanId: string; vanLengthId: string
  */
 function StepIncluded({ vanLengthId }: { floorPlanId: string; vanLengthId: string | null }) {
   const catalog = useCatalog();
-  const items = baseItemsFor(catalog, vanLengthId);
+  const [expanded, setExpanded] = useState<Option | null>(null);
+  const items: Option[] = baseItemsFor(catalog, vanLengthId).map((b) => ({
+    id: b.code,
+    categoryId: b.category,
+    name: `${b.qty > 1 ? `${b.qty}x ` : ""}${b.name}`,
+    type: "included",
+    price: 0,
+    thumb: b.photo,
+    manufacturer: b.manufacturer || undefined,
+    model: b.model || undefined,
+    whatItIs: b.whatItIs,
+    whyYouNeedIt: b.whyYouNeedIt,
+  }));
   const van = getVanLength(catalog, vanLengthId ?? "");
   const total = catalog.pricing.base[van?.size === "short" ? "short" : "long"];
-  const cats = [...new Set(items.map((b) => b.category))];
+  const cats = [...new Set(items.map((b) => b.categoryId))];
 
   return (
     <section>
       <StepHeading
         eyebrow="Included in the price"
         title="Base Options Included In All Vans"
-        blurb={`Every Papago van comes with these ${items.length} items, whichever layout or package you choose. Together they are ${formatPrice(total)} of the price.`}
+        blurb={`Every Papago van comes with these ${items.length} items, whichever layout or package you choose. Together they are ${formatPrice(total)} of the price. Tap a photo for the details.`}
       />
-      <div className="grid gap-x-10 gap-y-8 md:grid-cols-2">
-        {cats.map((c) => (
-          <section key={c} id={anchorOf(c)} className="scroll-mt-[260px]">
-            <h2 className="brand-heading text-xl text-navy border-b-2 border-navy pb-1">{c}</h2>
-            <ul className="divide-y divide-line">
-              {items.filter((b) => b.category === c).map((b) => (
-                <li key={b.code} className="py-2 text-sm">
-                  <span className="text-navy">
-                    {b.qty > 1 ? `${b.qty}x ` : ""}
-                    {b.name}
-                  </span>
-                  {(b.manufacturer || b.model) && (
-                    <span className="block text-xs text-steel">{[b.manufacturer, b.model].filter(Boolean).join(" ")}</span>
-                  )}
-                </li>
-              ))}
-            </ul>
-          </section>
-        ))}
-      </div>
+      {cats.map((c) => (
+        <section key={c} id={anchorOf(c)} className="scroll-mt-[260px] pt-6">
+          <h2 className="brand-heading text-xl text-navy border-b border-black/10 pb-2 mb-4">{c}</h2>
+          <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+            {items.filter((o) => o.categoryId === c).map((o) => (
+              <OptionCard key={o.id} option={o} state="included" selected={[]} onToggle={() => {}} onExpand={setExpanded} />
+            ))}
+          </div>
+        </section>
+      ))}
+      {expanded && <Lightbox option={expanded} onClose={() => setExpanded(null)} />}
     </section>
   );
 }
@@ -2635,11 +2602,14 @@ function CardImage({
 }) {
   if (!option.thumb) {
     return (
-      <div className="aspect-[4/3] rounded-md bg-offwhite grid place-items-center">
-        <span className="text-steel/30 text-3xl font-bold">
-          {option.name.charAt(0)}
-        </span>
-      </div>
+      <button
+        type="button"
+        onClick={() => onExpand(option)}
+        aria-label={`More about ${option.name}`}
+        className="aspect-[4/3] w-full rounded-md bg-offwhite grid place-items-center cursor-zoom-in"
+      >
+        <span className="text-steel/30 text-3xl font-bold">{option.name.charAt(0)}</span>
+      </button>
     );
   }
   return (

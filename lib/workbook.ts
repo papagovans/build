@@ -41,10 +41,17 @@ export interface PricingData {
   vans: Record<string, { code: string; price: number }>;
   vanOptions: { code: string; name: string; fits: string; price: number }[];
   base: { short: number; long: number };
-  baseItems: { code: string; category: string; name: string; manufacturer: string; model: string; fits: string; qty: number; retail: number }[];
-  upgrades: { code: string; category: string; name: string; manufacturer: string; model: string; replaces: string | null; fits: string; price: number }[];
+  baseItems: ({ code: string; category: string; name: string; manufacturer: string; model: string; fits: string; qty: number; retail: number } & Media)[];
+  upgrades: ({ code: string; category: string; name: string; manufacturer: string; model: string; replaces: string | null; fits: string; price: number } & Media)[];
   layout: Record<string, number>;
   packages: { slug: string; name: string; tagline: string; van: string; vanOptions: string[]; upgrades: string[]; layout: string | null }[];
+}
+
+/** What a buyer sees when they open an item: optional, blank when not filled in. */
+interface Media {
+  photo?: string;
+  whatItIs?: string;
+  whyYouNeedIt?: string;
 }
 
 type Cell = ExcelJS.CellValue;
@@ -77,6 +84,12 @@ function table(ws: ExcelJS.Worksheet, headerRow: number, problems: string[], nee
   });
   for (const n of need) if (!cols[n]) problems.push(`${ws.name}: no "${n}" column in row ${headerRow}`);
   return cols;
+}
+
+/** The optional Photo / What It Is / Why You Need It columns of a row. */
+function mediaOf(row: ExcelJS.Row, cols: Record<string, number>): Media {
+  const get = (name: string) => (cols[name] ? str(row.getCell(cols[name]).value) || undefined : undefined);
+  return { photo: get("Photo"), whatItIs: get("What It Is"), whyYouNeedIt: get("Why You Need It") };
 }
 
 export async function parseWorkbook(buffer: ArrayBuffer, source: string): Promise<PricingData> {
@@ -149,7 +162,7 @@ export async function parseWorkbook(buffer: ArrayBuffer, source: string): Promis
     baseItems.push({
       code, category: str(row.getCell(bc.Category).value), name: str(row.getCell(bc.Description).value),
       manufacturer: str(row.getCell(bc.Manufacturer).value), model: str(row.getCell(bc["Model #"]).value),
-      fits, qty, retail: Math.round(retail),
+      fits, qty, retail: Math.round(retail), ...mediaOf(row, bc),
     });
   });
   base.short = Math.round(base.short);
@@ -171,7 +184,7 @@ export async function parseWorkbook(buffer: ArrayBuffer, source: string): Promis
     upgrades.push({
       code, category: str(row.getCell(uc.Category).value), name: str(row.getCell(uc.Description).value),
       manufacturer: str(row.getCell(uc.Manufacturer).value), model: str(row.getCell(uc["Model #"]).value),
-      replaces, fits: str(row.getCell(uc.Fits).value) || "All", price: Math.round(pays),
+      replaces, fits: str(row.getCell(uc.Fits).value) || "All", price: Math.round(pays), ...mediaOf(row, uc),
     });
     for (const t of TIERS) if (num(row.getCell(uc[t]).value)) packageUpgrades[t].push(code);
   });

@@ -26,7 +26,7 @@ const REQUIRES: Record<string, string[]> = {
 const MAKES: Record<string, VanMake> = { Sprinter: "sprinter", Transit: "transit", ProMaster: "promaster" };
 const SIZES: Record<string, VanSize> = { Short: "short", Long: "long" };
 
-function toOption(u: { code: string; category: string; name: string; manufacturer?: string; model?: string; replaces?: string | null; fits: string; price: number }): Option {
+function toOption(u: { code: string; category: string; name: string; manufacturer?: string; model?: string; replaces?: string | null; fits: string; price: number; photo?: string; whatItIs?: string; whyYouNeedIt?: string }): Option {
   return {
     id: u.code,
     categoryId: UPGRADES_CATEGORY_ID,
@@ -38,6 +38,9 @@ function toOption(u: { code: string; category: string; name: string; manufacture
     requires: REQUIRES[u.code],
     manufacturer: u.manufacturer || undefined,
     model: u.model || undefined,
+    thumb: u.photo,
+    whatItIs: u.whatItIs,
+    whyYouNeedIt: u.whyYouNeedIt,
     makes: MAKES[u.fits] ? [MAKES[u.fits]] : undefined,
     sizes: SIZES[u.fits] ? [SIZES[u.fits]] : undefined,
   };
