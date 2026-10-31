@@ -218,6 +218,16 @@ export function ComparisonTable({ rows }: { rows: { pkg: Package; bom: BillOfMat
   const categories = [...new Set([...seen.values()].map((u) => u.category))];
   // Layout rows, in the builder's slot order, standard pieces left out.
   const layoutLabels = [...new Set(rows.flatMap((r) => r.bom.layout.filter((l) => l.label !== "Standard").map((l) => l.label)))];
+  /* A van built from a floor plan (the 144) has no pieces; its plan is the
+   * included options. ponytail: written out here; give the 144 its own rows on
+   * the Beds/Living/Kitchen tabs if it ever builds piece by piece. */
+  const FROM_INCLUDED: Record<string, string> = {
+    Bed: "Fixed platform bed",
+    Shower: "No shower (outdoor shower)",
+    "Living Room": "Bench seat with storage",
+    "Kitchenette Insert": "Under-counter cabinets",
+    "Kitchen Uppers": "Overhead cabinets, no microwave",
+  };
   const cell = "px-3 py-2 text-center";
   const label = "px-3 py-2 text-left text-navy";
   const vanRows: { label: string; value: (r: { bom: BillOfMaterials }) => string }[] = [
@@ -254,7 +264,7 @@ export function ComparisonTable({ rows }: { rows: { pkg: Package; bom: BillOfMat
               {rows.map((r) => <td key={r.pkg.slug} className={`${cell} text-navy`}>{v.value(r)}</td>)}
             </tr>
           ))}
-          <tr><th colSpan={rows.length + 1} className="px-3 pt-4 pb-1 text-left text-xs font-bold uppercase tracking-widest text-steel">Layout</th></tr>
+          <tr><th colSpan={rows.length + 1} className="px-3 pt-4 pb-1 text-left text-xs font-bold uppercase tracking-widest text-steel">Floor Plan</th></tr>
           {layoutLabels.map((lab) => (
             <tr key={lab}>
               <th className={`${label} font-normal`}>{lab === "Add-on" ? "Extras" : lab}</th>
@@ -262,7 +272,13 @@ export function ComparisonTable({ rows }: { rows: { pkg: Package; bom: BillOfMat
                 const picks = r.bom.layout.filter((l) => l.label === lab);
                 return (
                   <td key={r.pkg.slug} className={`${cell} text-navy`}>
-                    {r.bom.layout.length === 0 ? (lab === layoutLabels[0] ? <span className="text-steel">Floor plan</span> : "") : picks.length ? picks.map((p) => p.name).join(", ") : <span className="text-black/20">–</span>}
+                    {r.bom.layout.length === 0 ? (
+                      FROM_INCLUDED[lab] ?? <span className="text-black/20">–</span>
+                    ) : picks.length ? (
+                      picks.map((p) => p.name).join(", ")
+                    ) : (
+                      <span className="text-black/20">–</span>
+                    )}
                   </td>
                 );
               })}
