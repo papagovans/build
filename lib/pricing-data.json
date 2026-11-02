@@ -46,6 +46,54 @@
       "name": "EcoBoost V6 and all-wheel drive",
       "fits": "Transit",
       "price": 5750
+    },
+    {
+      "code": "VO03",
+      "name": "High Output engine (211 hp)",
+      "fits": "Sprinter",
+      "price": 2850
+    },
+    {
+      "code": "VO04",
+      "name": "Driver Assistance Package",
+      "fits": "Sprinter",
+      "price": 2439
+    },
+    {
+      "code": "VO05",
+      "name": "MBUX 10.25\" touchscreen with navigation",
+      "fits": "Sprinter",
+      "price": 1645
+    },
+    {
+      "code": "VO06",
+      "name": "360-degree camera parking package",
+      "fits": "Sprinter",
+      "price": 879
+    },
+    {
+      "code": "VO07",
+      "name": "LED headlights (Exterior Lighting Package)",
+      "fits": "Sprinter",
+      "price": 1825
+    },
+    {
+      "code": "VO08",
+      "name": "Comfort seats, driver and passenger",
+      "fits": "Sprinter",
+      "price": 2283
+    },
+    {
+      "code": "VO09",
+      "name": "Metallic paint",
+      "fits": "Sprinter",
+      "price": 1215
+    },
+    {
+      "code": "VO10",
+      "name": "Aluminum wheels",
+      "fits": "Sprinter",
+      "price": 1029
     }
   ],
   "base": {

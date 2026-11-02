@@ -162,6 +162,13 @@ The builder's Upgrades step lists the workbook's upgrades (`lib/upgrades.ts`),
 grouped by category and filtered to the van's make, each at what the buyer pays
 on top. Ids are the workbook codes (`EL21`, `VO01` for Sprinter AWD).
 
+The van's own options are on the Your Van step instead (owner, 2026-11-02):
+under the chosen length, 2WD or AWD (`VO01`, `VO02`, the `DRIVETRAIN` set in
+`Configurator.tsx`), then the maker's factory options, each at the maker's
+price from the Chassis tab's Van Options table (`VO03` to `VO10`, Sprinter
+only so far). They are still options in `build.selected`, so pricing, `?b=`
+and a change of make treat them like any upgrade.
+
 ### The modular build (Sprinter 170)
 
 The Sprinter 170 is built piece by piece instead of from a floor plan

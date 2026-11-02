@@ -436,7 +436,9 @@ export default function Configurator({ catalog }: { catalog: Catalog }) {
         {step === LENGTH_STEP && (
           <StepVanLength
             selectedId={build.vanLengthId}
+            selected={build.selected}
             possessive={possessive}
+            onToggle={(id) => setBuild((b) => toggleOption(catalog, b, id))}
             onChoose={(id) =>
               setBuild((b) => {
                 const next = setVanLength(catalog, b, id);
@@ -929,13 +931,17 @@ function Stepper({
  */
 function StepVanLength({
   selectedId,
+  selected,
   possessive,
   onChoose,
+  onToggle,
   onContinue,
 }: {
   selectedId: string | null;
+  selected: string[];
   possessive: string;
   onChoose: (id: string) => void;
+  onToggle: (id: string) => void;
   onContinue: () => void;
 }) {
   const catalog = useCatalog();
@@ -1024,6 +1030,9 @@ function StepVanLength({
                     })}
                   </div>
                 )}
+                {open && chosenMake === make.id && (
+                  <FactoryOptions van={getVanLength(catalog, selectedId ?? "")} selected={selected} onToggle={onToggle} />
+                )}
               </div>
             );
           })}
@@ -1042,6 +1051,63 @@ function StepVanLength({
         </div>
       </div>
     </section>
+  );
+}
+
+/* The factory's own drive choice: picking it is the AWD, not picking it 2WD. */
+const DRIVETRAIN = new Set(["VO01", "VO02"]);
+
+/**
+ * The maker's options under the chosen van (owner, 2026-11-02): 2WD or AWD,
+ * then the factory extras, each at the maker's price from the Chassis tab.
+ * They are the workbook's van options, so selecting one is toggleOption()
+ * like any upgrade and a change of make drops them.
+ */
+function FactoryOptions({ van, selected, onToggle }: { van?: VanLength; selected: string[]; onToggle: (id: string) => void }) {
+  const catalog = useCatalog();
+  const options = catalog.options.filter((o) => o.categoryId === UPGRADES_CATEGORY_ID && o.group === "Van" && fitsVan(o, van));
+  if (!van || options.length === 0) return null;
+  const awd = options.find((o) => DRIVETRAIN.has(o.id));
+  const extras = options.filter((o) => !DRIVETRAIN.has(o.id));
+  const pill = (on: boolean) =>
+    `flex items-baseline justify-between gap-3 rounded-md px-3 py-2 border text-left text-sm transition-colors ${
+      on ? "border-navy bg-offwhite" : "border-line hover:border-steel/50"
+    }`;
+  return (
+    <div className="px-3 pb-4 space-y-4">
+      {awd && (
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-widest text-steel mb-1.5">Drivetrain</p>
+          <div role="radiogroup" aria-label="Drivetrain" className="grid grid-cols-2 gap-2">
+            {[false, true].map((on) => {
+              const checked = selected.includes(awd.id) === on;
+              return (
+                <button key={String(on)} role="radio" aria-checked={checked} onClick={() => !checked && onToggle(awd.id)} className={pill(checked)}>
+                  <span className="font-semibold text-navy">{on ? "AWD" : "2WD"}</span>
+                  <span className="text-steel">{on ? `+${formatPrice(awd.price)}` : "Included"}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+      {extras.length > 0 && (
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-widest text-steel mb-1.5">Factory options</p>
+          <div className="grid gap-2">
+            {extras.map((o) => {
+              const on = selected.includes(o.id);
+              return (
+                <button key={o.id} role="checkbox" aria-checked={on} onClick={() => onToggle(o.id)} className={pill(on)}>
+                  <span className="text-navy">{o.name}</span>
+                  <span className="text-steel whitespace-nowrap">+{formatPrice(o.price)}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -1273,7 +1339,7 @@ function StepUpgrades({
   const catalog = useCatalog();
   const [expanded, setExpanded] = useState<Option | null>(null);
   const van = getVanLength(catalog, vanLengthId ?? "");
-  const upgrades = catalog.options.filter((o) => o.categoryId === UPGRADES_CATEGORY_ID && fitsVan(o, van));
+  const upgrades = catalog.options.filter((o) => o.categoryId === UPGRADES_CATEGORY_ID && o.group !== "Van" && fitsVan(o, van));
   /* Grouped the way the workbook groups them, in the order they first appear. */
   const groups = [...new Set(upgrades.map((o) => o.group ?? "Upgrades"))];
   return (
