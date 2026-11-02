@@ -106,6 +106,7 @@ export async function parseWorkbook(buffer: ArrayBuffer, source: string): Promis
   const settings = sheet("Settings");
   const chassis = sheet("Chassis");
   const baseWs = sheet("Base Options");
+  const partsWs = sheet("Base Parts");
   const upWs = sheet("Upgrades");
   const pkWs = sheet("Packages");
   const layoutWs = ["Beds", "Living", "Kitchen"].map((n) => sheet(n));
@@ -146,30 +147,47 @@ export async function parseWorkbook(buffer: ArrayBuffer, source: string): Promis
     }
   } else problems.push("Chassis: no Van Options table");
 
-  // Base options: every line's retail, and the total for a short and a long van.
-  const bc = table(baseWs!, 4, problems, ["Code", "Category", "Description", "Manufacturer", "Model #", "Fits", "Qty", "Unit Cost", "Install Hrs", "Markup %"]);
+  // Base options (owner, 2026-11-02): the products a buyer sees, each the
+  // sum of its costed lines on Base Parts. Brands and models stay on Base
+  // Parts and never leave this file.
+  const pc = table(partsWs!, 4, problems, ["Code", "Product", "Fits", "Qty", "Unit Cost", "Install Hrs", "Markup %"]);
   const base = { short: 0, long: 0 };
+  const partRetail: Record<string, number> = {};
+  const partProduct: Record<string, string> = {};
+  const productRetail: Record<string, number> = {};
+  partsWs!.eachRow((row, r) => {
+    if (r < 5) return;
+    const code = str(row.getCell(pc.Code).value);
+    if (!code) return;
+    const product = str(row.getCell(pc.Product).value);
+    if (!product) problems.push(`Base Parts: ${code} has no Product`);
+    const retail = retailOf(num(row.getCell(pc.Qty).value), num(row.getCell(pc["Unit Cost"]).value), num(row.getCell(pc["Install Hrs"]).value), row.getCell(pc["Markup %"]).value);
+    const fits = str(row.getCell(pc.Fits).value) || "All";
+    partRetail[code] = retail;
+    partProduct[code] = product;
+    productRetail[product] = (productRetail[product] ?? 0) + retail;
+    if (fits === "All" || fits === "Short") base.short += retail;
+    if (fits === "All" || fits === "Long") base.long += retail;
+  });
+  base.short = Math.round(base.short);
+  base.long = Math.round(base.long);
+  if (!base.short) problems.push("Base Parts: retail comes to $0; fill in the costs");
+
+  const bc = table(baseWs!, 4, problems, ["Code", "Category", "Product", "Fits"]);
   const baseItems: PricingData["baseItems"] = [];
-  const baseRetail: Record<string, number> = {};
   baseWs!.eachRow((row, r) => {
     if (r < 5) return;
     const code = str(row.getCell(bc.Code).value);
     if (!code) return;
-    const qty = num(row.getCell(bc.Qty).value);
-    const retail = retailOf(qty, num(row.getCell(bc["Unit Cost"]).value), num(row.getCell(bc["Install Hrs"]).value), row.getCell(bc["Markup %"]).value);
-    const fits = str(row.getCell(bc.Fits).value) || "All";
-    baseRetail[code] = retail;
-    if (fits === "All" || fits === "Short") base.short += retail;
-    if (fits === "All" || fits === "Long") base.long += retail;
+    if (productRetail[code] === undefined) problems.push(`Base Options: ${code} has no parts on Base Parts`);
     baseItems.push({
-      code, category: str(row.getCell(bc.Category).value), name: str(row.getCell(bc.Description).value),
-      manufacturer: str(row.getCell(bc.Manufacturer).value), model: str(row.getCell(bc["Model #"]).value),
-      fits, qty, retail: Math.round(retail), ...mediaOf(row, bc),
+      code, category: str(row.getCell(bc.Category).value), name: str(row.getCell(bc.Product).value),
+      manufacturer: "", model: "", fits: str(row.getCell(bc.Fits).value) || "All", qty: 1,
+      retail: Math.round(productRetail[code] ?? 0), ...mediaOf(row, bc),
     });
   });
-  base.short = Math.round(base.short);
-  base.long = Math.round(base.long);
-  if (!base.short) problems.push("Base Options: retail comes to $0; fill in the costs");
+  for (const [part, product] of Object.entries(partProduct))
+    if (!baseItems.some((b) => b.code === product)) problems.push(`Base Parts: ${part} belongs to ${product}, which is not on Base Options`);
 
   // Upgrades: what the buyer pays on top (retail less the base line it
   // replaces), and how many each package carries.
@@ -181,12 +199,14 @@ export async function parseWorkbook(buffer: ArrayBuffer, source: string): Promis
     const code = str(row.getCell(uc.Code).value);
     if (!code) return;
     const replaces = str(row.getCell(uc.Replaces).value) || null;
-    if (replaces && baseRetail[replaces] === undefined) problems.push(`Upgrades: ${code} replaces ${replaces}, which is not on Base Options`);
-    const pays = retailOf(1, num(row.getCell(uc["Unit Cost"]).value), num(row.getCell(uc["Install Hrs"]).value), row.getCell(uc["Markup %"]).value) - (replaces ? baseRetail[replaces] ?? 0 : 0);
+    if (replaces && partRetail[replaces] === undefined) problems.push(`Upgrades: ${code} replaces ${replaces}, which is not on Base Parts`);
+    // The buyer pays the difference over the one part it swaps; the site
+    // knows it as replacing that part's product.
+    const pays = retailOf(1, num(row.getCell(uc["Unit Cost"]).value), num(row.getCell(uc["Install Hrs"]).value), row.getCell(uc["Markup %"]).value) - (replaces ? partRetail[replaces] ?? 0 : 0);
     upgrades.push({
       code, category: str(row.getCell(uc.Category).value), name: str(row.getCell(uc.Description).value),
       manufacturer: str(row.getCell(uc.Manufacturer).value), model: str(row.getCell(uc["Model #"]).value),
-      replaces, fits: str(row.getCell(uc.Fits).value) || "All", price: Math.round(pays), ...mediaOf(row, uc),
+      replaces: replaces ? partProduct[replaces] ?? null : null, fits: str(row.getCell(uc.Fits).value) || "All", price: Math.round(pays), ...mediaOf(row, uc),
     });
     for (const t of TIERS) if (num(row.getCell(uc[t]).value)) packageUpgrades[t].push(code);
   });

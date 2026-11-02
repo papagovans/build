@@ -103,6 +103,17 @@ owner 2026-10-30): chassis, included options, upgrades, the Sprinter 170
 layout pieces (Beds, Living, Kitchen tabs) and the four packages, each at cost
 plus markup.
 
+**Base options are products, not parts** (owner, 2026-11-02). The Base
+Options tab is what a buyer sees: 35 products in seven categories
+(Electricity, Plumbing, Heating/Cooling, Kitchen, Aesthetic, Storage, Misc),
+each one photo and two lines, no brand or model number. The Base Parts tab
+holds the costed parts with their brands, each tagged with its product, and a
+product's cost and retail are the sum of its parts. Support parts nobody
+shops for (wiring, pump, fusing) ride inside the product they serve, so the
+margin stays honest. An upgrade's **Replaces** names a part, and the buyer
+pays the difference over that part alone; the site sees it as replacing the
+part's product.
+
 **To change prices:** edit the workbook, then go to
 **build.papagovans.com/pricing** (admin login), upload it, read what changes,
 and click Publish. The builder and the package pages use the new prices within
