@@ -205,7 +205,8 @@ export async function parseWorkbook(buffer: ArrayBuffer, source: string): Promis
     const pays = retailOf(1, num(row.getCell(uc["Unit Cost"]).value), num(row.getCell(uc["Install Hrs"]).value), row.getCell(uc["Markup %"]).value) - (replaces ? partRetail[replaces] ?? 0 : 0);
     upgrades.push({
       code, category: str(row.getCell(uc.Category).value), name: str(row.getCell(uc.Description).value),
-      manufacturer: str(row.getCell(uc.Manufacturer).value), model: str(row.getCell(uc["Model #"]).value),
+      // Brands stay in the workbook for the shop; buyers see the product only.
+      manufacturer: "", model: "",
       replaces: replaces ? partProduct[replaces] ?? null : null, fits: str(row.getCell(uc.Fits).value) || "All", price: Math.round(pays), ...mediaOf(row, uc),
     });
     for (const t of TIERS) if (num(row.getCell(uc[t]).value)) packageUpgrades[t].push(code);
