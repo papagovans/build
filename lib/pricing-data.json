@@ -1624,7 +1624,8 @@
       "tagline": "The Happy Camper",
       "van": "sprinter-144",
       "vanOptions": [
-        "VO01"
+        "VO01",
+        "VO03"
       ],
       "upgrades": [],
       "layout": "BD01-BC01-SHN-LRNSH01-PI02-PU02"
@@ -1644,7 +1645,8 @@
       "tagline": "The Traveling Nomad",
       "van": "sprinter-170",
       "vanOptions": [
-        "VO01"
+        "VO01",
+        "VO03"
       ],
       "upgrades": [
         "HC21",
@@ -1672,7 +1674,8 @@
       "tagline": "The Luxury Explorer",
       "van": "sprinter-170x",
       "vanOptions": [
-        "VO01"
+        "VO01",
+        "VO03"
       ],
       "upgrades": [
         "EL22",

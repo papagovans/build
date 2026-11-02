@@ -21,6 +21,7 @@ const REQUIRES: Record<string, string[]> = {
   EX22: ["EX21"], // bumper lights need the bumper
   RF23: ["RF21"], // light bars need a roof rack
   RF24: ["RF22"],
+  VO01: ["VO03"], // Mercedes sells AWD only with the High Output engine
 };
 
 const MAKES: Record<string, VanMake> = { Sprinter: "sprinter", Transit: "transit", ProMaster: "promaster" };
